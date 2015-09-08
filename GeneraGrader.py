@@ -12,7 +12,7 @@ arrays = {}
 
 
 def DeclareVariable(var):
-	grader_c.write("static " + var["type"] + " " + var["name"] + ";\n");
+	grader_c.write("static " + types_c[var["type"]] + " " + var["name"] + ";\n");
 	
 def DeclareArray(arr):
 	grader_c.write("static " + arr["type"] + ( "*" * len(arr["dim"]) ) + " " + arr["name"] + ";\n" )
@@ -94,7 +94,24 @@ def ReadVariables(ReadVar):
 	grader_c.write(");\n")
 	grader_c.write("\n")
 
+def BetweenReadAndWrite():
+	grader_c.write("\tfclose(fr);\n")
+	grader_c.write("\tfw = fopen(\"output.txt\", \"w\");\n")
+
+def WriteArrays(WriteArr): #TODO
+	grader_c.write("\t//SCRIVI ARRAY;\n")
+
+def WriteVariables(WriteVar):
+	grader_c.write("\tfprintf(fw, \"")
+	for name in WriteVar:
+		grader_c.write("%" + stdio_types[variables[name]["type"]] + " ")
+	grader_c.write("\\n\"")
+	for name in WriteVar:
+		grader_c.write(", " + name)
+	grader_c.write(");\n")
+
 def FileFooters():
+	grader_c.write("\tfclose(fw);\n")
 	grader_c.write("}\n")
 
 FileHeaders()
@@ -144,7 +161,7 @@ MainFunction()
 InputFormat = open("InputFormat.txt","r")
 lines = InputFormat.read().splitlines()
 
-# Parsing InputFormat
+# Parsing InputFormat.txt
 for line in lines:
 	line.strip()
 	if not line.startswith("#") and len(line) != 0:
@@ -174,5 +191,35 @@ for line in lines:
 			ReadVar = [x for x in ReadVar if x] # Remove empty chuncks
 			
 			ReadVariables(ReadVar)
+
+BetweenReadAndWrite()
+
+OutputFormat = open("OutputFormat.txt","r")
+lines = OutputFormat.read().splitlines()
+
+# Parsing OutputFormat.txt
+for line in lines:
+	line.strip()
+	if not line.startswith("#") and len(line) != 0:
+		if "[" in line: # Write arrays
+			WriteArr = re.sub("[\[\]]", "", line) # Remove square brackets
+			WriteArr = re.split(" ", WriteArr) # Split line by spaces
+			WriteArr = [x for x in WriteArr if x] # Remove empty chuncks
+			
+			for name in WriteArr:
+				if name not in arrays:
+					sys.exit("Un array da scrivere non esiste")
+				
+				arr = arrays[name]
+				if arr["dim"] != arrays[WriteArr[0]]["dim"]:
+					sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
+					
+			WriteArrays(WriteArr)
+			
+		else: # Write variables
+			WriteVar = re.split(" ", line) # Split line by spaces
+			WriteVar = [x for x in WriteVar if x] # Remove empty chuncks
+			
+			WriteVariables(WriteVar)
 
 FileFooters()

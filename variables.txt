@@ -15,3 +15,8 @@ int W
 char R[H][W]
 char G[H][W]
 char B[H][W]
+
+
+int res
+int scelti[res]
+double colore[res]

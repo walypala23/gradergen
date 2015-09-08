@@ -16,6 +16,9 @@ static int W;
 static char** R;
 static char** G;
 static char** B;
+static int res;
+static int* scelti;
+static double* colore;
 
 int main() {
 	fr = fopen("input.txt", "r");
@@ -57,4 +60,9 @@ int main() {
 			fscanf(fr, "%c %c %c ", &R[i0][i1], &G[i0][i1], &B[i0][i1]);
 		}
 	}
+	fclose(fr);
+	fw = fopen("output.txt", "w");
+	fprintf(fw, "%d \n", res);
+	//SCRIVI ARRAY;
+	fclose(fw);
 }

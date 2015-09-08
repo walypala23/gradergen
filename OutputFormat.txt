@@ -1,0 +1,2 @@
+res
+scelti[] colore[]
