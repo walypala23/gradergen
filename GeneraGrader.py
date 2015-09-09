@@ -18,14 +18,25 @@ def DeclareArray(arr):
 	grader_c.write("static " + arr["type"] + ( "*" * len(arr["dim"]) ) + " " + arr["name"] + ";\n" )
 
 def FileHeaders():
-	grader_c.write("#include <stdio.h>\n")
-	grader_c.write("#include <assert.h>\n")
-	grader_c.write("#include <stdlib.h>\n\n")
-	grader_c.write("static FILE *fr, *fw;\n\n");
+	grader_c.write(
+"""#include <stdio.h>
+#include <assert.h>
+#include <stdlib.h>
+
+static FILE *fr, *fw;\n""")
 	
 def MainFunction():
-	grader_c.write("\nint main() {\n")
-	grader_c.write("\tfr = fopen(\"input.txt\", \"r\");\n");
+	grader_c.write("""
+int main() {
+	#ifdef EVAL
+		fr = fopen("input.txt", "r");
+		fw = fopen("output.txt", "w");
+	#else
+		fr = stdin;
+		fw = stdout;
+	#endif
+	
+	// Reading input\n""")
 	
 def AllocateArray(name, arr):
 	ArrLen = len(arr["dim"])
@@ -77,6 +88,8 @@ def ReadArrays(ReadArr):
 	for i in range(0, len(AllDim)):
 		grader_c.write("\t" * (len(AllDim) - i)+ "}\n");
 	
+	grader_c.write("\n")
+	
 def ReadVariables(ReadVar):
 	grader_c.write("\tfscanf(fr, \"");
 			
@@ -91,15 +104,41 @@ def ReadVariables(ReadVar):
 	for var in ReadVar:
 		grader_c.write(", &" + var)
 	
-	grader_c.write(");\n")
-	grader_c.write("\n")
+	grader_c.write(");\n\n")
 
 def BetweenReadAndWrite():
-	grader_c.write("\tfclose(fr);\n")
-	grader_c.write("\tfw = fopen(\"output.txt\", \"w\");\n")
+	grader_c.write("\t// Writing output\n")
 
-def WriteArrays(WriteArr): #TODO
-	grader_c.write("\t//SCRIVI ARRAY;\n")
+def WriteArrays(WriteArr):
+	AllDim = arrays[WriteArr[0]]["dim"]
+	for i in range(0, len(AllDim)):
+		grader_c.write('\t' * (i+1))
+		it = "i" + str(i)
+		grader_c.write("for (int " + it + " = 0; " + it + " < " + AllDim[i] + "; " + it + "++) {\n")
+	
+	
+	grader_c.write("\t" * (len(AllDim)+1))
+	grader_c.write("fprintf(fw, \"")
+				
+	for name in WriteArr:
+		grader_c.write("%" + stdio_types[arrays[name]["type"]] + " ")
+	
+	if len(WriteArr) > 1:
+		grader_c.write("\\n")
+	grader_c.write("\"")
+	
+	indexes = ""
+	for i in range(0, len(AllDim)):
+		indexes += "[i" + str(i) + "]"
+	for name in WriteArr:
+		grader_c.write(", " + name + indexes)
+	grader_c.write(");\n")
+		
+	for i in range(0, len(AllDim)):
+		grader_c.write("\t" * (len(AllDim) - i)+ "}\n")
+		if i == len(AllDim)-1 and len(WriteArr) > 1:
+			grader_c.write("\t" * (len(AllDim) - i)+ "fprintf(fw, \"\\n\");\n");
+	grader_c.write("\n")
 
 def WriteVariables(WriteVar):
 	grader_c.write("\tfprintf(fw, \"")
@@ -108,11 +147,15 @@ def WriteVariables(WriteVar):
 	grader_c.write("\\n\"")
 	for name in WriteVar:
 		grader_c.write(", " + name)
-	grader_c.write(");\n")
+	grader_c.write(");\n\n")
 
 def FileFooters():
-	grader_c.write("\tfclose(fw);\n")
-	grader_c.write("}\n")
+	grader_c.write(
+"""	fclose(fr);
+	fclose(fw);
+	return 0;
+}
+""")
 
 FileHeaders()
 
