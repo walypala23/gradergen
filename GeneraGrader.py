@@ -71,15 +71,14 @@ def AllocateArray(name, arr):
 			grader_c.write("for (int " + it + " = 0; " + it + " < " + arr['dim'][i-1] + "; " + it + "++) {\n")
 		
 		grader_c.write("\t"*(i+1))
-		grader_c.write(name)
-		for j in range(0, i):
-			grader_c.write("[i" + str(j) + "]")
+		indexes = "".join("[i" + str(x) + "]" for x in range(0,i))
+		grader_c.write(name + indexes)
 		grader_c.write(" = (")
 		grader_c.write(arr["type"] + " " + ("*" * (ArrLen-i)));
 		grader_c.write(")malloc(" + arr["dim"][i] + " * sizeof(")
 		grader_c.write(arr["type"] + ("*" * (ArrLen-i-1)))
 		grader_c.write("));\n");
-	
+		
 	for i in range(0, ArrLen - 1):
 		grader_c.write("\t" * (ArrLen - i - 1)+ "}\n");
 				
@@ -95,17 +94,14 @@ def ReadArrays(ReadArr):
 	
 	grader_c.write("\t" * (len(AllDim)+1))
 	grader_c.write("fscanf(fr, \"")
-				
-	for name in ReadArr:
-		grader_c.write("%" + stdio_types[arrays[name]["type"]] + " ")
+	
+	grader_c.write(" ".join(("%" + stdio_types[arrays[name]["type"]] for name in ReadArr)))
 	
 	grader_c.write("\"")
 	
-	indexes = ""
-	for i in range(0, len(AllDim)):
-		indexes += "[i" + str(i) + "]"
-	for name in ReadArr:
-		grader_c.write(", &" + name + indexes)
+	indexes = "".join("[i" + str(x) + "]" for x in range(0, len(AllDim)))
+	grader_c.write(", &" + ((indexes + ", &").join(ReadArr)) + indexes)
+	
 	grader_c.write(");\n")
 		
 	for i in range(0, len(AllDim)):
@@ -114,19 +110,10 @@ def ReadArrays(ReadArr):
 	grader_c.write("\n")
 	
 def ReadVariables(ReadVar):
-	grader_c.write("\tfscanf(fr, \"");
-			
-	for var in ReadVar:
-		if var not in variables:
-			sys.exit("Una variabile da leggere non esiste")
-		variables[var]['read'] = 1
-		grader_c.write("%" + stdio_types[variables[var]["type"]] + " ")
-	
-	grader_c.write("\" ")
-	
-	for var in ReadVar:
-		grader_c.write(", &" + var)
-	
+	grader_c.write("\tfscanf(fr, \"")
+	grader_c.write(" ".join(("%" + stdio_types[variables[var]["type"]] for name in ReadVar)))
+	grader_c.write("\", ")
+	grader_c.write(", ".join(("&" + var for var in ReadVar)))
 	grader_c.write(");\n\n")
 
 def BeforeCallingFunctions():
@@ -137,10 +124,7 @@ def CallFunction(fun):
 	if fun["type"] != '':
 		grader_c.write(fun['return'] + " = ")
 	grader_c.write(fun["name"] + "(")
-	for i in range(0, len(fun["parameters"])):
-		if i != 0:
-			grader_c.write(", ")
-		grader_c.write(fun["parameters"][i])
+	grader_c.write(', '.join(fun["parameters"]))
 	grader_c.write(");\n\n")
 
 def BeforeWritingOutput():
@@ -162,13 +146,11 @@ def WriteArrays(WriteArr):
 	
 	if len(WriteArr) > 1:
 		grader_c.write("\\n")
-	grader_c.write("\"")
+	grader_c.write("\", ")
 	
-	indexes = ""
-	for i in range(0, len(AllDim)):
-		indexes += "[i" + str(i) + "]"
-	for name in WriteArr:
-		grader_c.write(", " + name + indexes)
+	indexes = "".join("[i" + str(x) + "]" for x in range(0, len(AllDim)))
+	grader_c.write((indexes + ", ").join(WriteArr) + indexes)
+	
 	grader_c.write(");\n")
 		
 	for i in range(0, len(AllDim)):
@@ -319,6 +301,10 @@ for line in lines:
 		else: # Read variables
 			ReadVar = re.split(" ", line) # Split line by spaces
 			ReadVar = [x for x in ReadVar if x] # Remove empty chuncks
+			for var in ReadVar:
+				if var not in variables:
+					sys.exit("Una variabile da leggere non esiste")
+				variables[var]['read'] = 1
 			
 			ReadVariables(ReadVar)
 

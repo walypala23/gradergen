@@ -37,12 +37,12 @@ int main() {
 	#endif
 	
 	// Reading input
-	fscanf(fr, "%d %d %d " , &N, &M, &S);
+	fscanf(fr, "%d %d %d", &N, &M, &S);
 
 	P = (int *)malloc(N * sizeof(int));
 
 	for (int i0 = 0; i0 < N; i0++) {
-		fscanf(fr, "%d ", &P[i0]);
+		fscanf(fr, "%d", &P[i0]);
 	}
 
 	from = (int *)malloc(M * sizeof(int));
@@ -52,10 +52,10 @@ int main() {
 	length = (int *)malloc(M * sizeof(int));
 
 	for (int i0 = 0; i0 < M; i0++) {
-		fscanf(fr, "%d %d %d ", &from[i0], &to[i0], &length[i0]);
+		fscanf(fr, "%d %d %d", &from[i0], &to[i0], &length[i0]);
 	}
 
-	fscanf(fr, "%d %d " , &H, &W);
+	fscanf(fr, "%d %d", &H, &W);
 
 	R = (char **)malloc(H * sizeof(char*));
 	for (int i0 = 0; i0 < H; i0++) {
@@ -74,7 +74,7 @@ int main() {
 
 	for (int i0 = 0; i0 < H; i0++) {
 		for (int i1 = 0; i1 < W; i1++) {
-			fscanf(fr, "%c %c %c ", &R[i0][i1], &G[i0][i1], &B[i0][i1]);
+			fscanf(fr, "%c %c %c", &R[i0][i1], &G[i0][i1], &B[i0][i1]);
 		}
 	}
 
