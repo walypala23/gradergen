@@ -3,13 +3,16 @@
 import sys
 import re # regexp, used to check variables and functions names.
 
-types_c = {'int':'int', 'l':'long int', 'll':'long long int', 'ull':'unsigned long long int', 'char':'char', 'double':'double', 'float':'float'}
+types_c = {'': 'void', 'int':'int', 'l':'long int', 'll':'long long int', 'ull':'unsigned long long int', 'char':'char', 'double':'double', 'float':'float'}
 stdio_types = {'int':'d', 'l':'ld', 'll':'lld', 'ull':'llu', 'char':'c', 'double':'lf', 'float':'f'}		
 grader_c = open("grader.cpp", "w")
 		
 variables = {}
 arrays = {}
+functions = []
 
+def BeforeVariablesDeclaration():
+	grader_c.write("// Declaring variables\n")
 
 def DeclareVariable(var):
 	grader_c.write("static " + types_c[var["type"]] + " " + var["name"] + ";\n");
@@ -17,13 +20,33 @@ def DeclareVariable(var):
 def DeclareArray(arr):
 	grader_c.write("static " + arr["type"] + ( "*" * len(arr["dim"]) ) + " " + arr["name"] + ";\n" )
 
+def BeforeFunctionsDeclaration():
+	grader_c.write("\n// Declaring functions\n")
+
+def DeclareFunction(fun):
+	grader_c.write(types_c[fun["type"]] + " " + fun["name"] + "(")
+	for i in range(0, len(parameters)):
+		if i != 0:
+			grader_c.write(", ")
+		name = parameters[i].strip()
+		if name in variables:
+			var = variables[name]
+			grader_c.write(types_c[var["type"]] + " " + name)
+		elif name in arrays:
+			arr = arrays[name]
+			grader_c.write(types_c[arr["type"]] + ("*"*len(arr["dim"])) + " " + name)
+		else:
+			sys.exit("I parametri delle funzioni devono essere variabili note")
+	
+	grader_c.write(");\n\n")
+
 def FileHeaders():
 	grader_c.write(
 """#include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 
-static FILE *fr, *fw;\n""")
+static FILE *fr, *fw;\n\n""")
 	
 def MainFunction():
 	grader_c.write("""
@@ -106,7 +129,21 @@ def ReadVariables(ReadVar):
 	
 	grader_c.write(");\n\n")
 
-def BetweenReadAndWrite():
+def BeforeCallingFunctions():
+	grader_c.write("\t// Calling functions\n")
+
+def CallFunction(fun):
+	grader_c.write("\t")
+	if fun["type"] != '':
+		grader_c.write(fun['return'] + " = ")
+	grader_c.write(fun["name"] + "(")
+	for i in range(0, len(fun["parameters"])):
+		if i != 0:
+			grader_c.write(", ")
+		grader_c.write(fun["parameters"][i])
+	grader_c.write(");\n\n")
+
+def BeforeWritingOutput():
 	grader_c.write("\t// Writing output\n")
 
 def WriteArrays(WriteArr):
@@ -159,13 +196,14 @@ def FileFooters():
 
 FileHeaders()
 
-var = open("variables.txt", "r")
-lines = var.read().splitlines()
-var.close()
+variables_file = open("variables.txt", "r")
+lines = variables_file.read().splitlines()
+variables_file.close()
 
+BeforeVariablesDeclaration()
 # Parsing variables.txt
 for line in lines:
-	line.strip()
+	line = line.strip()
 	if not line.startswith("#") and len(line) != 0: # Ignore empty lines and comments
 		var = re.split('[ \[\]]', line) # Split line by square brackets and space
 		var = [x for x in var if x] # Remove empty chunks
@@ -197,16 +235,65 @@ for line in lines:
 			arrays[var[1]] = ArrObj
 			
 			DeclareArray(ArrObj)
+
+BeforeFunctionsDeclaration()			
+# Parsing functions.txt
+functions_file = open("functions.txt", "r")
+lines = functions_file.read().splitlines()
+functions_file.close()
+
+for line in lines:
+	line = line.strip()
+	if not line.startswith("#") and len(line) != 0:
+		fun_obj = {}
+		
+		fun = re.split("=", line)
+		if len(fun) > 2:
+			sys.exit("La descrizione di una funzione ha troppi caratteri '='")
+		elif len(fun) == 2:
+			var = fun[0].strip()
+			if var not in variables:
+				sys.exit("Variabile di ritorno di una funzione non definita")
 			
+			fun_obj["type"] = variables[var]["type"]
+			fun_obj["return"] = var
+			fun = fun[1].strip()
+		else:
+			fun_obj["type"] = ""
+			fun = fun[0]
+		
+		fun = re.split("[\(\)]", fun)
+		if len(fun) != 3:
+			sys.exit("La descrizione di una funzione ha un numero errato di parentesi")
+		else:
+			name = fun[0].strip()
+			if name in variables or name in arrays:
+				sys.exit("Il nome di una funzione è già usato")
+			
+			fun_obj["name"] = name
+			
+			fun_obj["parameters"] = []
+			parameters = re.split(",", fun[1])
+			for param in parameters:
+				param = param.strip()
+				
+				if param not in variables and param not in arrays:
+					sys.exit("Parametro di funzione non definito")
+				fun_obj["parameters"].append(param)
+		
+		functions.append(fun_obj)
+		DeclareFunction(fun_obj)
+
 
 MainFunction()
 
-InputFormat = open("InputFormat.txt","r")
-lines = InputFormat.read().splitlines()
+InputFormat_file = open("InputFormat.txt","r")
+lines = InputFormat_file.read().splitlines()
+InputFormat_file.close()
 
 # Parsing InputFormat.txt
 for line in lines:
-	line.strip()
+	line = line.strip()
 	if not line.startswith("#") and len(line) != 0:
 		if "[" in line: # Read arrays
 			ReadArr = re.sub("[\[\]]", "", line) # Remove square brackets
@@ -235,14 +322,20 @@ for line in lines:
 			
 			ReadVariables(ReadVar)
 
-BetweenReadAndWrite()
+BeforeCallingFunctions()
+for fun in functions:
+	CallFunction(fun)
 
-OutputFormat = open("OutputFormat.txt","r")
-lines = OutputFormat.read().splitlines()
+
+BeforeWritingOutput()
+
+OutputFormat_file = open("OutputFormat.txt","r")
+lines = OutputFormat_file.read().splitlines()
+OutputFormat_file.close()
 
 # Parsing OutputFormat.txt
 for line in lines:
-	line.strip()
+	line = line.strip()
 	if not line.startswith("#") and len(line) != 0:
 		if "[" in line: # Write arrays
 			WriteArr = re.sub("[\[\]]", "", line) # Remove square brackets

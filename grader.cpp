@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 static FILE *fr, *fw;
+
+// Declaring variables
 static int N;
 static int M;
 static int S;
@@ -18,6 +20,12 @@ static char** B;
 static int res;
 static int* scelti;
 static double* colore;
+
+// Declaring functions
+int contapersone(int M, int* from, int* to);
+
+void sceglicolori(int res, int* scelti, double* colore);
+
 
 int main() {
 	#ifdef EVAL
@@ -69,6 +77,11 @@ int main() {
 			fscanf(fr, "%c %c %c ", &R[i0][i1], &G[i0][i1], &B[i0][i1]);
 		}
 	}
+
+	// Calling functions
+	res = contapersone(M, from, to);
+
+	sceglicolori(res, scelti, colore);
 
 	// Writing output
 	fprintf(fw, "%d \n", res);

@@ -1,0 +1,3 @@
+res = contapersone(M, from, to)
+
+sceglicolori(res, scelti, colore)
