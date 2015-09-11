@@ -1,55 +1,26 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import sys
 import re # regexp, used to check variables and functions names.
 
-types_c = {'': 'void', 'int':'int', 'l':'long int', 'll':'long long int', 'ull':'unsigned long long int', 'char':'char', 'double':'double', 'float':'float'}
-stdio_types = {'int':'d', 'l':'ld', 'll':'lld', 'ull':'llu', 'char':'c', 'double':'lf', 'float':'f'}		
-grader_c = open("grader.cpp", "w")
-		
-variables = {}
-arrays = {}
-functions = []
-
-def BeforeVariablesDeclaration():
-	grader_c.write("// Declaring variables\n")
-
-def DeclareVariable(var):
-	grader_c.write("static " + types_c[var["type"]] + " " + var["name"] + ";\n");
+class CLanguage:
+	def __init__(self):
+		self.out = ""
 	
-def DeclareArray(arr):
-	grader_c.write("static " + arr["type"] + ( "*" * len(arr["dim"]) ) + " " + arr["name"] + ";\n" )
-
-def BeforeFunctionsDeclaration():
-	grader_c.write("\n// Declaring functions\n")
-
-def DeclareFunction(fun):
-	grader_c.write(types_c[fun["type"]] + " " + fun["name"] + "(")
-	for i in range(0, len(parameters)):
-		if i != 0:
-			grader_c.write(", ")
-		name = parameters[i].strip()
-		if name in variables:
-			var = variables[name]
-			grader_c.write(types_c[var["type"]] + " " + name)
-		elif name in arrays:
-			arr = arrays[name]
-			grader_c.write(types_c[arr["type"]] + ("*"*len(arr["dim"])) + " " + name)
-		else:
-			sys.exit("I parametri delle funzioni devono essere variabili note")
+	types = {'': 'void', 'int':'int', 'l':'long int', 'll':'long long int', 'ull':'unsigned long long int', 'char':'char', 'double':'double', 'float':'float'}
 	
-	grader_c.write(");\n\n")
-
-def FileHeaders():
-	grader_c.write(
-"""#include <stdio.h>
+	stdio_types = {'int':'d', 'l':'ld', 'll':'lld', 'ull':'llu', 'char':'c', 'double':'lf', 'float':'f'}
+	
+	headers = """\
+#include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 
-static FILE *fr, *fw;\n\n""")
+static FILE *fr, *fw;
+"""
 	
-def MainFunction():
-	grader_c.write("""
+	main_function = """\
+
 int main() {
 	#ifdef EVAL
 		fr = fopen("input.txt", "r");
@@ -58,131 +29,169 @@ int main() {
 		fr = stdin;
 		fw = stdout;
 	#endif
+"""
 	
-	// Reading input\n""")
+	footers = """\
 	
-def AllocateArray(name, arr):
-	ArrLen = len(arr["dim"])
-	
-	for i in range(0, ArrLen):
-		grader_c.write("\t"*i)
-		if i != 0:
-			it = "i" + str(i-1)
-			grader_c.write("for (int " + it + " = 0; " + it + " < " + arr['dim'][i-1] + "; " + it + "++) {\n")
-		
-		grader_c.write("\t"*(i+1))
-		indexes = "".join("[i" + str(x) + "]" for x in range(0,i))
-		grader_c.write(name + indexes)
-		grader_c.write(" = (")
-		grader_c.write(arr["type"] + " " + ("*" * (ArrLen-i)));
-		grader_c.write(")malloc(" + arr["dim"][i] + " * sizeof(")
-		grader_c.write(arr["type"] + ("*" * (ArrLen-i-1)))
-		grader_c.write("));\n");
-		
-	for i in range(0, ArrLen - 1):
-		grader_c.write("\t" * (ArrLen - i - 1)+ "}\n");
-				
-	grader_c.write("\n")
-
-def ReadArrays(ReadArr):
-	AllDim = arrays[ReadArr[0]]["dim"]
-	for i in range(0, len(AllDim)):
-		grader_c.write('\t' * (i+1))
-		it = "i" + str(i)
-		grader_c.write("for (int " + it + " = 0; " + it + " < " + AllDim[i] + "; " + it + "++) {\n")
-	
-	
-	grader_c.write("\t" * (len(AllDim)+1))
-	grader_c.write("fscanf(fr, \"")
-	
-	grader_c.write(" ".join(("%" + stdio_types[arrays[name]["type"]] for name in ReadArr)))
-	
-	grader_c.write("\"")
-	
-	indexes = "".join("[i" + str(x) + "]" for x in range(0, len(AllDim)))
-	grader_c.write(", &" + ((indexes + ", &").join(ReadArr)) + indexes)
-	
-	grader_c.write(");\n")
-		
-	for i in range(0, len(AllDim)):
-		grader_c.write("\t" * (len(AllDim) - i)+ "}\n");
-	
-	grader_c.write("\n")
-	
-def ReadVariables(ReadVar):
-	grader_c.write("\tfscanf(fr, \"")
-	grader_c.write(" ".join(("%" + stdio_types[variables[var]["type"]] for name in ReadVar)))
-	grader_c.write("\", ")
-	grader_c.write(", ".join(("&" + var for var in ReadVar)))
-	grader_c.write(");\n\n")
-
-def BeforeCallingFunctions():
-	grader_c.write("\t// Calling functions\n")
-
-def CallFunction(fun):
-	grader_c.write("\t")
-	if fun["type"] != '':
-		grader_c.write(fun['return'] + " = ")
-	grader_c.write(fun["name"] + "(")
-	grader_c.write(', '.join(fun["parameters"]))
-	grader_c.write(");\n\n")
-
-def BeforeWritingOutput():
-	grader_c.write("\t// Writing output\n")
-
-def WriteArrays(WriteArr):
-	AllDim = arrays[WriteArr[0]]["dim"]
-	for i in range(0, len(AllDim)):
-		grader_c.write('\t' * (i+1))
-		it = "i" + str(i)
-		grader_c.write("for (int " + it + " = 0; " + it + " < " + AllDim[i] + "; " + it + "++) {\n")
-	
-	
-	grader_c.write("\t" * (len(AllDim)+1))
-	grader_c.write("fprintf(fw, \"")
-				
-	for name in WriteArr:
-		grader_c.write("%" + stdio_types[arrays[name]["type"]] + " ")
-	
-	if len(WriteArr) > 1:
-		grader_c.write("\\n")
-	grader_c.write("\", ")
-	
-	indexes = "".join("[i" + str(x) + "]" for x in range(0, len(AllDim)))
-	grader_c.write((indexes + ", ").join(WriteArr) + indexes)
-	
-	grader_c.write(");\n")
-		
-	for i in range(0, len(AllDim)):
-		grader_c.write("\t" * (len(AllDim) - i)+ "}\n")
-		if i == len(AllDim)-1 and len(WriteArr) > 1:
-			grader_c.write("\t" * (len(AllDim) - i)+ "fprintf(fw, \"\\n\");\n");
-	grader_c.write("\n")
-
-def WriteVariables(WriteVar):
-	grader_c.write("\tfprintf(fw, \"")
-	for name in WriteVar:
-		grader_c.write("%" + stdio_types[variables[name]["type"]] + " ")
-	grader_c.write("\\n\"")
-	for name in WriteVar:
-		grader_c.write(", " + name)
-	grader_c.write(");\n\n")
-
-def FileFooters():
-	grader_c.write(
-"""	fclose(fr);
+	fclose(fr);
 	fclose(fw);
 	return 0;
 }
-""")
+"""
+	
+	comments = {
+		"dec_var": "Declaring variables", 
+		"dec_fun": "Declaring functions", 
+		"input": "Reading input", 
+		"call_fun": "Calling functions", 
+		"output": "Writing output", 
+	}
+	
+	# array type
+	def at(self, _type, dim):
+		return self.types[_type] + "*"*dim
+	
+	# write line
+	def wl(self, line, tabulation = 0):
+		self.out += "\t"*tabulation + line + "\n"
+	
+	# write comment
+	def wc(self, short_description, tabulation = 0):
+		self.out += "\n" + ("\t"*tabulation) + "// " + self.comments[short_description] +"\n"
+	
+	def DeclareVariable(self, var):
+		self.wl("static {0} {1};".format(self.types[var.type], var.name))
+		
+	def DeclareArray(self, arr):
+		self.wl("static {0} {1};".format(self.at(arr.type, arr.dim), arr.name) )
+	
+	def DeclareFunction(self, fun):
+		typed_parameters = []
+		for param in fun.parameters:
+			if type(param) == Variable:
+				typed_parameters.append(self.types[param.type] + " " + param.name)
+			elif type(param) == Array:
+				typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
+		self.wl("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
+	
+	def AllocateArray(self, arr):
+		for i in range(0, arr.dim):
+			if i != 0:
+				self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i-1), arr.sizes[i-1]), i)
+				
+			indexes = "".join("[i" + str(x) + "]" for x in range(0,i))
+			self.wl("{0}{1} = ({2}*)malloc({3} * sizeof({2}));".format(arr.name, indexes, self.at(arr.type, arr.dim-i-1), arr.sizes[i]), i+1)
+			
+		for i in range(0, arr.dim - 1):
+			self.wl("}", arr.dim - i - 1)
+	
+	def ReadArrays(self, ReadArr):
+		all_dim = ReadArr[0].dim
+		all_sizes = ReadArr[0].sizes
+		for i in range(0, all_dim):
+			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
+			
+		format_string = " ".join("%" + self.stdio_types[arr.type] for arr in ReadArr)
+		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
+		pointers = ", ".join("&" + arr.name + indexes for arr in ReadArr)
+		self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), all_dim+1)
+			
+		for i in range(0, all_dim):
+			self.wl("}", all_dim - i)
+	
+	def ReadVariables(self, ReadVar):
+		format_string = " ".join("%" + self.stdio_types[var.type] for var in ReadVar)
+		pointers = ", ".join("&" + var.name for var in ReadVar)
+		self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), 1)
+	
+	def CallFunction(self, fun):
+		parameters = ', '.join([param.name for param in fun.parameters])
+		if fun.type == "":
+			self.wl("{0}({1});".format(fun.name, parameters), 1)
+		else:
+			self.wl("{2} = {0}({1});".format(fun.name, parameters, fun.return_var.name), 1)
+	
+	def WriteArrays(self, WriteArr):
+		all_dim = WriteArr[0].dim
+		all_sizes = WriteArr[0].sizes
+		
+		for i in range(0, all_dim):
+			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
+		
+		format_string = " ".join("%" + self.stdio_types[arr.type] for arr in WriteArr)
+		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
+		antipointers = ", ".join(arr.name + indexes for arr in WriteArr)
+		if len(WriteArr) > 1:
+			self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), all_dim+1)
+		else:
+			self.wl("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), all_dim+1)
+		
+		for i in range(0, all_dim):
+			self.wl("}", all_dim - i)
+			if i == all_dim-1 and len(WriteArr) > 1:
+				self.wl("fprintf(fw, \"\\n\");", all_dim - i)
 
-FileHeaders()
+	def WriteVariables(self, WriteVar):
+		format_string = " ".join("%" + self.stdio_types[var.type] for var in WriteVar)
+		antipointers = ", ".join(var.name for var in WriteVar)
+		self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), 1)
+	
+	def insert_headers(self):
+		self.out += self.headers
+		
+	def insert_main(self):
+		self.out += self.main_function
+	
+	def insert_footers(self):
+		self.out += self.footers
+	
+	def GraderFile(self):
+		grader = open("grader.cpp", "w")
+		grader.write(self.out)
+		grader.close()
+
+
+languages = {"C": CLanguage()}
+types = ['', 'int', 'l', 'll', 'ull', 'char', 'double', 'float']
+
+class Variable:
+	def __init__(self, n, t):
+		self.name = n
+		self.type = t
+		self.read = False
+		
+
+class Array:
+	def __init__(self, n, t, s):
+		self.name = n
+		self.type = t
+		self.dim = len(s)
+		self.sizes = s
+
+class Function:
+	def __init__(self, n = None, p = None, r = None):
+		self.name = n
+		self.parameters = p
+		if r != None:
+			self.type = r.type
+			self.return_var = r
+		else:
+			self.type = ""
+			self.return_var = None
+
+variables = {}
+arrays = {}
+functions = []
+
+for lang in languages:
+	languages[lang].insert_headers()
 
 variables_file = open("variables.txt", "r")
 lines = variables_file.read().splitlines()
 variables_file.close()
 
-BeforeVariablesDeclaration()
+for lang in languages:
+	languages[lang].wc("dec_var")
 # Parsing variables.txt
 for line in lines:
 	line = line.strip()
@@ -190,35 +199,38 @@ for line in lines:
 		var = re.split('[ \[\]]', line) # Split line by square brackets and space
 		var = [x for x in var if x] # Remove empty chunks
 		
-		if not var[0] in types_c:
+		if not var[0] in types:
 			sys.exit("Tipo non esistente")
 		
 		if not re.match("^[a-zA-Z_$][0-9a-zA-Z_$]*$", var[1]):
 			sys.exit("Il nome di una variabile contiene dei caratteri non ammessi")
 		
 		if len(var) == 2:
-			if var[1] in variables:
+			if var[1] in variables or var[1] in arrays:
 				sys.exit("Nome della variabile già utilizzata")
-			VarObj = {"name":var[1], "type":var[0], "read":0}
-			variables[var[1]] = VarObj
+			var_obj = Variable(var[1], var[0])
+			variables[var[1]] = var_obj
 					
-			DeclareVariable(VarObj)
+			for lang in languages:
+				languages[lang].DeclareVariable(var_obj)
 			
 		else:
 			dim = len(var)-2
-			if var[1] in arrays:
+			if var[1] in variables or var[1] in arrays:
 				sys.exit("Nome dell'array già utilizzato")
 			if dim == 0:
 				sys.exit("Dimensioni dell'array non specificate")
 			for num in var[2:]:
-				if not num in variables:
+				if num not in variables:
 					sys.exit("Dimensione dell'array non definita")
-			ArrObj = {"name":var[1], "type":var[0], "dim":var[2:]}
-			arrays[var[1]] = ArrObj
+			arr_obj = Array(var[1], var[0], var[2:])
+			arrays[var[1]] = arr_obj
 			
-			DeclareArray(ArrObj)
+			for lang in languages:
+				languages[lang].DeclareArray(arr_obj)
 
-BeforeFunctionsDeclaration()			
+for lang in languages:
+	languages[lang].wc("dec_fun")			
 # Parsing functions.txt
 functions_file = open("functions.txt", "r")
 lines = functions_file.read().splitlines()
@@ -227,7 +239,7 @@ functions_file.close()
 for line in lines:
 	line = line.strip()
 	if not line.startswith("#") and len(line) != 0:
-		fun_obj = {}
+		fun_obj = Function()
 		
 		fun = re.split("=", line)
 		if len(fun) > 2:
@@ -237,11 +249,10 @@ for line in lines:
 			if var not in variables:
 				sys.exit("Variabile di ritorno di una funzione non definita")
 			
-			fun_obj["type"] = variables[var]["type"]
-			fun_obj["return"] = var
+			fun_obj.return_var = variables[var]
 			fun = fun[1].strip()
 		else:
-			fun_obj["type"] = ""
+			fun_obj.type = ""
 			fun = fun[0]
 		
 		fun = re.split("[\(\)]", fun)
@@ -252,23 +263,30 @@ for line in lines:
 			if name in variables or name in arrays:
 				sys.exit("Il nome di una funzione è già usato")
 			
-			fun_obj["name"] = name
+			fun_obj.name = name
 			
-			fun_obj["parameters"] = []
+			fun_obj.parameters = []
 			parameters = re.split(",", fun[1])
 			for param in parameters:
 				param = param.strip()
 				
-				if param not in variables and param not in arrays:
+				if param in variables:
+					fun_obj.parameters.append(variables[param])
+				elif param in arrays:
+					fun_obj.parameters.append(arrays[param])
+				else:
 					sys.exit("Parametro di funzione non definito")
-				fun_obj["parameters"].append(param)
-		
+					
 		functions.append(fun_obj)
-		DeclareFunction(fun_obj)
+		for lang in languages:
+			languages[lang].DeclareFunction(fun_obj)
 
 
-MainFunction()
+for lang in languages:
+	languages[lang].insert_main()
 
+for lang in languages:
+	languages[lang].wc("input", 1)
 InputFormat_file = open("InputFormat.txt","r")
 lines = InputFormat_file.read().splitlines()
 InputFormat_file.close()
@@ -287,33 +305,39 @@ for line in lines:
 					sys.exit("Un array da leggere non esiste")
 				
 				arr = arrays[name]
-				if arr["dim"] != arrays[ReadArr[0]]["dim"]:
+				if arr.sizes != arrays[ReadArr[0]].sizes:
 					sys.exit("Array da leggere insieme devono avere le stesse dimensioni")
 				
-				for var in arr["dim"]:
-					if variables[var]["read"] == 0:
+				for var in arr.sizes:
+					if variables[var].read == False:
 						sys.exit("Quando si legge un array devono essere note le dimensioni")
 						
-				AllocateArray(name, arr)
+				for lang in languages:
+					languages[lang].AllocateArray(arr)
 					
-			ReadArrays(ReadArr)
+			for lang in languages:
+				languages[lang].ReadArrays([arrays[name] for name in ReadArr])
 			
 		else: # Read variables
 			ReadVar = re.split(" ", line) # Split line by spaces
 			ReadVar = [x for x in ReadVar if x] # Remove empty chuncks
-			for var in ReadVar:
-				if var not in variables:
+			for name in ReadVar:
+				if name not in variables:
 					sys.exit("Una variabile da leggere non esiste")
-				variables[var]['read'] = 1
+				variables[name].read = True
 			
-			ReadVariables(ReadVar)
+			for lang in languages:
+				languages[lang].ReadVariables([variables[name] for name in ReadVar])
 
-BeforeCallingFunctions()
+for lang in languages:
+	languages[lang].wc("call_fun", 1)
 for fun in functions:
-	CallFunction(fun)
+	for lang in languages:
+		languages[lang].CallFunction(fun)
 
 
-BeforeWritingOutput()
+for lang in languages:
+	languages[lang].wc("output", 1)
 
 OutputFormat_file = open("OutputFormat.txt","r")
 lines = OutputFormat_file.read().splitlines()
@@ -331,17 +355,26 @@ for line in lines:
 			for name in WriteArr:
 				if name not in arrays:
 					sys.exit("Un array da scrivere non esiste")
-				
-				arr = arrays[name]
-				if arr["dim"] != arrays[WriteArr[0]]["dim"]:
+					
+				if arrays[name].sizes != arrays[WriteArr[0]].sizes:
 					sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
 					
-			WriteArrays(WriteArr)
+			for lang in languages:
+				languages[lang].WriteArrays([arrays[name] for name in WriteArr])
 			
 		else: # Write variables
 			WriteVar = re.split(" ", line) # Split line by spaces
 			WriteVar = [x for x in WriteVar if x] # Remove empty chuncks
 			
-			WriteVariables(WriteVar)
+			for name in WriteVar:
+				if name not in variables:
+					sys.exit("Una variable da scrivere non esiste")
+			
+			for lang in languages:
+				languages[lang].WriteVariables([variables[name] for name in WriteVar])
 
-FileFooters()
+for lang in languages:
+	languages[lang].insert_footers()
+
+for lang in languages:
+	languages[lang].GraderFile()
