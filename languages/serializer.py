@@ -66,7 +66,7 @@ class Language:
 			self.languages[lang].insert_footers()
 	
 	def write_grader(self, grader_files):
-		for lang in self.languages:
-			grader = open(grader_files[lang], "w")
+		for [lang, grader_file] in grader_files:
+			grader = open(grader_file, "w")
 			grader.write(self.languages[lang].out)
 			grader.close()

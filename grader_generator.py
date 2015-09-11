@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 
 import sys
-import re # regexp, used to check variables and functions names.
+import re # regexp, used to check variables and functions names
+import argparse # to parse command line arguments
 
 from structures import Variable, Array, Function
 from languages import serializer, C
 
-all_languages = serializer.Language({"C": C.Language()})
+languages_list = ['C']
+
+# All languages are generated (not all are written to file)
+all_languages = serializer.Language({
+	"C": C.Language()
+})
+standard_grader_names = {
+	"C": "grader.c"
+}
+
 types = ['', 'int', 'l', 'll', 'ull', 'char', 'double', 'float']
 
 variables = {}
@@ -146,66 +156,108 @@ def parse_output(line):
 
 
 # Parsing grader description file
-grader_description = open("grader_description.txt", "r")
-lines = grader_description.read().splitlines()
-grader_description.close()
-
-sections = {"variables": False, "functions": False, "input": False, "output": False}
-section_lines = {}
-act_section = None
-for line in lines:
-	line = line.strip()
+def parse_description(lines):
+	sections = {"variables": False, "functions": False, "input": False, "output": False}
+	section_lines = {}
+	act_section = None
+	for line in lines:
+		line = line.strip()
 	
-	if line.startswith("#") or len(line) == 0:
-		continue
+		if line.startswith("#") or len(line) == 0:
+			continue
+			
+		is_section_title = False
+		for section in sections:
+			if line == "***" + section + "***":
+				if sections[section]:
+					sys.exit("Il file di descrizione contiene due volte la stessa sezione")
+				is_section_title = True
+				sections[section] = True
+				act_section = section
+				section_lines[section] = []
+				break
 		
-	is_section_title = False
-	for section in sections:
-		if line == "***" + section + "***":
-			if sections[section]:
-				sys.exit("Il file di descrizione contiene due volte la stessa sezione")
-			is_section_title = True
-			sections[section] = True
-			act_section = section
-			section_lines[section] = []
-			break
+		if not is_section_title:
+			if not act_section:
+				sys.exit("Il file di descrizione deve specificare la sezione")
+			section_lines[act_section].append(line)
+	return section_lines
+
+
+if __name__=='__main__':
+	parser = argparse.ArgumentParser(description = "Automatically generate grader files in various languages")
+	parser.add_argument(\
+		"grader_description", 
+		metavar="grader_description", 
+		action="store", nargs=1, 
+		help="the file describing the grader"
+	)
+	group = parser.add_mutually_exclusive_group(required=True)
 	
-	if not is_section_title:
-		if not act_section:
-			sys.exit("Il file di descrizione deve specificare la sezione")
-		section_lines[act_section].append(line)
+	group.add_argument(\
+		"-l","--lang",
+		nargs = "+", 
+		metavar = ("lang", "grader_filename"), 
+		dest = "languages", 
+		action = "append", 
+		help="programming language and grader filename"
+	)
+	
+	group.add_argument(\
+		"-a", "--all", 
+		action="store_true", 
+		default=False,
+		help="create grader (with filename 'grader.lang') in all supported languages"
+	)
+		
+	args = parser.parse_args()
+	
+	grader_description = open(args.grader_description[0], "r")
+	lines = grader_description.read().splitlines()
+	grader_description.close()
+	
+	section_lines = parse_description(lines)
+	
+	all_languages.insert_headers()
 
-all_languages.insert_headers()
+	all_languages.wc("dec_var")
+	# Parsing variables.txt
+	for line in section_lines["variables"]:
+		parse_variable(line)
 
-all_languages.wc("dec_var")
-# Parsing variables.txt
-for line in section_lines["variables"]:
-	parse_variable(line)
+	all_languages.wc("dec_fun")			
+	# Parsing functions.txt
+	for line in section_lines["functions"]:
+		parse_function(line)
 
-all_languages.wc("dec_fun")			
-# Parsing functions.txt
-for line in section_lines["functions"]:
-	parse_function(line)
+	all_languages.insert_main()
 
-all_languages.insert_main()
+	all_languages.wc("input", 1)
 
-all_languages.wc("input", 1)
+	# Parsing InputFormat.txt
+	for line in section_lines["input"]:
+		parse_input(line)
 
-# Parsing InputFormat.txt
-for line in section_lines["input"]:
-	parse_input(line)
+	all_languages.wc("call_fun", 1)
+	for fun in functions:
+		all_languages.CallFunction(fun)
 
-all_languages.wc("call_fun", 1)
-for fun in functions:
-	all_languages.CallFunction(fun)
+	all_languages.wc("output", 1)
 
-all_languages.wc("output", 1)
+	# Parsing OutputFormat.txt
+	for line in section_lines["output"]:
+		parse_output(line)
 
-# Parsing OutputFormat.txt
-for line in section_lines["output"]:
-	parse_output(line)
-
-all_languages.insert_footers()
-
-all_languages.write_grader({"C": "grader.cpp"})
-
+	all_languages.insert_footers()
+	
+	grader_files = args.languages
+	if args.all:
+		grader_files = [[lang] for lang in languages_list]
+	
+	for el in grader_files:
+		if len(el) == 1:
+			el.append(standard_grader_names[el[0]])
+	
+	all_languages.write_grader(grader_files)
+	
+	
