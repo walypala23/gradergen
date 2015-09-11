@@ -1,4 +1,4 @@
-from structures import Variable, Array, Function, variables, arrays, functions
+from structures import Variable, Array, Function
 
 class Language:
 	def __init__(self):
@@ -9,9 +9,9 @@ class Language:
 	stdio_types = {'int':'d', 'l':'ld', 'll':'lld', 'ull':'llu', 'char':'c', 'double':'lf', 'float':'f'}
 	
 	headers = """\
-#include <stdio.h>
-#include <assert.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cassert>
+#include <cstdlib>
 
 static FILE *fr, *fw;
 """
@@ -74,7 +74,7 @@ int main() {
 	def AllocateArray(self, arr):
 		for i in range(0, arr.dim):
 			if i != 0:
-				self.wl("for ({0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i-1), arr.sizes[i-1]), i)
+				self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i-1), arr.sizes[i-1]), i)
 				
 			indexes = "".join("[i" + str(x) + "]" for x in range(0,i))
 			self.wl("{0}{1} = ({2}*)malloc({3} * sizeof({2}));".format(arr.name, indexes, self.at(arr.type, arr.dim-i-1), arr.sizes[i]), i+1)
@@ -86,7 +86,7 @@ int main() {
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		for i in range(0, all_dim):
-			self.wl("for ({0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
+			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
 			
 		format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
@@ -113,7 +113,7 @@ int main() {
 		all_sizes = all_arrs[0].sizes
 		
 		for i in range(0, all_dim):
-			self.wl("for ({0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
+			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
 		
 		format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
@@ -138,13 +138,6 @@ int main() {
 		
 	def insert_main(self):
 		self.out += self.main_function
-		
-		global arrays
-		if len(arrays) > 0:
-			max_dim = max(arrays[name].dim for name in arrays)
-			self.out += """
-	// iterators used in for loops
-	int """ + ", ".join("i" + str(x) for x in range(0, max_dim)) + ";\n"
 	
 	def insert_footers(self):
 		self.out += self.footers

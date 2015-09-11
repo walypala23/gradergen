@@ -21,3 +21,7 @@ class Function:
 		else:
 			self.type = ""
 			self.return_var = None
+
+variables = {}
+arrays = {}
+functions = []

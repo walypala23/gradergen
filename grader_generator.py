@@ -4,24 +4,22 @@ import sys
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
-from structures import Variable, Array, Function
-from languages import serializer, C
+from structures import Variable, Array, Function, variables, arrays, functions
+from languages import serializer, C, CPP
 
-languages_list = ['C']
+languages_list = ['C', 'CPP']
 
 # All languages are generated (not all are written to file)
 all_languages = serializer.Language({
-	"C": C.Language()
+	"C": C.Language(),
+	"CPP": CPP.Language()
 })
 standard_grader_names = {
-	"C": "grader.c"
+	"C": "grader.c",
+	"CPP": "grader.cpp"
 }
 
 types = ['', 'int', 'l', 'll', 'ull', 'char', 'double', 'float']
-
-variables = {}
-arrays = {}
-functions = []
 
 def parse_variable(line):
 	var = re.split('[ \[\]]', line) # Split line by square brackets and space
