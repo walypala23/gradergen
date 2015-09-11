@@ -1,4 +1,4 @@
-from structures import Variable, Array, Function, variables, arrays, functions
+import structures
 
 class Language:
 	def __init__(self):
@@ -65,9 +65,9 @@ int main() {
 	def DeclareFunction(self, fun):
 		typed_parameters = []
 		for param in fun.parameters:
-			if type(param) == Variable:
+			if type(param) == structures.Variable:
 				typed_parameters.append(self.types[param.type] + " " + param.name)
-			elif type(param) == Array:
+			elif type(param) == structures.Array:
 				typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
 		self.wl("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
 	
@@ -139,9 +139,8 @@ int main() {
 	def insert_main(self):
 		self.out += self.main_function
 		
-		global arrays
-		if len(arrays) > 0:
-			max_dim = max(arrays[name].dim for name in arrays)
+		if len(structures.arrays) > 0:
+			max_dim = max(structures.arrays[name].dim for name in structures.arrays)
 			self.out += """
 	// Iterators used in for loops
 	int """ + ", ".join("i" + str(x) for x in range(0, max_dim)) + ";\n"

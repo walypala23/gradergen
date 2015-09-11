@@ -1,4 +1,4 @@
-from structures import Variable, Array, Function, variables, arrays, functions
+import structures
 
 class Language:
 	def __init__(self):
@@ -119,9 +119,8 @@ end.
 		self.out += self.headers
 		
 	def insert_main(self):
-		global arrays
-		if len(arrays) > 0:
-			max_dim = max(arrays[name].dim for name in arrays)
+		if len(structures.arrays) > 0:
+			max_dim = max(structures.arrays[name].dim for name in structures.arrays)
 			self.out += "\t" + ", ".join("i" + str(x) for x in range(0, max_dim)) + ": Integer;\n"
 		self.out += self.main_function
 	

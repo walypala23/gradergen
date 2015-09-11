@@ -1,4 +1,4 @@
-from structures import Variable, Array, Function
+import structures
 
 class Language:
 	def __init__(self):
@@ -65,9 +65,9 @@ int main() {
 	def DeclareFunction(self, fun):
 		typed_parameters = []
 		for param in fun.parameters:
-			if type(param) == Variable:
+			if type(param) == structures.Variable:
 				typed_parameters.append(self.types[param.type] + " " + param.name)
-			elif type(param) == Array:
+			elif type(param) == structures.Array:
 				typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
 		self.wl("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
 	
