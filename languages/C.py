@@ -143,7 +143,7 @@ int main() {
 		if len(arrays) > 0:
 			max_dim = max(arrays[name].dim for name in arrays)
 			self.out += """
-	// iterators used in for loops
+	// Iterators used in for loops
 	int """ + ", ".join("i" + str(x) for x in range(0, max_dim)) + ";\n"
 	
 	def insert_footers(self):

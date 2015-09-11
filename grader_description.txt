@@ -11,7 +11,7 @@ int M
 int S
 int P[N]
 int from[M]
-int to[M]
+int too[M]
 int length[M]
 
 int H
@@ -28,7 +28,7 @@ double colore[res]
 
 ***functions***
 
-res = contapersone(M, from, to)
+res = contapersone(M, from, too)
 
 sceglicolori(res, scelti, colore)
 
@@ -37,7 +37,7 @@ sceglicolori(res, scelti, colore)
 
 N M S
 P[]
-from[] to[] length[]
+from[] too[] length[]
 
 H W
 R[][] G[][] B[][]

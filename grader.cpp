@@ -10,7 +10,7 @@ static int M;
 static int S;
 static int* P;
 static int* from;
-static int* to;
+static int* too;
 static int* length;
 static int H;
 static int W;
@@ -22,7 +22,7 @@ static int* scelti;
 static double* colore;
 
 // Declaring functions
-void contapersone(int M, int* from, int* to);
+void contapersone(int M, int* from, int* too);
 void sceglicolori(int res, int* scelti, double* colore);
 
 int main() {
@@ -41,10 +41,10 @@ int main() {
 		fscanf(fr, "%d", &P[i0]);
 	}
 	from = (int*)malloc(M * sizeof(int));
-	to = (int*)malloc(M * sizeof(int));
+	too = (int*)malloc(M * sizeof(int));
 	length = (int*)malloc(M * sizeof(int));
 	for (int i0 = 0; i0 < M; i0++) {
-		fscanf(fr, "%d %d %d", &from[i0], &to[i0], &length[i0]);
+		fscanf(fr, "%d %d %d", &from[i0], &too[i0], &length[i0]);
 	}
 	fscanf(fr, "%d %d", &H, &W);
 	R = (char**)malloc(H * sizeof(char*));
@@ -66,7 +66,7 @@ int main() {
 	}
 
 	// Calling functions
-	contapersone(M, from, to);
+	contapersone(M, from, too);
 	sceglicolori(res, scelti, colore);
 
 	// Writing output

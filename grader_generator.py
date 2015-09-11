@@ -5,18 +5,20 @@ import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
 from structures import Variable, Array, Function, variables, arrays, functions
-from languages import serializer, C, CPP
+from languages import serializer, C, CPP, pascal
 
-languages_list = ['C', 'CPP']
+languages_list = ['C', 'CPP', 'pascal']
 
 # All languages are generated (not all are written to file)
 all_languages = serializer.Language({
 	"C": C.Language(),
-	"CPP": CPP.Language()
+	"CPP": CPP.Language(),
+	"pascal": pascal.Language()
 })
 standard_grader_names = {
 	"C": "grader.c",
-	"CPP": "grader.cpp"
+	"CPP": "grader.cpp",
+	"pascal": "grader.pas"
 }
 
 types = ['', 'int', 'l', 'll', 'ull', 'char', 'double', 'float']
