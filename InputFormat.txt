@@ -1,6 +1,0 @@
-N M S
-P[]
-from[] to[] length[]
-
-H W
-R[][] G[][] B[][]
