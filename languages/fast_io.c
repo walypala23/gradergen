@@ -1,9 +1,5 @@
 // Begin fast input library
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 static inline char fast_read_char() {
 	char c = fgetc_unlocked(fr);
 	// ignore whitespaces
