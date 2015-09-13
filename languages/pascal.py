@@ -13,11 +13,18 @@ class Language:
 	headers = """\
 uses NomeSorgenteContestant;
 
-var	fr, fw : text;
+var	
+	fr, fw : text;
 """
 	
+	headers_fast_io1 = """\
+uses NomeSorgenteContestant;
+"""
+	headers_fast_io2 = """\
+var	\
+"""
 	main_function = """\
-	
+
 begin
 {$ifdef EVAL}
     assign(fr, 'input.txt');
@@ -29,11 +36,21 @@ begin
     reset(fr);
     rewrite(fw);
 """
+	main_function_fast_io = """\
+	
+begin
+	init_fast_io();
+"""
 	
 	footers = """\
 	
 	close(fr);
     close(fw);
+end.
+"""
+	footers_fast_io = """\
+	
+	close_fast_io();
 end.
 """
 	
@@ -76,17 +93,25 @@ end.
 		for i in range(0, all_dim):
 			self.wl("for {0} := 0 to {1} do".format("i" + str(i), all_sizes[i]), i+1)
 			self.wl("begin", i+1)
-			
+		
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
-		pointers = ", ".join(arr.name + indexes for arr in all_arrs)
-		self.wl("read(fr, {0});".format(pointers), all_dim+1)
-			
+		if self.fast_io:
+			for arr in all_arrs:
+				self.wl("{0} := fast_read_{1}();".format(arr.name + indexes, arr.type), all_dim+1)
+		else:	
+			pointers = ", ".join(arr.name + indexes for arr in all_arrs)
+			self.wl("read(fr, {0});".format(pointers), all_dim+1)
+						
 		for i in range(0, all_dim):
 			self.wl("end;", all_dim - i)
 	
 	def ReadVariables(self, all_vars):
-		pointers = ", ".join(var.name for var in all_vars)
-		self.wl("readln(fr, {0});".format(pointers), 1)
+		if self.fast_io:
+			for var in all_vars:
+				self.wl("{0} := fast_read_{1}();".format(var.name, var.type), 1)
+		else:
+			pointers = ", ".join(var.name for var in all_vars)
+			self.wl("readln(fr, {0});".format(pointers), 1)
 	
 	def CallFunction(self, fun):
 		parameters = ', '.join([param.name for param in fun.parameters])
@@ -102,25 +127,49 @@ end.
 		for i in range(0, all_dim):
 			self.wl("for {0} := 0 to {1} do".format("i" + str(i), all_sizes[i]), i+1)
 			self.wl("begin", i+1)
+		
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
-		antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
-		if len(all_arrs) > 1:
-			self.wl("writeln(fw, {0});".format(antipointers), all_dim+1)
-		else:
-			self.wl("write(fw, {0});".format(antipointers), all_dim+1)
+		if self.fast_io:
+			for arr in all_arrs:
+				self.wl("fast_write_{0}({1});".format(arr.type, arr.name + indexes), all_dim + 1)
+				self.wl("fast_write_char(' ');", all_dim + 1)
+			if len(all_arrs) > 1:
+				self.wl("fast_write_char('\\n');", all_dim + 1)
+		else: 
+			antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
+			if len(all_arrs) > 1:
+				self.wl("writeln(fw, {0});".format(antipointers), all_dim+1)
+			else:
+				self.wl("write(fw, {0});".format(antipointers), all_dim+1)
 		
 		for i in range(0, all_dim):
 			self.wl("end;", all_dim - i)
-			if i == all_dim-1 and len(all_arrs) > 1:
-				self.wl("writeln(fw);", all_dim - i)
+			if i == 0 and len(all_arrs) == 1:
+				if self.fast_io:
+					self.wl("fast_write_char('\\n');", all_dim - i)
+				else:
+					self.wl("writeln(fw);", all_dim - i)
 
 	def WriteVariables(self, all_vars):
-		antipointers = ", ".join(var.name for var in all_vars)
-		self.wl("writeln(fw, {0});".format(antipointers), 1)
+		if self.fast_io:
+			for var in all_vars:
+				self.wl("fast_write_{0}({1});".format(var.type, var.name), 1)
+				self.wl("fast_write_char(' ');", 1)
+			self.wl("fast_write_char('\\n');", 1)
+		else:
+			antipointers = ", ".join(var.name for var in all_vars)
+			self.wl("writeln(fw, {0});".format(antipointers), 1)
 	
 	def insert_headers(self):
 		print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
-		self.out += self.headers
+		if self.fast_io:
+			self.out += self.headers_fast_io1
+			fast_io_file = open("languages/fast_io.pas", "r")
+			self.out += "\n" + fast_io_file.read()
+			fast_io_file.close()
+			self.out += self.headers_fast_io2
+		else:
+			self.out += self.headers
 		
 	def insert_main(self):
 		self.wl("\n{ iterators used in for loops }")
@@ -129,11 +178,12 @@ end.
 			self.wl(", ".join("i" + str(x) for x in range(0, max_dim)) + ": Integer;", 1)
 		
 		if self.fast_io:
-			fast_io_file = open("languages/fast_io.pas", "r")
-			self.out += "\n" + fast_io_file.read()
-			fast_io_file.close()
-			
-		self.out += self.main_function
+			self.out += self.main_function_fast_io
+		else:
+			self.out += self.main_function
 	
 	def insert_footers(self):
-		self.out += self.footers
+		if self.fast_io:
+			self.out += self.footers_fast_io
+		else:
+			self.out += self.footers

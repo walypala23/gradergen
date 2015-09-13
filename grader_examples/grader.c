@@ -77,7 +77,12 @@ int main() {
 	for (i0 = 0; i0 < res; i0++) {
 		fprintf(fw, "%d %lf\n", scelti[i0], colore[i0]);
 	}
-	fprintf(fw, "\n");
+	for (i0 = 0; i0 < H; i0++) {
+		for (i1 = 0; i1 < W; i1++) {
+			fprintf(fw, "%c", R[i0][i1]);
+		}
+		fprintf(fw, "\n");
+	}
 	
 	fclose(fr);
 	fclose(fw);

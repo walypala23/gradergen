@@ -27,10 +27,6 @@ void sceglicolori(int res, int* scelti, double* colore);
 
 // Begin fast input library
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
 static inline char fast_read_char() {
 	char c = fgetc_unlocked(fr);
 	// ignore whitespaces
@@ -191,7 +187,13 @@ int main() {
 		fast_write_char(' ');
 		fast_write_char('\n');
 	}
-	fast_write_char('\n');
+	for (int i0 = 0; i0 < H; i0++) {
+		for (int i1 = 0; i1 < W; i1++) {
+			fast_write_char(R[i0][i1]);
+			fast_write_char(' ');
+		}
+		fast_write_char('\n');
+	}
 	
 	fclose(fr);
 	fclose(fw);

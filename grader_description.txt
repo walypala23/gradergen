@@ -47,6 +47,7 @@ R[][] G[][] B[][]
 
 res
 scelti[] colore[]
+R[][]
 
 
 #***adhoc***

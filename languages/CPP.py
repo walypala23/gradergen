@@ -145,9 +145,9 @@ int main() {
 		
 		for i in range(0, all_dim):
 			self.wl("}", all_dim - i)
-			if i == all_dim-1 and len(all_arrs) > 1:
+			if i == 0 and len(all_arrs) == 1:
 				if self.fast_io:
-					self.wl("fast_write_char('\\n');", 1)
+					self.wl("fast_write_char('\\n');", all_dim - i)
 				else:
 					self.wl("fprintf(fw, \"\\n\");", all_dim - i)
 

@@ -1,8 +1,7 @@
-{
 uses NomeSorgenteContestant;
-}
 
-var	fr, fw : text;
+var	
+	fr, fw : text;
 
 { Declaring variables }
 	N : Integer;
@@ -23,7 +22,7 @@ var	fr, fw : text;
 
 { iterators used in for loops }
 	i0, i1: Integer;
-	
+
 begin
 {$ifdef EVAL}
     assign(fr, 'input.txt');
@@ -71,7 +70,14 @@ begin
 	begin
 		writeln(fw, scelti[i0], colore[i0]);
 	end;
-	writeln(fw);
+	for i0 := 0 to H do
+	begin
+		for i1 := 0 to W do
+		begin
+			write(fw, R[i0][i1]);
+		end;
+		writeln(fw);
+	end;
 	
 	close(fr);
     close(fw);

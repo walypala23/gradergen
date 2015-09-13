@@ -1,9 +1,7 @@
-{
 uses NomeSorgenteContestant;
-}
 
-var	fr, fw : text;
-
+{ TODO: languages/fast_io.pas }
+var	
 { Declaring variables }
 	N : Integer;
 	M : Integer;
@@ -23,35 +21,30 @@ var	fr, fw : text;
 
 { iterators used in for loops }
 	i0, i1: Integer;
-
-{ TODO: languages/fast_io.pas }
 	
 begin
-{$ifdef EVAL}
-    assign(fr, 'input.txt');
-    assign(fw, 'output.txt');
-{$else}
-    fr := input;
-    fw := output;
-{$endif}
-    reset(fr);
-    rewrite(fw);
+	init_fast_io();
 
 	{ Reading input }
-	readln(fr, N, M, S);
+	N := fast_read_int();
+	M := fast_read_int();
+	S := fast_read_int();
 	Setlength(P, N);
 	for i0 := 0 to N do
 	begin
-		read(fr, P[i0]);
+		P[i0] := fast_read_int();
 	end;
 	Setlength(from, M);
 	Setlength(too, M);
 	Setlength(length, M);
 	for i0 := 0 to M do
 	begin
-		read(fr, from[i0], too[i0], length[i0]);
+		from[i0] := fast_read_int();
+		too[i0] := fast_read_int();
+		length[i0] := fast_read_int();
 	end;
-	readln(fr, H, W);
+	H := fast_read_int();
+	W := fast_read_int();
 	Setlength(R, H, W);
 	Setlength(G, H, W);
 	Setlength(B, H, W);
@@ -59,7 +52,9 @@ begin
 	begin
 		for i1 := 0 to W do
 		begin
-			read(fr, R[i0][i1], G[i0][i1], B[i0][i1]);
+			R[i0][i1] := fast_read_char();
+			G[i0][i1] := fast_read_char();
+			B[i0][i1] := fast_read_char();
 		end;
 	end;
 
@@ -68,13 +63,26 @@ begin
 	sceglicolori(res, scelti, colore);
 
 	{ Writing output }
-	writeln(fw, res);
+	fast_write_int(res);
+	fast_write_char(' ');
+	fast_write_char('\n');
 	for i0 := 0 to res do
 	begin
-		writeln(fw, scelti[i0], colore[i0]);
+		fast_write_int(scelti[i0]);
+		fast_write_char(' ');
+		fast_write_real(colore[i0]);
+		fast_write_char(' ');
+		fast_write_char('\n');
 	end;
-	writeln(fw);
+	for i0 := 0 to H do
+	begin
+		for i1 := 0 to W do
+		begin
+			fast_write_char(R[i0][i1]);
+			fast_write_char(' ');
+		end;
+		fast_write_char('\n');
+	end;
 	
-	close(fr);
-    close(fw);
+	close_fast_io();
 end.
