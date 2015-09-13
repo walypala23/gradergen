@@ -18,7 +18,7 @@ var
 """
 	
 	headers_fast_io1 = """\
-uses NomeSorgenteContestant;
+uses NomeSorgenteContestant, Classes;
 """
 	headers_fast_io2 = """\
 var	\
@@ -39,7 +39,8 @@ begin
 	main_function_fast_io = """\
 	
 begin
-	init_fast_io();
+	init_fast_input('input.txt');
+	init_fast_output('output.txt');
 """
 	
 	footers = """\
@@ -50,7 +51,8 @@ end.
 """
 	footers_fast_io = """\
 	
-	close_fast_io();
+	close_fast_input();
+	close_fast_output();
 end.
 """
 	
@@ -134,7 +136,7 @@ end.
 				self.wl("fast_write_{0}({1});".format(arr.type, arr.name + indexes), all_dim + 1)
 				self.wl("fast_write_char(' ');", all_dim + 1)
 			if len(all_arrs) > 1:
-				self.wl("fast_write_char('\\n');", all_dim + 1)
+				self.wl("fast_write_char(chr(10));", all_dim + 1)
 		else: 
 			antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
 			if len(all_arrs) > 1:
@@ -146,7 +148,7 @@ end.
 			self.wl("end;", all_dim - i)
 			if i == 0 and len(all_arrs) == 1:
 				if self.fast_io:
-					self.wl("fast_write_char('\\n');", all_dim - i)
+					self.wl("fast_write_char(chr(10));", all_dim - i)
 				else:
 					self.wl("writeln(fw);", all_dim - i)
 
@@ -155,7 +157,7 @@ end.
 			for var in all_vars:
 				self.wl("fast_write_{0}({1});".format(var.type, var.name), 1)
 				self.wl("fast_write_char(' ');", 1)
-			self.wl("fast_write_char('\\n');", 1)
+			self.wl("fast_write_char(chr(10));", 1)
 		else:
 			antipointers = ", ".join(var.name for var in all_vars)
 			self.wl("writeln(fw, {0});".format(antipointers), 1)

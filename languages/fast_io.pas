@@ -1,5 +1,3 @@
-uses Classes;
-
 const MAXBUF = 4096 * 4;
 var
     total_bytes_read, bytes_read : int64;
@@ -25,10 +23,10 @@ begin
     end;
 end;
 
-function fast_write_char() : char;
+procedure fast_write_char(x : char);
 begin
     (* Write one char onto the buffer *)
-    output_buffer[idx_output_buffer];
+    output_buffer[idx_output_buffer] := x;
     inc(idx_input_buffer);
 
     if idx_input_buffer = MAXBUF then (* I'm at the end of the buffer, flush it *)
@@ -63,7 +61,7 @@ begin
     until not (('0' <= c) and (c <= '9'));
 
     if negative then
-        fast_read_int := -res;
+        fast_read_int := -res
     else
         fast_read_int := res;
 end;
@@ -107,9 +105,9 @@ begin
     until not (('0' <= c) and (c <= '9'));
 
     if negative then
-        fast_read_int := -res;
+        fast_read_longint := -res
     else
-        fast_read_int := res;
+        fast_read_longint := res;
 end;
 
 procedure fast_write_longint(x : int64);
@@ -128,9 +126,8 @@ begin
 end;
 
 function fast_read_real() : double;
-var res : double;
 begin
-    fast_read_int := 42.0;
+    fast_read_real := 42.0;
 end;
 
 procedure fast_write_real(x : double);
@@ -145,7 +142,7 @@ procedure init_fast_input(file_name : string);
 begin
     input_stream := TFileStream.Create(file_name, fmOpenRead);
     input_stream.Position := 0;
-    bytes_read := input_stream.Read(buffer, sizeof(Buffer));
+    bytes_read := input_stream.Read(input_buffer, sizeof(input_buffer));
     inc(total_bytes_read, bytes_read);
     idx_input_buffer := 0;
 end;
