@@ -7,21 +7,29 @@ import argparse # to parse command line arguments
 from structures import Variable, Array, Function, variables, arrays, functions
 from languages import serializer, C, CPP, pascal
 
-languages_list = ['C', 'CPP', 'pascal']
+languages_list = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
 
 # All languages are generated (not all are written to file)
-all_languages = serializer.Language({
-	"C": C.Language(),
-	"CPP": CPP.Language(),
-	"pascal": pascal.Language()
-})
-standard_grader_names = {
-	"C": "grader.c",
-	"CPP": "grader.cpp",
-	"pascal": "grader.pas"
+language_classes = {
+	"C": C.Language(0),
+	"fast_C": C.Language(1),
+	"CPP": CPP.Language(0),
+	"fast_CPP": CPP.Language(1),
+	"pascal": pascal.Language(0),
+	"fast_pascal": pascal.Language(1)
 }
 
-types = ['', 'int', 'l', 'll', 'ull', 'char', 'double', 'float']
+standard_grader_names = {
+	"C": "grader.c",
+	"fast_C": "fast_grader.c",
+	"CPP": "grader.cpp",
+	"fast_CPP": "fast_grader.cpp",
+	"pascal": "grader.pas",
+	"fast_pascal": "fast_grader.pas"
+}
+
+languages_serializer = {}
+types = ["", "int", "longint", "char", "real"]
 
 def parse_variable(line):
 	var = re.split('[ \[\]]', line) # Split line by square brackets and space
@@ -39,7 +47,7 @@ def parse_variable(line):
 		var_obj = Variable(var[1], var[0])
 		variables[var[1]] = var_obj
 				
-		all_languages.DeclareVariable(var_obj)
+		languages_serializer.DeclareVariable(var_obj)
 		
 	else:
 		dim = len(var)-2
@@ -53,7 +61,7 @@ def parse_variable(line):
 		arr_obj = Array(var[1], var[0], var[2:])
 		arrays[var[1]] = arr_obj
 		
-		all_languages.DeclareArray(arr_obj)
+		languages_serializer.DeclareArray(arr_obj)
 	
 def parse_function(line):
 	fun_obj = Function()
@@ -95,7 +103,7 @@ def parse_function(line):
 				sys.exit("Parametro di funzione non definito")
 				
 	functions.append(fun_obj)
-	all_languages.DeclareFunction(fun_obj)
+	languages_serializer.DeclareFunction(fun_obj)
 	
 def parse_input(line):
 	if "[" in line: # Read arrays
@@ -115,9 +123,9 @@ def parse_input(line):
 				if variables[var].read == False:
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
 					
-			all_languages.AllocateArray(arr)
+			languages_serializer.AllocateArray(arr)
 				
-		all_languages.ReadArrays([arrays[name] for name in all_arrs])
+		languages_serializer.ReadArrays([arrays[name] for name in all_arrs])
 		
 	else: # Read variables
 		all_vars = re.split(" ", line) # Split line by spaces
@@ -127,7 +135,7 @@ def parse_input(line):
 				sys.exit("Una variabile da leggere non esiste")
 			variables[name].read = True
 		
-		all_languages.ReadVariables([variables[name] for name in all_vars])
+		languages_serializer.ReadVariables([variables[name] for name in all_vars])
 		
 def parse_output(line):
 	if "[" in line: # Write arrays
@@ -142,7 +150,7 @@ def parse_output(line):
 			if arrays[name].sizes != arrays[all_arrs[0]].sizes:
 				sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
 				
-		all_languages.WriteArrays([arrays[name] for name in all_arrs])
+		languages_serializer.WriteArrays([arrays[name] for name in all_arrs])
 		
 	else: # Write variables
 		all_vars = re.split(" ", line) # Split line by spaces
@@ -152,7 +160,7 @@ def parse_output(line):
 			if name not in variables:
 				sys.exit("Una variable da scrivere non esiste")
 		
-		all_languages.WriteVariables([variables[name] for name in all_vars])
+		languages_serializer.WriteVariables([variables[name] for name in all_vars])
 
 
 # Parsing grader description file
@@ -216,48 +224,57 @@ if __name__=='__main__':
 	lines = grader_description.read().splitlines()
 	grader_description.close()
 	
+	grader_files = args.languages
+	if args.all:
+		grader_files = [[lang] for lang in languages_list]
+	
+	chosed_languages = {}
+	for el in grader_files:
+		if el[0] not in languages_list:
+			sys.exit("Uno dei linguaggi non è supportato")
+		if len(el) == 1:
+			el.append(standard_grader_names[el[0]])
+		elif len(el) > 2:
+			sys.exit("Per ogni linguaggio si può indicare soltanto il nome del grader")
+		
+		chosed_languages[el[0]] = language_classes[el[0]]
+
+	languages_serializer = serializer.Language(chosed_languages)
+	
 	section_lines = parse_description(lines)
 	
-	all_languages.insert_headers()
+	languages_serializer.insert_headers()
 
-	all_languages.wc("dec_var")
+	languages_serializer.wc("dec_var")
 	# Parsing variables.txt
 	for line in section_lines["variables"]:
 		parse_variable(line)
 
-	all_languages.wc("dec_fun")			
+	languages_serializer.wc("dec_fun")			
 	# Parsing functions.txt
 	for line in section_lines["functions"]:
 		parse_function(line)
 
-	all_languages.insert_main()
+	languages_serializer.insert_main()
 
-	all_languages.wc("input", 1)
+	languages_serializer.wc("input", 1)
 
 	# Parsing InputFormat.txt
 	for line in section_lines["input"]:
 		parse_input(line)
 
-	all_languages.wc("call_fun", 1)
+	languages_serializer.wc("call_fun", 1)
 	for fun in functions:
-		all_languages.CallFunction(fun)
+		languages_serializer.CallFunction(fun)
 
-	all_languages.wc("output", 1)
+	languages_serializer.wc("output", 1)
 
 	# Parsing OutputFormat.txt
 	for line in section_lines["output"]:
 		parse_output(line)
 
-	all_languages.insert_footers()
+	languages_serializer.insert_footers()			
 	
-	grader_files = args.languages
-	if args.all:
-		grader_files = [[lang] for lang in languages_list]
-	
-	for el in grader_files:
-		if len(el) == 1:
-			el.append(standard_grader_names[el[0]])
-	
-	all_languages.write_grader(grader_files)
+	languages_serializer.write_grader(grader_files)
 	
 	

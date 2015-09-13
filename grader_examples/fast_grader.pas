@@ -23,6 +23,8 @@ var	fr, fw : text;
 
 { iterators used in for loops }
 	i0, i1: Integer;
+
+{ TODO: languages/fast_io.pas }
 	
 begin
 {$ifdef EVAL}

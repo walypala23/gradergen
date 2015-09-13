@@ -23,7 +23,7 @@ char B[H][W]
 
 int res
 int scelti[res]
-double colore[res]
+real colore[res]
 
 
 ***functions***
@@ -47,3 +47,7 @@ R[][] G[][] B[][]
 
 res
 scelti[] colore[]
+
+
+#***adhoc***
+#C 

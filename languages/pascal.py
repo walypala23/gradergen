@@ -1,15 +1,17 @@
 import structures
 
 class Language:
-	def __init__(self):
+	def __init__(self, fast_io):
 		self.out = ""
+		if fast_io == 1:
+			self.fast_io = True
+		else:
+			self.fast_io = False
 	
-	types = {'': 'void', 'int':'Integer', 'l':'Longint', 'll':'Int64', 'ull':'unsigned long long int', 'char':'Char', 'double':'Double', 'float':'Single'}
-	
-	stdio_types = {'int':'d', 'l':'ld', 'll':'lld', 'ull':'llu', 'char':'c', 'double':'lf', 'float':'f'}
+	types = {'': 'void', 'int':'Integer', 'longint':'Int64', 'char':'Char', 'real':'Double'}
 	
 	headers = """\
-uses NomeProblema;
+uses NomeSorgenteContestant;
 
 var	fr, fw : text;
 """
@@ -37,7 +39,7 @@ end.
 	
 	comments = {
 		"dec_var": "Declaring variables", 
-		"dec_fun": "iterators used in for loops", 
+		"dec_fun": "", 
 		"input": "Reading input", 
 		"call_fun": "Calling functions", 
 		"output": "Writing output", 
@@ -53,7 +55,8 @@ end.
 	
 	# write comment
 	def wc(self, short_description, tabulation = 0):
-		self.out += "\n" + ("\t"*tabulation) + "{ " + self.comments[short_description] +" }\n"
+		if len(self.comments[short_description]) > 0:
+			self.out += "\n" + ("\t"*tabulation) + "{ " + self.comments[short_description] +" }\n"
 	
 	def DeclareVariable(self, var):
 		self.wl("{0} : {1};".format(var.name, self.types[var.type]), 1)
@@ -116,12 +119,20 @@ end.
 		self.wl("writeln(fw, {0});".format(antipointers), 1)
 	
 	def insert_headers(self):
+		print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
 		self.out += self.headers
 		
 	def insert_main(self):
+		self.wl("\n{ iterators used in for loops }")
 		if len(structures.arrays) > 0:
 			max_dim = max(structures.arrays[name].dim for name in structures.arrays)
-			self.out += "\t" + ", ".join("i" + str(x) for x in range(0, max_dim)) + ": Integer;\n"
+			self.wl(", ".join("i" + str(x) for x in range(0, max_dim)) + ": Integer;", 1)
+		
+		if self.fast_io:
+			fast_io_file = open("languages/fast_io.pas", "r")
+			self.out += "\n" + fast_io_file.read()
+			fast_io_file.close()
+			
 		self.out += self.main_function
 	
 	def insert_footers(self):

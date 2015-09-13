@@ -1,12 +1,16 @@
 import structures
 
 class Language:
-	def __init__(self):
+	def __init__(self, fast_io):
 		self.out = ""
+		if fast_io == 1:
+			self.fast_io = True
+		else:
+			self.fast_io = False
 	
-	types = {'': 'void', 'int':'int', 'l':'long int', 'll':'long long int', 'ull':'unsigned long long int', 'char':'char', 'double':'double', 'float':'float'}
+	types = {'': 'void', 'int':'int', 'longint':'long long int', 'char':'char', 'real':'double'}
 	
-	stdio_types = {'int':'d', 'l':'ld', 'll':'lld', 'ull':'llu', 'char':'c', 'double':'lf', 'float':'f'}
+	stdio_types = {'int':'d', 'longint':'lld', 'char':'c', 'real':'lf'}
 	
 	headers = """\
 #include <stdio.h>
@@ -54,7 +58,8 @@ int main() {
 	
 	# write comment
 	def wc(self, short_description, tabulation = 0):
-		self.out += "\n" + ("\t"*tabulation) + "// " + self.comments[short_description] +"\n"
+		if len(self.comments[short_description]) > 0:
+			self.out += "\n" + ("\t"*tabulation) + "// " + self.comments[short_description] +"\n"
 	
 	def DeclareVariable(self, var):
 		self.wl("static {0} {1};".format(self.types[var.type], var.name))
@@ -88,18 +93,26 @@ int main() {
 		for i in range(0, all_dim):
 			self.wl("for ({0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
 			
-		format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
-		pointers = ", ".join("&" + arr.name + indexes for arr in all_arrs)
-		self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), all_dim+1)
+		if self.fast_io:
+			for arr in all_arrs:
+				self.wl("{0} = fast_read_{1}();".format(arr.name + indexes, arr.type), all_dim+1)
+		else:	
+			format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
+			pointers = ", ".join("&" + arr.name + indexes for arr in all_arrs)
+			self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), all_dim+1)
 			
 		for i in range(0, all_dim):
 			self.wl("}", all_dim - i)
 	
 	def ReadVariables(self, all_vars):
-		format_string = " ".join("%" + self.stdio_types[var.type] for var in all_vars)
-		pointers = ", ".join("&" + var.name for var in all_vars)
-		self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), 1)
+		if self.fast_io:
+			for var in all_vars:
+				self.wl("{0} = fast_read_{1}();".format(var.name, var.type), 1)
+		else:
+			format_string = " ".join("%" + self.stdio_types[var.type] for var in all_vars)
+			pointers = ", ".join("&" + var.name for var in all_vars)
+			self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), 1)
 	
 	def CallFunction(self, fun):
 		parameters = ', '.join([param.name for param in fun.parameters])
@@ -115,28 +128,49 @@ int main() {
 		for i in range(0, all_dim):
 			self.wl("for ({0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
 		
-		format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
-		antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
-		if len(all_arrs) > 1:
-			self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), all_dim+1)
-		else:
-			self.wl("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), all_dim+1)
+		if self.fast_io:
+			for arr in all_arrs:
+				self.wl("fast_write_{0}({1});".format(arr.type, arr.name + indexes), all_dim + 1)
+				self.wl("fast_write_char(' ');", all_dim + 1)
+			if len(all_arrs) > 1:
+				self.wl("fast_write_char('\\n');", all_dim + 1)
+		else: 
+			format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
+			antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
+			if len(all_arrs) > 1:
+				self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), all_dim+1)
+			else:
+				self.wl("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), all_dim+1)
 		
 		for i in range(0, all_dim):
 			self.wl("}", all_dim - i)
 			if i == all_dim-1 and len(all_arrs) > 1:
-				self.wl("fprintf(fw, \"\\n\");", all_dim - i)
+				if self.fast_io:
+					self.wl("fast_write_char('\\n');", 1)
+				else:
+					self.wl("fprintf(fw, \"\\n\");", all_dim - i)
 
 	def WriteVariables(self, all_vars):
-		format_string = " ".join("%" + self.stdio_types[var.type] for var in all_vars)
-		antipointers = ", ".join(var.name for var in all_vars)
-		self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), 1)
+		if self.fast_io:
+			for var in all_vars:
+				self.wl("fast_write_{0}({1});".format(var.type, var.name), 1)
+				self.wl("fast_write_char(' ');", 1)
+			self.wl("fast_write_char('\\n');", 1)
+		else:
+			format_string = " ".join("%" + self.stdio_types[var.type] for var in all_vars)
+			antipointers = ", ".join(var.name for var in all_vars)
+			self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), 1)
 	
 	def insert_headers(self):
 		self.out += self.headers
 		
 	def insert_main(self):
+		if self.fast_io:
+			fast_io_file = open("languages/fast_io.c", "r")
+			self.out += "\n" + fast_io_file.read()
+			fast_io_file.close()
+		
 		self.out += self.main_function
 		
 		if len(structures.arrays) > 0:
