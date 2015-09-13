@@ -3,28 +3,39 @@ uses Classes;
 const MAXBUF = 4096 * 4;
 var
     total_bytes_read, bytes_read : int64;
-    buffer : array [0..MAXBUF] of char;
-    idx_buffer : longint;
-    file_stream : TFileStream;
+    input_buffer, output_buffer : array[0..MAXBUF-1] of char;
+    idx_input_buffer, idx_output_buffer : longint;
+    input_stream, output_stream : TFileStream;
 
-function read_fast_char() : char;
+function fast_read_char() : char;
 begin
-    (* Take one byte out of the buffer *)
-    read_fast_char := buffer[idxBuffer];
+    (* Take one char out of the buffer *)
+    fast_read_char := input_buffer[idx_input_buffer];
+    inc(idx_input_buffer);
 
-    if idx_buffer = MAXBUF then (* I'm at the end of the buffer, read another buffer *)
+    if idx_input_buffer = MAXBUF then (* I'm at the end of the buffer, read another buffer *)
     begin
-        if total_bytes_read <= file_stream.Size then (* We haven't reached EOF *)
+        if total_bytes_read <= input_stream.Size then (* We haven't reached EOF *)
         begin
-            bytes_read := file_stream.Read(buffer, sizeof(Buffer));
+            bytes_read := input_stream.Read(input_buffer, sizeof(input_buffer));
             inc(total_bytes_read, bytes_read);
         end;
 
-        idx_buffer := 0;
-    end
-    else (* The buffer has not ran out of bytes, yet *)
+        idx_input_buffer := 0;
+    end;
+end;
+
+function fast_write_char() : char;
+begin
+    (* Write one char onto the buffer *)
+    output_buffer[idx_output_buffer];
+    inc(idx_input_buffer);
+
+    if idx_input_buffer = MAXBUF then (* I'm at the end of the buffer, flush it *)
     begin
-        inc(idx_buffer);
+        output_stream.WriteBuffer(output_buffer, sizeof(output_buffer));
+
+        idx_input_buffer := 0;
     end;
 end;
 
@@ -37,24 +48,39 @@ begin
     negative := False;
 
     repeat
-        c := read_fast_char();
+        c := fast_read_char();
     until (c = '-') or (('0' <= c) and (c <= '9'));
 
     if c = '-' then
     begin
         negative := True;
-        c := read_fast_char();
+        c := fast_read_char();
     end;
 
     repeat
         res := res * 10 + ord(c) - ord('0');
-        c := read_fast_char();
+        c := fast_read_char();
     until not (('0' <= c) and (c <= '9'));
 
     if negative then
         fast_read_int := -res;
     else
         fast_read_int := res;
+end;
+
+procedure fast_write_int(x : longint);
+begin
+    if x < 0 then (* Write the sign, then the number *)
+    begin
+        fast_write_char('-');
+        fast_write_int(-x);
+    end
+    else (* Write the number recursively *)
+    begin
+        if x >= 10 then
+            fast_write_int(x div 10);
+        fast_write_char(chr(ord('0') + x mod 10));
+    end;
 end;
 
 function fast_read_longint() : int64;
@@ -66,18 +92,18 @@ begin
     negative := False;
 
     repeat
-        c := read_fast_char();
+        c := fast_read_char();
     until (c = '-') or (('0' <= c) and (c <= '9'));
 
     if c = '-' then
     begin
         negative := True;
-        c := read_fast_char();
+        c := fast_read_char();
     end;
 
     repeat
         res := res * 10 + ord(c) - ord('0');
-        c := read_fast_char();
+        c := fast_read_char();
     until not (('0' <= c) and (c <= '9'));
 
     if negative then
@@ -86,11 +112,62 @@ begin
         fast_read_int := res;
 end;
 
-procedure init_fast_io(input_name : string);
+procedure fast_write_longint(x : int64);
 begin
-    file_stream := TFileStream.Create(input_name, fmOpenRead);
-    file_stream.Position := 0;
-    bytes_read := file_stream.Read(buffer, sizeof(Buffer));
+    if x < 0 then (* Write the sign, then the number *)
+    begin
+        fast_write_char('-');
+        fast_write_longint(-x);
+    end
+    else (* Write the number recursively *)
+    begin
+        if x >= 10 then
+            fast_write_longint(x div 10);
+        fast_write_char(chr(ord('0') + x mod 10));
+    end;
+end;
+
+function fast_read_real() : double;
+var res : double;
+begin
+    fast_read_int := 42.0;
+end;
+
+procedure fast_write_real(x : double);
+begin
+    fast_write_char('4');
+    fast_write_char('2');
+    fast_write_char('.');
+    fast_write_char('0');
+end;
+
+procedure init_fast_input(file_name : string);
+begin
+    input_stream := TFileStream.Create(file_name, fmOpenRead);
+    input_stream.Position := 0;
+    bytes_read := input_stream.Read(buffer, sizeof(Buffer));
     inc(total_bytes_read, bytes_read);
-    idx_buffer := 0;
+    idx_input_buffer := 0;
+end;
+
+procedure close_fast_input;
+begin
+    input_stream.Free;
+end;
+
+procedure init_fast_output(file_name : string);
+begin
+    output_stream := TFileStream.Create(file_name, fmCreate);
+    idx_output_buffer := 0;
+end;
+
+procedure close_fast_output;
+begin
+    if idx_output_buffer > 0 then (* Gotta flush them bytez *)
+    begin
+        (* TODO: check if this is OK also when using unicode data *)
+        output_stream.Write(output_buffer, idx_output_buffer * sizeof(output_buffer[0]))
+    end;
+
+    output_stream.Free;
 end;
