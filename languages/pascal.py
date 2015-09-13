@@ -11,14 +11,14 @@ class Language:
 	types = {'': 'void', 'int':'Integer', 'longint':'Int64', 'char':'Char', 'real':'Double'}
 	
 	headers = """\
-uses NomeSorgenteContestant;
+uses nome_sorgente_contestant;
 
 var	
 	fr, fw : text;
 """
 	
 	headers_fast_io1 = """\
-uses NomeSorgenteContestant, Classes;
+uses nome_sorgente_contestant, Classes;
 """
 	headers_fast_io2 = """\
 var	\
