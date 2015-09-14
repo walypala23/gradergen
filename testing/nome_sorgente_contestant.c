@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 int contapersone(int M, int* from, int* too) {
-	int xxx = from[M/2] + from[M-1] + too[1];
+	int xxx = from[M-2] + from[M-1] + too[1];
 	if (xxx > 10000) return 10000;
 	return xxx;
 }
