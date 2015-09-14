@@ -134,15 +134,18 @@ end.
 		if self.fast_io:
 			for arr in all_arrs:
 				self.wl("fast_write_{0}({1});".format(arr.type, arr.name + indexes), all_dim + 1)
-				self.wl("fast_write_char(' ');", all_dim + 1)
+				if arr != all_arrs[-1]:
+					self.wl("fast_write_char(' ');", all_dim + 1)
 			if len(all_arrs) > 1:
 				self.wl("fast_write_char(chr(10));", all_dim + 1)
+			else:
+				self.wl("fast_write_char(' ');", all_dim + 1)
 		else: 
 			antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
 			if len(all_arrs) > 1:
 				self.wl("writeln(fw, {0});".format(antipointers), all_dim+1)
 			else:
-				self.wl("write(fw, {0});".format(antipointers), all_dim+1)
+				self.wl("write(fw, {0}, ' ');".format(antipointers), all_dim+1)
 		
 		for i in range(0, all_dim):
 			self.wl("end;", all_dim - i)
@@ -156,7 +159,8 @@ end.
 		if self.fast_io:
 			for var in all_vars:
 				self.wl("fast_write_{0}({1});".format(var.type, var.name), 1)
-				self.wl("fast_write_char(' ');", 1)
+				if var != all_vars[-1]:
+					self.wl("fast_write_char(' ');", 1)
 			self.wl("fast_write_char(chr(10));", 1)
 		else:
 			antipointers = ", ".join(var.name for var in all_vars)

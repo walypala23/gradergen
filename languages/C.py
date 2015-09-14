@@ -100,7 +100,8 @@ int main() {
 		else:	
 			format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 			pointers = ", ".join("&" + arr.name + indexes for arr in all_arrs)
-			self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), all_dim+1)
+			# The space after the format_string is used to ignore all whitespaces
+			self.wl("fscanf(fr, \"{0} \", {1});".format(format_string, pointers), all_dim+1)
 			
 		for i in range(0, all_dim):
 			self.wl("}", all_dim - i)
@@ -112,7 +113,8 @@ int main() {
 		else:
 			format_string = " ".join("%" + self.stdio_types[var.type] for var in all_vars)
 			pointers = ", ".join("&" + var.name for var in all_vars)
-			self.wl("fscanf(fr, \"{0}\", {1});".format(format_string, pointers), 1)
+			# The space after the format_string is used to ignore all whitespaces
+			self.wl("fscanf(fr, \"{0} \", {1});".format(format_string, pointers), 1)
 	
 	def CallFunction(self, fun):
 		parameters = ', '.join([param.name for param in fun.parameters])
@@ -132,16 +134,19 @@ int main() {
 		if self.fast_io:
 			for arr in all_arrs:
 				self.wl("fast_write_{0}({1});".format(arr.type, arr.name + indexes), all_dim + 1)
-				self.wl("fast_write_char(' ');", all_dim + 1)
+				if arr != all_arrs[-1]:
+					self.wl("fast_write_char(' ');", all_dim + 1)
 			if len(all_arrs) > 1:
 				self.wl("fast_write_char('\\n');", all_dim + 1)
+			else:
+				self.wl("fast_write_char(' ');", all_dim + 1)
 		else: 
 			format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 			antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
 			if len(all_arrs) > 1:
 				self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), all_dim+1)
 			else:
-				self.wl("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), all_dim+1)
+				self.wl("fprintf(fw, \"{0} \", {1});".format(format_string, antipointers), all_dim+1)
 		
 		for i in range(0, all_dim):
 			self.wl("}", all_dim - i)
@@ -155,7 +160,8 @@ int main() {
 		if self.fast_io:
 			for var in all_vars:
 				self.wl("fast_write_{0}({1});".format(var.type, var.name), 1)
-				self.wl("fast_write_char(' ');", 1)
+				if var != all_vars[-1]:
+					self.wl("fast_write_char(' ');", 1)
 			self.wl("fast_write_char('\\n');", 1)
 		else:
 			format_string = " ".join("%" + self.stdio_types[var.type] for var in all_vars)
