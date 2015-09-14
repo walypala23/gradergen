@@ -27,13 +27,13 @@ procedure fast_write_char(x : char);
 begin
     (* Write one char onto the buffer *)
     output_buffer[idx_output_buffer] := x;
-    inc(idx_input_buffer);
+    inc(idx_output_buffer);
 
-    if idx_input_buffer = MAXBUF then (* I'm at the end of the buffer, flush it *)
+    if idx_output_buffer = MAXBUF then (* I'm at the end of the buffer, flush it *)
     begin
         output_stream.WriteBuffer(output_buffer, sizeof(output_buffer));
 
-        idx_input_buffer := 0;
+        idx_output_buffer := 0;
     end;
 end;
 
