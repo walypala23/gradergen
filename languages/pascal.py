@@ -1,7 +1,9 @@
 import structures
 
 class Language:
-	def __init__(self, fast_io):
+	def __init__(self, fast_io, task_name):
+		self.task_name = task_name
+
 		self.out = ""
 		if fast_io == 1:
 			self.fast_io = True
@@ -11,7 +13,7 @@ class Language:
 	types = {'': 'void', 'int':'Integer', 'longint':'Int64', 'char':'Char', 'real':'Double'}
 	
 	headers = """\
-uses nome_sorgente_contestant;
+uses %(the_name_of_the_task)s;
 
 var	
 	fr, fw : text;
@@ -34,7 +36,7 @@ var
 """
 	
 	headers_fast_io1 = """\
-uses nome_sorgente_contestant, Classes;
+uses %(the_name_of_the_task)s, Classes;
 """
 	headers_fast_io2 = """\
 var	\
@@ -201,13 +203,13 @@ end.
 	def insert_headers(self):
 		print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
 		if self.fast_io:
-			self.out += self.headers_fast_io1
+			self.out += self.headers_fast_io1 % {"the_name_of_the_task": self.task_name}
 			fast_io_file = open("languages/fast_io.pas", "r")
 			self.out += "\n" + fast_io_file.read()
 			fast_io_file.close()
 			self.out += self.headers_fast_io2
 		else:
-			self.out += self.headers
+			self.out += self.headers % {"the_name_of_the_task": self.task_name}
 		
 	def insert_main(self):
 		self.wl("\n{ iterators used in for loops }")

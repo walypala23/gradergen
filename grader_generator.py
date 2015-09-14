@@ -9,16 +9,6 @@ from languages import serializer, C, CPP, pascal
 
 languages_list = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
 
-# All languages are generated (not all are written to file)
-language_classes = {
-	"C": C.Language(0),
-	"fast_C": C.Language(1),
-	"CPP": CPP.Language(0),
-	"fast_CPP": CPP.Language(1),
-	"pascal": pascal.Language(0),
-	"fast_pascal": pascal.Language(1)
-}
-
 standard_grader_names = {
 	"C": "grader.c",
 	"fast_C": "fast_grader.c",
@@ -202,6 +192,13 @@ if __name__=='__main__':
 		action="store", nargs=1, 
 		help="the file describing the grader"
 	)
+	parser.add_argument(\
+		"--task-name",
+		metavar="task_name",
+		action="store", nargs="?",
+		default="the_name_of_the_task",
+		help="the name of the task"
+	)
 	group = parser.add_mutually_exclusive_group(required=True)
 	
 	group.add_argument(\
@@ -229,6 +226,16 @@ if __name__=='__main__':
 	grader_files = args.languages
 	if args.all:
 		grader_files = [[lang] for lang in languages_list]
+	
+	# All languages are generated (not all are written to file)
+	language_classes = {
+		"C": C.Language(0, args.task_name),
+		"fast_C": C.Language(1, args.task_name),
+		"CPP": CPP.Language(0, args.task_name),
+		"fast_CPP": CPP.Language(1, args.task_name),
+		"pascal": pascal.Language(0, args.task_name),
+		"fast_pascal": pascal.Language(1, args.task_name)
+	}
 	
 	chosed_languages = {}
 	for el in grader_files:

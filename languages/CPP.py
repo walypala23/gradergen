@@ -1,7 +1,9 @@
 import structures
 
 class Language:
-	def __init__(self, fast_io):
+	def __init__(self, fast_io, task_name):
+		self.task_name = task_name
+
 		self.out = ""
 		if fast_io == 1:
 			self.fast_io = True

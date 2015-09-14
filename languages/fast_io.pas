@@ -23,17 +23,17 @@ begin
     end;
 end;
 
-{ returns first non whitespace character }
+(* Returns first non whitespace character *)
 function fast_read_char() : char;
 var c: Char;
 begin
-	c := fast_read_next_char();
-	while (ord(c) = $0020) or (ord(c) = $0009) or
-         (ord(c) = $000a) or (ord(c) = $000b) or
-         (ord(c) = $000c) or (ord(c) = $000d) do
-         c := fast_read_next_char();
-	
-	fast_read_char := c;
+    c := fast_read_next_char();
+    while (ord(c) = $0020) or (ord(c) = $0009) or
+          (ord(c) = $000a) or (ord(c) = $000b) or
+          (ord(c) = $000c) or (ord(c) = $000d) do
+        c := fast_read_next_char();
+
+    fast_read_char := c;
 end;
 
 procedure fast_write_char(x : char);
