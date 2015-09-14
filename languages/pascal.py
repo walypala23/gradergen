@@ -93,7 +93,7 @@ end.
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		for i in range(0, all_dim):
-			self.wl("for {0} := 0 to {1} do".format("i" + str(i), all_sizes[i]), i+1)
+			self.wl("for {0} := 0 to {1}-1 do".format("i" + str(i), all_sizes[i]), i+1)
 			self.wl("begin", i+1)
 		
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
@@ -127,7 +127,7 @@ end.
 		all_sizes = all_arrs[0].sizes
 		
 		for i in range(0, all_dim):
-			self.wl("for {0} := 0 to {1} do".format("i" + str(i), all_sizes[i]), i+1)
+			self.wl("for {0} := 0 to {1}-1 do".format("i" + str(i), all_sizes[i]), i+1)
 			self.wl("begin", i+1)
 		
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
