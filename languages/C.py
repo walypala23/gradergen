@@ -138,16 +138,18 @@ int main() {
 					self.wl("fast_write_char(' ');", all_dim + 1)
 			if len(all_arrs) > 1:
 				self.wl("fast_write_char('\\n');", all_dim + 1)
-			else:
+			elif all_arrs[0].type != 'char':
 				self.wl("fast_write_char(' ');", all_dim + 1)
 		else: 
 			format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 			antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
 			if len(all_arrs) > 1:
 				self.wl("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), all_dim+1)
-			else:
+			elif all_arrs[0].type != 'char':
 				self.wl("fprintf(fw, \"{0} \", {1});".format(format_string, antipointers), all_dim+1)
-		
+			else:
+				self.wl("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), all_dim+1)
+			
 		for i in range(0, all_dim):
 			self.wl("}", all_dim - i)
 			if i == 0 and len(all_arrs) == 1:
