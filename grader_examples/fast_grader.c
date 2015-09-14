@@ -22,7 +22,7 @@ static int* scelti;
 static double* colore;
 
 // Declaring functions
-void contapersone(int M, int* from, int* too);
+int contapersone(int M, int* from, int* too);
 void sceglicolori(int res, int* scelti, double* colore);
 
 // Begin fast input library
@@ -176,24 +176,23 @@ int main() {
 	}
 
 	// Calling functions
-	contapersone(M, from, too);
+	res = contapersone(M, from, too);
+	scelti = (int*)malloc(res * sizeof(int));
+	colore = (double*)malloc(res * sizeof(double));
 	sceglicolori(res, scelti, colore);
 
 	// Writing output
 	fast_write_int(res);
-	fast_write_char(' ');
 	fast_write_char('\n');
 	for (i0 = 0; i0 < res; i0++) {
 		fast_write_int(scelti[i0]);
 		fast_write_char(' ');
 		fast_write_real(colore[i0]);
-		fast_write_char(' ');
 		fast_write_char('\n');
 	}
 	for (i0 = 0; i0 < H; i0++) {
 		for (i1 = 0; i1 < W; i1++) {
 			fast_write_char(R[i0][i1]);
-			fast_write_char(' ');
 		}
 		fast_write_char('\n');
 	}

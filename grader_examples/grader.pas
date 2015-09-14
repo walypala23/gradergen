@@ -1,4 +1,4 @@
-uses NomeSorgenteContestant;
+uses nome_sorgente_contestant;
 
 var	
 	fr, fw : text;
@@ -37,14 +37,14 @@ begin
 	{ Reading input }
 	readln(fr, N, M, S);
 	Setlength(P, N);
-	for i0 := 0 to N do
+	for i0 := 0 to N-1 do
 	begin
 		read(fr, P[i0]);
 	end;
 	Setlength(from, M);
 	Setlength(too, M);
 	Setlength(length, M);
-	for i0 := 0 to M do
+	for i0 := 0 to M-1 do
 	begin
 		read(fr, from[i0], too[i0], length[i0]);
 	end;
@@ -52,27 +52,29 @@ begin
 	Setlength(R, H, W);
 	Setlength(G, H, W);
 	Setlength(B, H, W);
-	for i0 := 0 to H do
+	for i0 := 0 to H-1 do
 	begin
-		for i1 := 0 to W do
+		for i1 := 0 to W-1 do
 		begin
 			read(fr, R[i0][i1], G[i0][i1], B[i0][i1]);
 		end;
 	end;
 
 	{ Calling functions }
-	contapersone(M, from, too);
+	res := contapersone(M, from, too);
+	Setlength(scelti, res);
+	Setlength(colore, res);
 	sceglicolori(res, scelti, colore);
 
 	{ Writing output }
 	writeln(fw, res);
-	for i0 := 0 to res do
+	for i0 := 0 to res-1 do
 	begin
 		writeln(fw, scelti[i0], colore[i0]);
 	end;
-	for i0 := 0 to H do
+	for i0 := 0 to H-1 do
 	begin
-		for i1 := 0 to W do
+		for i1 := 0 to W-1 do
 		begin
 			write(fw, R[i0][i1]);
 		end;
