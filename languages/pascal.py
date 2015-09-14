@@ -15,6 +15,22 @@ uses nome_sorgente_contestant;
 
 var	
 	fr, fw : text;
+
+{ used to read char ignoring whitespaces (space, newline, tab...) }
+function read_char_skip_whitespaces() : char;
+var
+   c : char;
+begin
+   read(fr, c);
+   while (ord(c) = $0020) or (ord(c) = $0009) or
+         (ord(c) = $000a) or (ord(c) = $000b) or
+         (ord(c) = $000c) or (ord(c) = $000d) do
+       read(fr, c);
+
+   read_char_skip_whitespaces := c;
+end;
+
+var
 """
 	
 	headers_fast_io1 = """\
@@ -101,8 +117,13 @@ end.
 			for arr in all_arrs:
 				self.wl("{0} := fast_read_{1}();".format(arr.name + indexes, arr.type), all_dim+1)
 		else:	
-			pointers = ", ".join(arr.name + indexes for arr in all_arrs)
-			self.wl("read(fr, {0});".format(pointers), all_dim+1)
+			# pointers = ", ".join(arr.name + indexes for arr in all_arrs)
+			# self.wl("read(fr, {0});".format(pointers), all_dim+1)
+			for arr in all_arrs:
+				if arr.type == 'char':
+					self.wl("{0} := read_char_skip_whitespaces();".format(arr.name + indexes), all_dim+1)
+				else:
+					self.wl("read(fr, {0});".format(arr.name + indexes), all_dim+1)
 						
 		for i in range(0, all_dim):
 			self.wl("end;", all_dim - i)
@@ -112,8 +133,13 @@ end.
 			for var in all_vars:
 				self.wl("{0} := fast_read_{1}();".format(var.name, var.type), 1)
 		else:
-			pointers = ", ".join(var.name for var in all_vars)
-			self.wl("readln(fr, {0});".format(pointers), 1)
+			for var in all_vars:
+				if var.type == 'char':
+					self.wl("{0} := read_char_skip_whitespaces();".format(var.name), 1)
+				else:
+					self.wl("read(fr, {0});".format(var.name), 1)
+			# pointers = ", ".join(var.name for var in all_vars)
+			# self.wl("readln(fr, {0});".format(pointers), 1)
 	
 	def CallFunction(self, fun):
 		parameters = ', '.join([param.name for param in fun.parameters])

@@ -5,10 +5,10 @@ var
     idx_input_buffer, idx_output_buffer : longint;
     input_stream, output_stream : TFileStream;
 
-function fast_read_char() : char;
+function fast_read_next_char(): Char;
 begin
     (* Take one char out of the buffer *)
-    fast_read_char := input_buffer[idx_input_buffer];
+    fast_read_next_char := input_buffer[idx_input_buffer];
     inc(idx_input_buffer);
 
     if idx_input_buffer = MAXBUF then (* I'm at the end of the buffer, read another buffer *)
@@ -21,6 +21,19 @@ begin
 
         idx_input_buffer := 0;
     end;
+end;
+
+{ returns first non whitespace character }
+function fast_read_char() : char;
+var c: Char;
+begin
+	c := fast_read_next_char();
+	while (ord(c) = $0020) or (ord(c) = $0009) or
+         (ord(c) = $000a) or (ord(c) = $000b) or
+         (ord(c) = $000c) or (ord(c) = $000d) do
+         c := fast_read_next_char();
+	
+	fast_read_char := c;
 end;
 
 procedure fast_write_char(x : char);
@@ -46,18 +59,18 @@ begin
     negative := False;
 
     repeat
-        c := fast_read_char();
+        c := fast_read_next_char();
     until (c = '-') or (('0' <= c) and (c <= '9'));
 
     if c = '-' then
     begin
         negative := True;
-        c := fast_read_char();
+        c := fast_read_next_char();
     end;
 
     repeat
         res := res * 10 + ord(c) - ord('0');
-        c := fast_read_char();
+        c := fast_read_next_char();
     until not (('0' <= c) and (c <= '9'));
 
     if negative then
@@ -90,18 +103,18 @@ begin
     negative := False;
 
     repeat
-        c := fast_read_char();
+        c := fast_read_next_char();
     until (c = '-') or (('0' <= c) and (c <= '9'));
 
     if c = '-' then
     begin
         negative := True;
-        c := fast_read_char();
+        c := fast_read_next_char();
     end;
 
     repeat
         res := res * 10 + ord(c) - ord('0');
-        c := fast_read_char();
+        c := fast_read_next_char();
     until not (('0' <= c) and (c <= '9'));
 
     if negative then
