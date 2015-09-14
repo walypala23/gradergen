@@ -17,9 +17,9 @@ mv grader pascal
 fpc fast_grader.pas
 mv fast_grader fast_pascal
 
-./c
-./fast_c
-./cpp
-./fast_cpp
-./pascal
-./fast_pascal
+# ./c
+# ./fast_c
+# ./cpp
+# ./fast_cpp
+# ./pascal
+# ./fast_pascal

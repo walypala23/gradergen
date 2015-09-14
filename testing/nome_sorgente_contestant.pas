@@ -3,11 +3,7 @@ unit nome_sorgente_contestant;
 interface
 function contapersone(M: Integer; from, too: array of Integer): Integer;
 
-type
-  IntArray = array of Integer;
-  RealArray = array of Double;
-
-procedure sceglicolori(res: Integer; var scelti: IntArray; var colore: RealArray);
+procedure sceglicolori(res: Integer; var scelti: array of Integer; var colore: array of Double);
 
 implementation
 
@@ -17,23 +13,18 @@ var
 
 begin
 	xxx := from[M-2] + from[M-1] + too[1];
-{
-	name := min(xxx, 10000);
-}
+	
 	if xxx > 10000 Then
 		contapersone := 10000
 	else 
 		contapersone := xxx;
 end;
 
-procedure sceglicolori(res: Integer; var scelti: IntArray; var colore: RealArray);
+procedure sceglicolori(res: Integer; var scelti: array of Integer; var colore: array of Double);
 var
 	i: Integer;
 	
 begin
-	SetLength(scelti, res);
-	SetLength(colore, res);
-	
 	for  i:= 0 to res do
 	begin
 		scelti[i] := i;

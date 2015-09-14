@@ -74,6 +74,7 @@ def parse_function(line):
 		if var not in variables:
 			sys.exit("Variabile di ritorno di una funzione non definita")
 		
+		fun_obj.type = variables[var].type
 		fun_obj.return_var = variables[var]
 		fun = fun[1].strip()
 	else:
@@ -124,6 +125,7 @@ def parse_input(line):
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
 					
 			languages_serializer.AllocateArray(arr)
+			arrays[name].allocated = True
 				
 		languages_serializer.ReadArrays([arrays[name] for name in all_arrs])
 		
@@ -265,7 +267,15 @@ if __name__=='__main__':
 
 	languages_serializer.wc("call_fun", 1)
 	for fun in functions:
+		for param in fun.parameters:
+			if type(param) == Array and arrays[param.name].allocated == False:
+				if not all(variables[name].read for name in param.sizes):
+					sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
+				languages_serializer.AllocateArray(param)
+				arrays[param.name].allocated = True
 		languages_serializer.CallFunction(fun)
+		if fun.return_var:
+			variables[fun.return_var.name].read = True
 
 	languages_serializer.wc("output", 1)
 
