@@ -6,6 +6,8 @@ RED='\033[0;31m'
 ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
+FILES='c fast_c cpp fast_cpp pascal fast_pascal'
+
 run_test() {
     pushd ..
 
@@ -25,7 +27,7 @@ run_test() {
     fpc -dEVAL grader.pas -opascal
     fpc -dEVAL fast_grader.pas -ofast_pascal
 
-    for name in c fast_c cpp fast_cpp pascal fast_pascal
+    for name in $FILES
     do
         echo $name
         ./$name
@@ -40,6 +42,12 @@ TESTS=$(find . -name "test*" -type d | sort -V)
 
 for i in $TESTS
 do
+    for j in $FILES
+    do
+        rm -f $i/$j
+        rm -f $i/$j.out
+    done
+
     run_test $i
 done
 

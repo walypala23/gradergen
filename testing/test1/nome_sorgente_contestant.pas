@@ -1,15 +1,15 @@
 unit nome_sorgente_contestant;
 
 interface
-function contapersone(M: Integer; from, too: array of Integer): Integer;
+function contapersone(M: Longint; from, too: array of Longint): Longint;
 
-procedure sceglicolori(res: Integer; var scelti: array of Integer; var colore: array of Double);
+procedure sceglicolori(res: Longint; var scelti: array of Longint; var colore: array of Double);
 
 implementation
 
-function contapersone(M: Integer; from, too: array of Integer): Integer;
+function contapersone(M: Longint; from, too: array of Longint): Longint;
 var
-	xxx: Integer;
+	xxx: Longint;
 
 begin
 	xxx := from[M-2] + from[M-1] + too[1];
@@ -20,9 +20,9 @@ begin
 		contapersone := xxx;
 end;
 
-procedure sceglicolori(res: Integer; var scelti: array of Integer; var colore: array of Double);
+procedure sceglicolori(res: Longint; var scelti: array of Longint; var colore: array of Double);
 var
-	i: Integer;
+	i: Longint;
 	
 begin
 	for  i:= 0 to res do
