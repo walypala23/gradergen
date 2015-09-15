@@ -197,7 +197,7 @@ end.
 					self.wl("fast_write_char(' ');", 1)
 			self.wl("fast_write_char(chr(10));", 1)
 		else:
-			antipointers = ", ".join(var.name for var in all_vars)
+			antipointers = ", ' ', ".join(var.name for var in all_vars)
 			self.wl("writeln(fw, {0});".format(antipointers), 1)
 	
 	def insert_headers(self):
