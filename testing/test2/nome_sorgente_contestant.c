@@ -1,7 +1,7 @@
-void cerca(int N, char mat[5000][5000], int* A, int* B, int* C) {
-    for (int i=0; i<N; i++) 
+void cerca(int N, char** mat, int *A, int *B, int *C) {
+    for (int i=0; i<N; i++)
         for (int j=0; j<N; j++) {
-            int val = mat[i][j] - '0';
+            mat[i][j] -= '0';
         }
     for (int i=0; i<N; i++)
         for (int j=i+1; j<N; j++)

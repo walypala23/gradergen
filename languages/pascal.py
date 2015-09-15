@@ -10,7 +10,7 @@ class Language:
 		else:
 			self.fast_io = False
 	
-	types = {'': 'void', 'int':'Integer', 'longint':'Int64', 'char':'Char', 'real':'Double'}
+	types = {'': 'void', 'int':'Longint', 'longint':'Int64', 'char':'Char', 'real':'Double'}
 	
 	headers = """\
 uses %(the_name_of_the_task)s;

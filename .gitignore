@@ -1,2 +1,16 @@
+# The following three rules are equivalent to "ignore files without a dot in the name"
+# Is useful to avoid putting binaries in the repository
+*
+!*/
+!*.*
+
+# For pascal
 *.o
+*.ppu
+
+# For python
 __pycache__
+
+# For the testsuite
+testing/test*/*.out
+testing/test*/*grader*

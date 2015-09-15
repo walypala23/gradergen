@@ -7,7 +7,7 @@
 ***variables***
 
 int N
-int mat[N][N]
+char mat[N][N]
 
 int A
 int B
