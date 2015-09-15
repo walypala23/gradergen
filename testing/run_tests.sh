@@ -66,7 +66,7 @@ do
     printf "${chosen_color}"
     for j in $FILES
     do
-        cat $i/$j.time
+        echo -n "("$(cat $i/$j.time)"s) "
         md5sum $i/$j.out
     done
     printf "${NC}"
