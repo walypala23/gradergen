@@ -10,9 +10,3 @@
 
 # For python
 __pycache__
-
-# For the testsuite
-testing/test*/*.out
-testing/test*/*grader*
-# sometimes the txt it's huge because it's generated, so exclude it:
-testing/test*/input.txt

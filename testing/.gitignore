@@ -1,0 +1,7 @@
+# For the testsuite
+test*/*.out
+test*/*.time
+test*/*grader*
+!test*/grader_description.txt
+# sometimes the txt it's huge because it's generated, so exclude it:
+test*/input.txt
