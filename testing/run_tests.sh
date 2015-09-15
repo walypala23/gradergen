@@ -20,6 +20,14 @@ run_test() {
     popd
     pushd $1
 
+    # If needed, create the input file
+    if [ -f input.py ]; then
+        python input.py > input.txt
+    fi
+    if [ -f input.cpp ]; then
+        g++ input.cpp -O2 -o input && ./input > input.txt
+    fi
+
     gcc -Wall -DEVAL -O2 grader.c $taskname.c -o c
     gcc -Wall -DEVAL -O2 fast_grader.c $taskname.c -o fast_c
     g++ -Wall -DEVAL -O2 grader.cpp $taskname.cpp -o cpp
