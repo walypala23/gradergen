@@ -193,7 +193,9 @@ def parse_description(lines):
 	return section_lines
 
 
-if __name__=='__main__':
+def main():
+	global languages_serializer
+
 	parser = argparse.ArgumentParser(description = "Automatically generate grader files in various languages")
 	parser.add_argument(\
 		"grader_description", 
