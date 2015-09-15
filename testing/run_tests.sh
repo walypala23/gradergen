@@ -38,7 +38,7 @@ run_test() {
     for name in $FILES
     do
         echo $name
-        ./$name
+        'time' -f "%e" ./$name 2> $name.time
         mv output.txt $name.out
     done
 
@@ -64,7 +64,11 @@ chosen_color=$RED
 for i in $TESTS
 do
     printf "${chosen_color}"
-    md5sum $i/*.out
+    for j in $FILES
+    do
+        cat $i/$j.time
+        md5sum $i/$j.out
+    done
     printf "${NC}"
 
     if [ "$chosen_color" == "$RED" ]; then
