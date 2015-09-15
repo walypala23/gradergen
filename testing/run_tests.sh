@@ -9,7 +9,7 @@ NC='\033[0m' # No Color
 FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 
 run_test() {
-    cd ..
+    pushd ..
 
     python grader_generator.py testing/$1/grader_description.txt --all --task-name $taskname
     for name in grader.c grader.cpp grader.pas fast_grader.c fast_grader.cpp fast_grader.pas
@@ -17,7 +17,8 @@ run_test() {
         mv $name testing/$1/$name
     done
 
-    cd testing/$1
+    popd
+    pushd $1
 
     # If needed, create the input file
     if [ -f input.py ]; then
@@ -41,7 +42,7 @@ run_test() {
         mv output.txt $name.out
     done
 
-    cd ..
+    popd
 }
 
 
