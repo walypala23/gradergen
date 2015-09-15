@@ -71,9 +71,13 @@ int main() {
 	
 	def DeclareFunction(self, fun):
 		typed_parameters = []
-		for param in fun.parameters:
+		for i in range(0, len(fun.parameters)):
+			param = fun.parameters[i]
 			if type(param) == structures.Variable:
-				typed_parameters.append(self.types[param.type] + " " + param.name)
+				if fun.by_ref[i]:
+					typed_parameters.append(self.types[param.type] + "* " + param.name)
+				else:
+					typed_parameters.append(self.types[param.type] + " " + param.name)
 			elif type(param) == structures.Array:
 				typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
 		self.wl("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
@@ -119,7 +123,14 @@ int main() {
 			self.wl("fscanf(fr, \"{0} \", {1});".format(format_string, pointers), 1)
 	
 	def CallFunction(self, fun):
-		parameters = ', '.join([param.name for param in fun.parameters])
+		parameter_names = []
+		for i in range(0, len(fun.parameters)):
+			if fun.by_ref[i]:
+				parameter_names.append("&" + fun.parameters[i].name)
+			else:
+				parameter_names.append(fun.parameters[i].name)
+		
+		parameters = ', '.join(parameter_names)
 		if fun.type == "":
 			self.wl("{0}({1});".format(fun.name, parameters), 1)
 		else:

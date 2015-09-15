@@ -201,7 +201,9 @@ end.
 			self.wl("writeln(fw, {0});".format(antipointers), 1)
 	
 	def insert_headers(self):
-		print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
+		if self.task_name is "the_name_of_the_task":
+			print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
+		
 		if self.fast_io:
 			self.out += self.headers_fast_io1 % {"the_name_of_the_task": self.task_name}
 			fast_io_file = open("languages/fast_io.pas", "r")

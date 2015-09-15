@@ -82,14 +82,23 @@ def parse_function(line):
 		fun_obj.name = name
 		
 		fun_obj.parameters = []
+		fun_obj.by_ref = []
 		parameters = re.split(",", fun[1])
 		for param in parameters:
 			param = param.strip()
+			
+			if param.startswith("&"):
+				param = param[1:]
+				fun_obj.by_ref.append(True)
+			else:
+				fun_obj.by_ref.append(False)
 			
 			if param in variables:
 				fun_obj.parameters.append(variables[param])
 			elif param in arrays:
 				fun_obj.parameters.append(arrays[param])
+				if fun_obj.by_ref[-1]:
+					sys.exit("Gli array non possono essere passati per reference")
 			else:
 				sys.exit("Parametro di funzione non definito")
 				
@@ -275,14 +284,20 @@ if __name__=='__main__':
 	languages_serializer.wc("call_fun", 1)
 	for fun in functions:
 		for param in fun.parameters:
-			if type(param) == Array and arrays[param.name].allocated == False:
+			if type(param) == Array and param.allocated == False:
 				if not all(variables[name].read for name in param.sizes):
 					sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
 				languages_serializer.AllocateArray(param)
 				arrays[param.name].allocated = True
 		languages_serializer.CallFunction(fun)
 		if fun.return_var:
-			variables[fun.return_var.name].read = True
+			fun.return_var.read = True
+			
+		# Variables passed by reference are "read"
+		for i in range(0, len(fun.parameters)):
+			param = fun.parameters[i]
+			if type(param) == Variable and fun.by_ref[i]:
+				param.read = True
 
 	languages_serializer.wc("output", 1)
 

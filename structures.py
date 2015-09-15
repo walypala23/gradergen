@@ -13,9 +13,10 @@ class Array:
 		self.allocated = False
 
 class Function:
-	def __init__(self, n = None, p = None, r = None):
+	def __init__(self, n = None, p = None, b = None, r = None):
 		self.name = n
 		self.parameters = p
+		self.by_ref = b
 		if r != None:
 			self.type = r.type
 			self.return_var = r

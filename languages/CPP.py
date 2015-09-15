@@ -71,11 +71,16 @@ int main() {
 	
 	def DeclareFunction(self, fun):
 		typed_parameters = []
-		for param in fun.parameters:
+		for i in range(0, len(fun.parameters)):
+			param = fun.parameters[i]
 			if type(param) == structures.Variable:
-				typed_parameters.append(self.types[param.type] + " " + param.name)
+				if fun.by_ref[i]:
+					typed_parameters.append(self.types[param.type] + " &" + param.name)
+				else:
+					typed_parameters.append(self.types[param.type] + " " + param.name)
 			elif type(param) == structures.Array:
 				typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
+				
 		self.wl("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
 	
 	def AllocateArray(self, arr):

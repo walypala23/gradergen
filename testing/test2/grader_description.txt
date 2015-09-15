@@ -16,7 +16,7 @@ int C
 
 ***functions***
 
-cerca(N, mat, A, B, C)
+cerca(N, mat, &A, &B, &C)
 
 
 ***input***
