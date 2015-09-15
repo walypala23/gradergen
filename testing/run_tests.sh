@@ -38,7 +38,11 @@ run_test() {
     for name in $FILES
     do
         echo $name
-        'time' -f "%e" ./$name 2> $name.time
+
+        #'time' -f "%e" ./$name 2> $name.time
+        ./$name
+        echo "x.xx" > $name.time
+
         mv output.txt $name.out
     done
 
