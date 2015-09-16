@@ -1,4 +1,5 @@
-import structures
+import pkg_resources
+from gradergen import structures
 
 class Language:
 	def __init__(self, fast_io, task_name):
@@ -182,7 +183,7 @@ int main() {
 		
 	def insert_main(self):
 		if self.fast_io:
-			fast_io_file = open("languages/fast_io.cpp", "r")
+			fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_io.cpp"), "r")
 			self.out += "\n" + fast_io_file.read()
 			fast_io_file.close()
 		

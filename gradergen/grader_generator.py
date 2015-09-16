@@ -4,8 +4,8 @@ import sys
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
-from structures import Variable, Array, Function, variables, arrays, functions
-from languages import serializer, C, CPP, pascal
+from gradergen.structures import Variable, Array, Function, variables, arrays, functions
+from gradergen.languages import serializer, C, CPP, pascal
 
 languages_list = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
 
@@ -193,7 +193,9 @@ def parse_description(lines):
 	return section_lines
 
 
-if __name__=='__main__':
+def main():
+	global languages_serializer
+
 	parser = argparse.ArgumentParser(description = "Automatically generate grader files in various languages")
 	parser.add_argument(\
 		"grader_description", 
