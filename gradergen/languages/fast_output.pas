@@ -59,7 +59,7 @@ end;
 
 procedure init_fast_output(file_name : string);
 begin
-    output_stream := TFileStream.Create(file_name, fmCreate);
+    output_stream := TFileStream.Create(file_name, fmOpenWrite);
     idx_output_buffer := 0;
 end;
 
