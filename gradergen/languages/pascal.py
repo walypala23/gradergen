@@ -221,7 +221,7 @@ end.
 		self.wl("\n{ iterators used in for loops }")
 		if len(structures.arrays) > 0:
 			max_dim = max(structures.arrays[name].dim for name in structures.arrays)
-			self.wl(", ".join("i" + str(x) for x in range(0, max_dim)) + ": Integer;", 1)
+			self.wl(", ".join("i" + str(x) for x in range(0, max_dim)) + ": Longint;", 1)
 		
 		if self.fast_io:
 			self.out += self.main_function_fast_io
