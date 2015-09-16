@@ -58,8 +58,15 @@ begin
 end;
 
 procedure init_fast_output(file_name : string);
+var
+    open_flag: word;
 begin
-    output_stream := TFileStream.Create(file_name, fmOpenWrite);
+    open_flag := fmCreate;
+    if FileExists(file_name) then
+        open_flag := fmOpenWrite;
+
+    output_stream := TFileStream.Create(file_name, open_flag);
+    output_stream.size := 0;
     idx_output_buffer := 0;
 end;
 
