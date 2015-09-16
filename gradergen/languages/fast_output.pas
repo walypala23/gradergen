@@ -1,6 +1,6 @@
-const MAXBUF = 4096 * 4;
+const MAX_OUT_BUF = 4096 * 4;
 var
-    output_buffer : array[0..MAXBUF-1] of char;
+    output_buffer : array[0..MAX_OUT_BUF-1] of char;
     idx_output_buffer : longint;
     output_stream : TFileStream;
 
@@ -10,7 +10,7 @@ begin
     output_buffer[idx_output_buffer] := x;
     inc(idx_output_buffer);
 
-    if idx_output_buffer = MAXBUF then (* I'm at the end of the buffer, flush it *)
+    if idx_output_buffer = MAX_OUT_BUF then (* I'm at the end of the buffer, flush it *)
     begin
         output_stream.WriteBuffer(output_buffer, sizeof(output_buffer));
 

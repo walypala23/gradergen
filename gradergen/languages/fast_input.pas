@@ -1,7 +1,7 @@
-const MAXBUF = 4096 * 4;
+const MAX_IN_BUF = 4096 * 4;
 var
     total_bytes_read, bytes_read : int64;
-    input_buffer : array[0..MAXBUF-1] of char;
+    input_buffer : array[0..MAX_IN_BUF-1] of char;
     idx_input_buffer : longint;
     input_stream : TFileStream;
 
@@ -11,7 +11,7 @@ begin
     fast_read_next_char := input_buffer[idx_input_buffer];
     inc(idx_input_buffer);
 
-    if idx_input_buffer = MAXBUF then (* I'm at the end of the buffer, read another buffer *)
+    if idx_input_buffer = MAX_IN_BUF then (* I'm at the end of the buffer, read another buffer *)
     begin
         if total_bytes_read <= input_stream.Size then (* We haven't reached EOF *)
         begin
