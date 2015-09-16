@@ -207,7 +207,7 @@ end.
 		
 		if self.fast_io:
 			self.out += self.headers_fast_io1 % {"the_name_of_the_task": self.task_name}
-			fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_io.pas"), "r")
+			fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_input.pas"), "r")
 			self.out += "\n" + fast_io_file.read()
 			fast_io_file.close()
 			self.out += self.headers_fast_io2

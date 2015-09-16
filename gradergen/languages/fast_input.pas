@@ -1,9 +1,9 @@
 const MAXBUF = 4096 * 4;
 var
     total_bytes_read, bytes_read : int64;
-    input_buffer, output_buffer : array[0..MAXBUF-1] of char;
-    idx_input_buffer, idx_output_buffer : longint;
-    input_stream, output_stream : TFileStream;
+    input_buffer : array[0..MAXBUF-1] of char;
+    idx_input_buffer : longint;
+    input_stream : TFileStream;
 
 function fast_read_next_char(): Char;
 begin
@@ -36,20 +36,6 @@ begin
     fast_read_char := c;
 end;
 
-procedure fast_write_char(x : char);
-begin
-    (* Write one char onto the buffer *)
-    output_buffer[idx_output_buffer] := x;
-    inc(idx_output_buffer);
-
-    if idx_output_buffer = MAXBUF then (* I'm at the end of the buffer, flush it *)
-    begin
-        output_stream.WriteBuffer(output_buffer, sizeof(output_buffer));
-
-        idx_output_buffer := 0;
-    end;
-end;
-
 function fast_read_int() : longint;
 var res : longint;
     c : char;
@@ -77,21 +63,6 @@ begin
         fast_read_int := -res
     else
         fast_read_int := res;
-end;
-
-procedure fast_write_int(x : longint);
-begin
-    if x < 0 then (* Write the sign, then the number *)
-    begin
-        fast_write_char('-');
-        fast_write_int(-x);
-    end
-    else (* Write the number recursively *)
-    begin
-        if x >= 10 then
-            fast_write_int(x div 10);
-        fast_write_char(chr(ord('0') + x mod 10));
-    end;
 end;
 
 function fast_read_longint() : int64;
@@ -123,32 +94,10 @@ begin
         fast_read_longint := res;
 end;
 
-procedure fast_write_longint(x : int64);
-begin
-    if x < 0 then (* Write the sign, then the number *)
-    begin
-        fast_write_char('-');
-        fast_write_longint(-x);
-    end
-    else (* Write the number recursively *)
-    begin
-        if x >= 10 then
-            fast_write_longint(x div 10);
-        fast_write_char(chr(ord('0') + x mod 10));
-    end;
-end;
-
 function fast_read_real() : double;
 begin
+    (* TODO *)
     fast_read_real := 42.0;
-end;
-
-procedure fast_write_real(x : double);
-begin
-    fast_write_char('4');
-    fast_write_char('2');
-    fast_write_char('.');
-    fast_write_char('0');
 end;
 
 procedure init_fast_input(file_name : string);
@@ -163,21 +112,4 @@ end;
 procedure close_fast_input;
 begin
     input_stream.Free;
-end;
-
-procedure init_fast_output(file_name : string);
-begin
-    output_stream := TFileStream.Create(file_name, fmCreate);
-    idx_output_buffer := 0;
-end;
-
-procedure close_fast_output;
-begin
-    if idx_output_buffer > 0 then (* Gotta flush them bytez *)
-    begin
-        (* TODO: check if this is OK also when using unicode data *)
-        output_stream.Write(output_buffer, idx_output_buffer * sizeof(output_buffer[0]))
-    end;
-
-    output_stream.Free;
 end;
