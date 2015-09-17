@@ -37,7 +37,7 @@ var
 """
 	
 	headers_fast_io1 = """\
-uses %(the_name_of_the_task)s, Classes;
+uses %(the_name_of_the_task)s, Classes, sysutils;
 """
 	headers_fast_io2 = """\
 var	\
