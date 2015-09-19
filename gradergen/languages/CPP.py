@@ -2,8 +2,8 @@ import pkg_resources
 from gradergen import structures
 
 class Language:
-	def __init__(self, fast_io, task_name):
-		self.task_name = task_name
+	def __init__(self, fast_io, data):
+		self.data = data
 
 		self.out = ""
 		if fast_io == 1:

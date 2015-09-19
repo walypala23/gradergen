@@ -2,8 +2,8 @@ import pkg_resources
 from gradergen import structures
 
 class Language:
-	def __init__(self, fast_io, task_name):
-		self.task_name = task_name
+	def __init__(self, fast_io, data):
+		self.data = data
 
 		self.out = ""
 		if fast_io == 1:
@@ -99,12 +99,12 @@ end.
 	def DeclareVariable(self, var):
 		self.wl("{0} : {1};".format(var.name, self.types[var.type]), 1)
 		if var.type == "real" and self.fast_io:
-			print("warning: pascal non support fast input e output di numeri floating point")
+			print("warning: pascal non supporta fast input e output di numeri floating point")
 		
 	def DeclareArray(self, arr):
 		self.wl("{0} : {1};".format(arr.name, self.at(arr.type, arr.dim)), 1)
 		if arr.type == "real" and self.fast_io:
-			print("warning: pascal non support fast input e output di numeri floating point")
+			print("warning: pascal non supporta fast input e output di numeri floating point")
 	
 	def DeclareFunction(self, fun): #forse non serve dichiarare le funzioni
 		doing_nothing = True

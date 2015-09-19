@@ -2,8 +2,8 @@ import pkg_resources
 from gradergen import structures
 
 class Language:
-	def __init__(self, fast_io, task_name):
-		self.task_name = task_name
+	def __init__(self, fast_io, data):
+		self.data = data
 
 		self.out = ""
 		if fast_io == 1:
@@ -186,6 +186,9 @@ int main() {
 	
 	def insert_headers(self):
 		self.out += self.headers
+		print(self.data)
+		if self.data["helpers"]:
+			print("TODO: self.DeclareFunction(self.helpers)")
 		
 	def insert_main(self):
 		if self.fast_io:

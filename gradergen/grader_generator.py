@@ -166,7 +166,7 @@ def parse_output(line):
 
 # Parsing grader description file
 def parse_description(lines):
-	sections = {"variables": False, "functions": False, "input": False, "output": False}
+	sections = {"variables": False, "functions": False, "input": False, "output": False, "helpers": False}
 	section_lines = {}
 	act_section = None
 	for line in lines:
@@ -188,7 +188,7 @@ def parse_description(lines):
 		
 		if not is_section_title:
 			if not act_section:
-				sys.exit("Il file di descrizione deve specificare la sezione")
+				sys.exit("Il file di descrizione deve specificare una sezione")
 			section_lines[act_section].append(line)
 	return section_lines
 
@@ -229,23 +229,28 @@ def main():
 	)
 		
 	args = parser.parse_args()
-	
-	grader_description = open(args.grader_description[0], "r")
-	lines = grader_description.read().splitlines()
-	grader_description.close()
-	
+
+	with open(args.grader_description[0], "r") as grader_description:
+		lines = grader_description.read().splitlines()
+		section_lines = parse_description(lines)
+
 	grader_files = args.languages
 	if args.all:
 		grader_files = [[lang] for lang in languages_list]
-	
+
+	data = {
+		"task_name": args.task_name,
+		"helpers": [parse_function(x) for x in section_lines["helpers"]] if "helpers" in section_lines else None
+	}
+
 	# All languages are generated (not all are written to file)
 	language_classes = {
-		"C": C.Language(0, args.task_name),
-		"fast_C": C.Language(1, args.task_name),
-		"CPP": CPP.Language(0, args.task_name),
-		"fast_CPP": CPP.Language(1, args.task_name),
-		"pascal": pascal.Language(0, args.task_name),
-		"fast_pascal": pascal.Language(1, args.task_name)
+		"C": C.Language(0, data),
+		"fast_C": C.Language(1, data),
+		"CPP": CPP.Language(0, data),
+		"fast_CPP": CPP.Language(1, data),
+		"pascal": pascal.Language(0, data),
+		"fast_pascal": pascal.Language(1, data)
 	}
 	
 	chosed_languages = {}
@@ -260,8 +265,6 @@ def main():
 		chosed_languages[el[0]] = language_classes[el[0]]
 
 	languages_serializer = serializer.Language(chosed_languages)
-	
-	section_lines = parse_description(lines)
 	
 	languages_serializer.insert_headers()
 
@@ -301,11 +304,12 @@ def main():
 			if type(param) == Variable and fun.by_ref[i]:
 				param.read = True
 
-	languages_serializer.wc("output", 1)
+	if not section_lines["helpers"]:
+		languages_serializer.wc("output", 1)
 
-	# Parsing OutputFormat.txt
-	for line in section_lines["output"]:
-		parse_output(line)
+		# Parsing OutputFormat.txt
+		for line in section_lines["output"]:
+			parse_output(line)
 
 	languages_serializer.insert_footers()			
 	
