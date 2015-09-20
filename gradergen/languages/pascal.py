@@ -219,8 +219,8 @@ end.
 		
 	def insert_main(self):
 		self.wl("\n{ iterators used in for loops }")
-		if len(structures.arrays) > 0:
-			max_dim = max(structures.arrays[name].dim for name in structures.arrays)
+		if len(self.data["arrays"]) > 0:
+			max_dim = max(arr.dim for name, arr in self.data["arrays"].items())
 			self.wl(", ".join("i" + str(x) for x in range(0, max_dim)) + ": Longint;", 1)
 		
 		if self.fast_io:

@@ -5,7 +5,7 @@ import os
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
-from gradergen.structures import Variable, Array, Function, IOline, variables, arrays, functions
+from gradergen.structures import Variable, Array, Function, IOline
 from gradergen.languages import serializer, C, CPP, pascal
 
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
@@ -21,9 +21,15 @@ standard_grader_names = {
 	"fast_pascal": "fast_grader.pas"
 }
 
-languages_serializer = {}
+# Global variables used in parsing functions
+variables = {}
+arrays = {}
+functions = {}
+
 
 def parse_variable(line):
+	global variables, arrays, functions
+	
 	var = re.split('[ \[\]]', line) # Split line by square brackets and space
 	var = [x for x in var if x] # Remove empty chunks
 	
@@ -38,9 +44,6 @@ def parse_variable(line):
 			sys.exit("Nome della variabile già utilizzata")
 		var_obj = Variable(var[1], var[0])
 		return var_obj;
-		# variables[var[1]] = var_obj
-				
-		# languages_serializer.declare_variable(var_obj)
 		
 	else:
 		dim = len(var)-2
@@ -53,11 +56,10 @@ def parse_variable(line):
 				sys.exit("Dimensione dell'array non definita")
 		arr_obj = Array(var[1], var[0], var[2:])
 		return arr_obj
-		# arrays[var[1]] = arr_obj
-		
-		# languages_serializer.declare_array(arr_obj)
 	
 def parse_function(line):
+	global variables, arrays, functions
+	
 	fun_obj = Function()
 	
 	fun = re.split("=", line)
@@ -109,6 +111,8 @@ def parse_function(line):
 	return fun_obj
 	
 def parse_input(line):
+	global variables, arrays, functions
+	
 	if "[" in line: # Read arrays
 		all_arrs = re.sub("[\[\]]", "", line) # Remove square brackets
 		all_arrs = re.split(" ", all_arrs) # Split line by spaces
@@ -125,9 +129,6 @@ def parse_input(line):
 			for var in arr.sizes:
 				if variables[var].read == False:
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
-					
-			# languages_serializer.allocate_array(arr)
-			# arrays[name].allocated = True
 				
 		input_line = IOline("Array", [arrays[name] for name in all_arrs], arrays[all_arrs[0]].sizes)
 		return input_line
@@ -144,6 +145,8 @@ def parse_input(line):
 		return input_line
 		
 def parse_output(line):
+	global variables, arrays, functions
+	
 	if "[" in line: # Write arrays
 		all_arrs = re.sub("[\[\]]", "", line) # Remove square brackets
 		all_arrs = re.split(" ", all_arrs) # Split line by spaces
@@ -203,6 +206,8 @@ def parse_description(lines):
 def main():
 	global languages_serializer
 	global DESCRIPTION_FILE
+	global variables, arrays, functions
+	
 	declarations_order = []
 	input_order = []
 	output_order = []
@@ -266,11 +271,6 @@ def main():
 	grader_files = args.languages
 	if args.all:
 		grader_files = [[lang] for lang in LANGUAGES_LIST]
-
-	data = {
-		"task_name": args.task_name,
-		"helpers": [parse_function(x) for x in section_lines["helpers"]] if "helpers" in section_lines else None
-	}
 		
 	# Parsing variables
 	for line in section_lines["variables"]:
@@ -302,6 +302,9 @@ def main():
 	
 	data = {
 		"task_name": args.task_name,
+		"variables": variables,
+		"arrays": arrays,
+		"functions": functions,
 		"helpers": [parse_function(x) for x in section_lines["helpers"]] if "helpers" in section_lines else None
 	}
 	
@@ -355,12 +358,16 @@ def main():
 
 	languages_serializer.wc("call_fun", 1)
 	for fun in functions_order:
-		for param in fun.parameters:
+		for i in range(len(fun.parameters)):
+			param = fun.parameters[i]
 			if type(param) == Array and param.allocated == False:
 				if not all(variables[name].read for name in param.sizes):
 					sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
 				languages_serializer.allocate_array(param)
-				arrays[param.name].allocated = True
+				param.allocated = True
+			if type(param) == Variable and not param.read and not fun.by_ref[i]:
+				sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
+				
 		languages_serializer.call_function(fun)
 		if fun.return_var:
 			fun.return_var.read = True

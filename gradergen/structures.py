@@ -30,8 +30,3 @@ class IOline:
 		self.list = l
 		if self.type == "Array":
 			self.sizes = s
-
-variables = {}
-arrays = {}
-# print(type(functions))
-functions = {}

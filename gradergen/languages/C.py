@@ -197,8 +197,8 @@ int main() {
 		
 		self.out += self.main_function
 		
-		if len(structures.arrays) > 0:
-			max_dim = max(structures.arrays[name].dim for name in structures.arrays)
+		if len(self.data["arrays"]) > 0:
+			max_dim = max(arr.dim for name, arr in self.data["arrays"].items())
 			self.out += """
 	// Iterators used in for loops
 	int """ + ", ".join("i" + str(x) for x in range(0, max_dim)) + ";\n"
