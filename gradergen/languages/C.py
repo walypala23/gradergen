@@ -186,7 +186,6 @@ int main() {
 	
 	def insert_headers(self):
 		self.out += self.headers
-		print(self.data)
 		if self.data["helpers"]:
 			print("TODO: self.declare_function(self.helpers)")
 		

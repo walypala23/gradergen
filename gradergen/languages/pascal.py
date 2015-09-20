@@ -202,11 +202,11 @@ end.
 			self.wl("writeln(fw, {0});".format(antipointers), 1)
 	
 	def insert_headers(self):
-		if self.task_name is "the_name_of_the_task":
+		if self.data["task_name"] is "the_name_of_the_task":
 			print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
 		
 		if self.fast_io:
-			self.out += self.headers_fast_io1 % {"the_name_of_the_task": self.task_name}
+			self.out += self.headers_fast_io1 % {"the_name_of_the_task": self.data["task_name"]}
 			fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_input.pas"), "r")
 			self.out += "\n" + fast_io_file.read()
 			fast_io_file.close()
@@ -215,7 +215,7 @@ end.
 			fast_io_file.close()
 			self.out += self.headers_fast_io2
 		else:
-			self.out += self.headers % {"the_name_of_the_task": self.task_name}
+			self.out += self.headers % {"the_name_of_the_task": self.data["task_name"]}
 		
 	def insert_main(self):
 		self.wl("\n{ iterators used in for loops }")

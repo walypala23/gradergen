@@ -304,7 +304,7 @@ def main():
 			if type(param) == Variable and fun.by_ref[i]:
 				param.read = True
 
-	if not section_lines["helpers"]:
+	if not "helpers" in section_lines:
 		languages_serializer.wc("output", 1)
 
 		# Parsing OutputFormat.txt
