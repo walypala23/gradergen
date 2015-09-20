@@ -236,7 +236,7 @@ def main():
 		# Search for a DESCRIPTION_FILE
 		directory = os.getcwd()
 		while True:
-			description = os.path.join(directory, "DESCRIPTION_FILE")
+			description = os.path.join(directory, DESCRIPTION_FILE)
 
 			if os.path.isfile(description):
 				args.grader_description = description
