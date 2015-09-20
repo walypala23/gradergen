@@ -24,6 +24,14 @@ class Function:
 			self.type = ""
 			self.return_var = None
 
+class IOline:
+	def __init__(self, t = None, l = None, s = None):
+		self.type = t
+		self.list = l
+		if self.type == "Array":
+			self.sizes = s
+
 variables = {}
 arrays = {}
-functions = []
+# print(type(functions))
+functions = {}

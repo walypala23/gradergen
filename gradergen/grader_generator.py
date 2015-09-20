@@ -5,7 +5,7 @@ import os
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
-from gradergen.structures import Variable, Array, Function, variables, arrays, functions
+from gradergen.structures import Variable, Array, Function, IOline, variables, arrays, functions
 from gradergen.languages import serializer, C, CPP, pascal
 
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
@@ -37,9 +37,10 @@ def parse_variable(line):
 		if var[1] in variables or var[1] in arrays:
 			sys.exit("Nome della variabile già utilizzata")
 		var_obj = Variable(var[1], var[0])
-		variables[var[1]] = var_obj
+		return var_obj;
+		# variables[var[1]] = var_obj
 				
-		languages_serializer.declare_variable(var_obj)
+		# languages_serializer.declare_variable(var_obj)
 		
 	else:
 		dim = len(var)-2
@@ -51,9 +52,10 @@ def parse_variable(line):
 			if num not in variables:
 				sys.exit("Dimensione dell'array non definita")
 		arr_obj = Array(var[1], var[0], var[2:])
-		arrays[var[1]] = arr_obj
+		return arr_obj
+		# arrays[var[1]] = arr_obj
 		
-		languages_serializer.declare_array(arr_obj)
+		# languages_serializer.declare_array(arr_obj)
 	
 def parse_function(line):
 	fun_obj = Function()
@@ -104,8 +106,7 @@ def parse_function(line):
 			else:
 				sys.exit("Parametro di funzione non definito")
 				
-	functions.append(fun_obj)
-	languages_serializer.declare_function(fun_obj)
+	return fun_obj
 	
 def parse_input(line):
 	if "[" in line: # Read arrays
@@ -125,10 +126,11 @@ def parse_input(line):
 				if variables[var].read == False:
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
 					
-			languages_serializer.allocate_array(arr)
-			arrays[name].allocated = True
+			# languages_serializer.allocate_array(arr)
+			# arrays[name].allocated = True
 				
-		languages_serializer.read_arrays([arrays[name] for name in all_arrs])
+		input_line = IOline("Array", [arrays[name] for name in all_arrs], arrays[all_arrs[0]].sizes)
+		return input_line
 		
 	else: # Read variables
 		all_vars = re.split(" ", line) # Split line by spaces
@@ -138,7 +140,8 @@ def parse_input(line):
 				sys.exit("Una variabile da leggere non esiste")
 			variables[name].read = True
 		
-		languages_serializer.read_variables([variables[name] for name in all_vars])
+		input_line = IOline("Variable", [variables[name] for name in all_vars])
+		return input_line
 		
 def parse_output(line):
 	if "[" in line: # Write arrays
@@ -153,7 +156,8 @@ def parse_output(line):
 			if arrays[name].sizes != arrays[all_arrs[0]].sizes:
 				sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
 				
-		languages_serializer.write_arrays([arrays[name] for name in all_arrs])
+		output_line = IOline("Array", [arrays[name] for name in all_arrs], arrays[all_arrs[0]].sizes)
+		return output_line
 		
 	else: # Write variables
 		all_vars = re.split(" ", line) # Split line by spaces
@@ -163,7 +167,8 @@ def parse_output(line):
 			if name not in variables:
 				sys.exit("Una variable da scrivere non esiste")
 		
-		languages_serializer.write_variables([variables[name] for name in all_vars])
+		output_line = IOline("Variable", [variables[name] for name in all_vars])
+		return output_line
 
 
 # Parsing grader description file
@@ -198,7 +203,11 @@ def parse_description(lines):
 def main():
 	global languages_serializer
 	global DESCRIPTION_FILE
-
+	declarations_order = []
+	input_order = []
+	output_order = []
+	functions_order = []
+	
 	parser = argparse.ArgumentParser(description = "Automatically generate grader files in various languages")
 	parser.add_argument(\
 		"grader_description", 
@@ -262,8 +271,41 @@ def main():
 		"task_name": args.task_name,
 		"helpers": [parse_function(x) for x in section_lines["helpers"]] if "helpers" in section_lines else None
 	}
+		
+	# Parsing variables
+	for line in section_lines["variables"]:
+		parsed = parse_variable(line)
+		if type(parsed) == Variable:
+			variables[parsed.name] = parsed
+			declarations_order.append(parsed)
+		elif type(parsed) == Array:
+			arrays[parsed.name] = parsed
+			declarations_order.append(parsed)
+			
+	# Parsing functions
+	for line in section_lines["functions"]:
+		parsed = parse_function(line)
+		functions[parsed.name] = parsed
+		functions_order.append(parsed)
 
-	# All languages are generated (not all are written to file)
+	# Parsing input
+	for line in section_lines["input"]:
+		parsed = parse_input(line)
+		input_order.append(parsed)
+
+	# Parsing output
+	for line in section_lines["output"]:
+		parsed = parse_output(line)
+		output_order.append(parsed)
+	
+	# End of parsing
+	
+	data = {
+		"task_name": args.task_name,
+		"helpers": [parse_function(x) for x in section_lines["helpers"]] if "helpers" in section_lines else None
+	}
+	
+	# All languages are initializated (not all are written to file)
 	language_classes = {
 		"C": C.Language(0, data),
 		"fast_C": C.Language(1, data),
@@ -283,31 +325,36 @@ def main():
 			sys.exit("Per ogni linguaggio si può indicare soltanto il nome del grader")
 		
 		chosed_languages[el[0]] = language_classes[el[0]]
-
+	
 	languages_serializer = serializer.Language(chosed_languages)
 	
 	languages_serializer.insert_headers()
 
 	languages_serializer.wc("dec_var")
-	# Parsing variables.txt
-	for line in section_lines["variables"]:
-		parse_variable(line)
+	for decl in declarations_order:
+		if type(decl) == Variable:
+			languages_serializer.declare_variable(decl)
+		else:
+			languages_serializer.declare_array(decl)
 
-	languages_serializer.wc("dec_fun")			
-	# Parsing functions.txt
-	for line in section_lines["functions"]:
-		parse_function(line)
-
+	languages_serializer.wc("dec_fun")
+	for fun in functions_order:
+		languages_serializer.declare_function(fun)
+		
 	languages_serializer.insert_main()
-
 	languages_serializer.wc("input", 1)
-
-	# Parsing InputFormat.txt
-	for line in section_lines["input"]:
-		parse_input(line)
+	for input_line in input_order:
+		if input_line.type == "Array":
+			for arr in input_line.list:
+				languages_serializer.allocate_array(arr)
+				arrays[arr.name].allocated = True
+			languages_serializer.read_arrays(input_line.list)
+			
+		elif input_line.type == "Variable":
+			languages_serializer.read_variables(input_line.list)
 
 	languages_serializer.wc("call_fun", 1)
-	for fun in functions:
+	for fun in functions_order:
 		for param in fun.parameters:
 			if type(param) == Array and param.allocated == False:
 				if not all(variables[name].read for name in param.sizes):
@@ -319,20 +366,17 @@ def main():
 			fun.return_var.read = True
 			
 		# Variables passed by reference are "read"
-		for i in range(0, len(fun.parameters)):
+		for i in range(len(fun.parameters)):
 			param = fun.parameters[i]
 			if type(param) == Variable and fun.by_ref[i]:
 				param.read = True
-
-	if not "helpers" in section_lines:
-		languages_serializer.wc("output", 1)
-
-		# Parsing OutputFormat.txt
-		for line in section_lines["output"]:
-			parse_output(line)
-
-	languages_serializer.insert_footers()			
 	
+	languages_serializer.wc("output", 1)
+	for output_line in output_order:
+		if output_line.type == "Array":
+			languages_serializer.write_arrays(output_line.list)
+		elif output_line.type == "Variable":
+			languages_serializer.write_variables(output_line.list)
+	
+	languages_serializer.insert_footers()
 	languages_serializer.write_grader(grader_files)
-	
-	
