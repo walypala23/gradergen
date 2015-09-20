@@ -9,7 +9,7 @@ run_test() {
 
     for name in grader fast_grader
     do
-        rm -f $name.c $name.cpp $name.pas $name.o $name.ppu
+        rm -f $name.c $name.cpp $name.pas $name.o $name.ppu $taskname.ppu
     done
 
     # If needed, delete the input file

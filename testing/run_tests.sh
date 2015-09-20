@@ -5,6 +5,8 @@ taskname='nome_sorgente_contestant'
 RED='\033[0;31m'
 ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
+OK='\033[92m✓\033[0m'
+NOTOK='\033[91m✗\033[0m'
 
 FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 
@@ -29,22 +31,24 @@ run_test() {
         python input.py > input.txt
     fi
     if [ -f input.cpp ]; then
-        g++ input.cpp -O2 -o input && ./input > input.txt
+        g++ input.cpp -O2 -o input >/dev/null 2>/dev/null && ./input > input.txt
     fi
 
-    gcc -Wall -DEVAL -O2 grader.c $taskname.c -o c
-    gcc -Wall -DEVAL -O2 fast_grader.c $taskname.c -o fast_c
-    g++ -Wall -DEVAL -O2 grader.cpp $taskname.cpp -o cpp
-    g++ -Wall -DEVAL -O2 fast_grader.cpp $taskname.cpp -o fast_cpp
-    fpc -dEVAL grader.pas -opascal
-    fpc -dEVAL fast_grader.pas -ofast_pascal
+    echo -n "Compiling stuff... "
+    (gcc -Wall -DEVAL -O2 grader.c $taskname.c -o c >/dev/null 2>/dev/null \
+      && gcc -Wall -DEVAL -O2 fast_grader.c $taskname.c -o fast_c >/dev/null 2>/dev/null \
+      && g++ -Wall -DEVAL -O2 grader.cpp $taskname.cpp -o cpp >/dev/null 2>/dev/null \
+      && g++ -Wall -DEVAL -O2 fast_grader.cpp $taskname.cpp -o fast_cpp >/dev/null 2>/dev/null \
+      && fpc -dEVAL grader.pas -opascal >/dev/null 2>/dev/null \
+      && fpc -dEVAL fast_grader.pas -ofast_pascal >/dev/null 2>/dev/null \
+      && echo -e $OK) || echo -e $NOTOK
 
     for name in $FILES
     do
-        echo $name
+        echo -n "Running $name... "
 
         #'time' -f "%e" ./$name 2> $name.time
-        ./$name
+        (./$name && echo -e $OK) || echo -e $NOTOK
         # echo "x.xx" > $name.time
 
         mv output.txt $name.out
@@ -63,7 +67,8 @@ fi
 
 # Ensure that gradergen is installed
 pushd ..
-python setup.py install || sudo python setup.py install
+echo -n "Installation of gradergen... "
+((python setup.py install >/dev/null 2>/dev/null || sudo python setup.py install >/dev/null 2>/dev/null) && echo -e $OK) || echo -e $NOTOK
 popd
 
 for i in $TESTS

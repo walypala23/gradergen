@@ -11,14 +11,14 @@ except:
 
 def run(N,H,M):
 
-    print N
+    print(N)
 
     short = randint(0,N+1)
-    trees = [randint(2,H+1) for _ in xrange(N-short)] + ([1,]*short)
+    trees = [randint(2,H+1) for _ in range(N-short)] + ([1,]*short)
     shuffle(trees)
 
     for i in trees:
-        print i,
+        print(i, end=" ")
 
 if __name__ == "__main__":
     N, H, M, S = 5000, 35, 1000, 31
