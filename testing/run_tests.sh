@@ -11,7 +11,19 @@ FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 run_test() {
     pushd $1
     gradergen --all --task-name $taskname
-
+	
+	exitcode=$?
+	if [ $exitcode != "0" ]
+	then
+		for name in $FILES
+		do
+			echo $exitcode > $name.out
+			echo $name
+		done
+		popd
+		return
+	fi
+	
     # If needed, create the input file
     if [ -f input.py ]; then
         python input.py > input.txt
@@ -33,7 +45,7 @@ run_test() {
 
         #'time' -f "%e" ./$name 2> $name.time
         ./$name
-        echo "x.xx" > $name.time
+        # echo "x.xx" > $name.time
 
         mv output.txt $name.out
     done
@@ -42,7 +54,12 @@ run_test() {
 }
 
 
-TESTS=$(find . -name "test*" -type d | sort -V)
+if [ -z "$1" ]
+then
+	TESTS=$(find . -name "test*" -type d | sort -V)
+else
+	TESTS=(test$1)
+fi
 
 # Ensure that gradergen is installed
 pushd ..
@@ -55,7 +72,7 @@ do
     do
         rm -f $i/$j
         rm -f $i/$j.out
-        rm -f $i/$j.time
+        # rm -f $i/$j.time
     done
 
     run_test $i
@@ -68,9 +85,11 @@ do
     printf "${chosen_color}"
     for j in $FILES
     do
-        echo -n "("$(cat $i/$j.time)"s) "
+        # echo -n "("$(cat $i/$j.time)"s) "
         md5sum $i/$j.out
     done
+    cat $i/correct_md5
+    
     printf "${NC}"
 
     if [ "$chosen_color" == "$RED" ]; then
