@@ -5,7 +5,7 @@ import os
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
-from gradergen.structures import Variable, Array, Function, IOline
+from gradergen.structures import Variable, Array, Function, IOline, Expression
 from gradergen.languages import serializer, C, CPP, pascal
 
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
@@ -26,7 +26,48 @@ variables = {}
 arrays = {}
 functions = {}
 
+def util_is_integer(s):
+	try:	
+		n = int(s)
+	except:	
+		return False
+	
+	return True
 
+def parse_expression(s):
+	splitted = re.split('[\*\+]', s)
+	splitted = [x.strip() for x in splitted if x.strip()]
+	if not 1 <= len(splitted) <= 3:
+		sys.exit("Un'espressione è malformata (si supportano solo quelle delle forma a*var+b)")
+	
+	a = 1
+	var = None
+	b = 0
+	
+	for i in range(len(splitted)):
+		if util_is_integer(splitted[i]):
+			splitted[i] = int(splitted[i])
+		elif splitted[i] not in variables:
+			sys.exit("Le variabili nelle espressioni devono essere dichiarate")
+		else:
+			splitted[i] = variables[splitted[i]]
+	
+	
+	if len(splitted) == 1:
+		if type(splitted[0]) == int:
+			return Expression(None, 1, splitted[0])
+		else:
+			return Expression(splitted[0], 1, 0)
+	
+	if len(splitted) == 2:
+		if type(splitted[0]) == int:
+			return Expression(splitted[1], splitted[0], 0)
+		else:
+			return Expression(splitted[0], 1, splitted[1])
+	
+	if len(splitted) == 3:
+		return Expression(splitted[1], splitted[0], splitted[2])
+		
 def parse_variable(line):
 	global variables, arrays, functions
 	

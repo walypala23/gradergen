@@ -30,3 +30,35 @@ class IOline:
 		self.list = l
 		if self.type == "Array":
 			self.sizes = s
+
+class Expression:
+	# a*var+b
+	def __init_(self, v = None, a = 1, b = 0):
+		if type(a) != int or type(b) != int or (type(v) != Variable and v != None): 
+			sys.exit("I parametri passati per inizializzare un'espressione sono del tipo sbagliato")
+		
+		if self.a == 0:
+			sys.exit("Il coefficiente di un'espressione non può essere 0")
+		
+		self.var = v
+		self.a = a
+		self.b = b 
+	
+	def to_string():
+		res = ""
+		if self.var==None:
+			res += self.b
+			return res
+		
+		if self.a == -1:
+			res += "-"
+		elif self.a != -1 and self.a != 1:
+			res += str(self.a) + " * "
+		
+		res += self.var.name
+		
+		if self.b != 0:
+			if self.b>0:
+				res+=" + " + str(self.b)
+			else:
+				res+=str(self.b)
