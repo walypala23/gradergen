@@ -17,41 +17,41 @@ class Language:
 		for lang in self.languages:
 			self.languages[lang].wc(short_description, tabulation)
 	
-	def DeclareVariable(self, var):
+	def declare_variable(self, var):
 		for lang in self.languages:
-			self.languages[lang].DeclareVariable(var)
+			self.languages[lang].declare_variable(var)
 		
-	def DeclareArray(self, arr):
+	def declare_array(self, arr):
 		for lang in self.languages:
-			self.languages[lang].DeclareArray(arr)
+			self.languages[lang].declare_array(arr)
 	
-	def DeclareFunction(self, fun):
+	def declare_function(self, fun):
 		for lang in self.languages:
-			self.languages[lang].DeclareFunction(fun)
+			self.languages[lang].declare_function(fun)
 	
-	def AllocateArray(self, arr):
+	def allocate_array(self, arr):
 		for lang in self.languages:
-			self.languages[lang].AllocateArray(arr)
+			self.languages[lang].allocate_array(arr)
 	
-	def ReadArrays(self, all_arrs):
+	def read_arrays(self, all_arrs):
 		for lang in self.languages:
-			self.languages[lang].ReadArrays(all_arrs)
+			self.languages[lang].read_arrays(all_arrs)
 	
-	def ReadVariables(self, all_vars):
+	def read_variables(self, all_vars):
 		for lang in self.languages:
-			self.languages[lang].ReadVariables(all_vars)
+			self.languages[lang].read_variables(all_vars)
 	
-	def CallFunction(self, fun):
+	def call_function(self, fun):
 		for lang in self.languages:
-			self.languages[lang].CallFunction(fun)
+			self.languages[lang].call_function(fun)
 	
-	def WriteArrays(self, all_arrs):
+	def write_arrays(self, all_arrs):
 		for lang in self.languages:
-			self.languages[lang].WriteArrays(all_arrs)
+			self.languages[lang].write_arrays(all_arrs)
 
-	def WriteVariables(self, all_vars):
+	def write_variables(self, all_vars):
 		for lang in self.languages:
-			self.languages[lang].WriteVariables(all_vars)
+			self.languages[lang].write_variables(all_vars)
 	
 	def insert_headers(self):
 		for lang in self.languages:

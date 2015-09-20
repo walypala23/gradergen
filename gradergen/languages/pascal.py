@@ -96,23 +96,23 @@ end.
 		if len(self.comments[short_description]) > 0:
 			self.out += "\n" + ("\t"*tabulation) + "{ " + self.comments[short_description] +" }\n"
 	
-	def DeclareVariable(self, var):
+	def declare_variable(self, var):
 		self.wl("{0} : {1};".format(var.name, self.types[var.type]), 1)
 		if var.type == "real" and self.fast_io:
 			print("warning: pascal non supporta fast input e output di numeri floating point")
 		
-	def DeclareArray(self, arr):
+	def declare_array(self, arr):
 		self.wl("{0} : {1};".format(arr.name, self.at(arr.type, arr.dim)), 1)
 		if arr.type == "real" and self.fast_io:
 			print("warning: pascal non supporta fast input e output di numeri floating point")
 	
-	def DeclareFunction(self, fun): #forse non serve dichiarare le funzioni
+	def declare_function(self, fun): #forse non serve dichiarare le funzioni
 		doing_nothing = True
 	
-	def AllocateArray(self, arr):
+	def allocate_array(self, arr):
 		self.wl("Setlength({0}, {1});".format(arr.name, ", ".join(arr.sizes)), 1)
 	
-	def ReadArrays(self, all_arrs):
+	def read_arrays(self, all_arrs):
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		for i in range(0, all_dim):
@@ -135,7 +135,7 @@ end.
 		for i in range(0, all_dim):
 			self.wl("end;", all_dim - i)
 	
-	def ReadVariables(self, all_vars):
+	def read_variables(self, all_vars):
 		if self.fast_io:
 			for var in all_vars:
 				self.wl("{0} := fast_read_{1}();".format(var.name, var.type), 1)
@@ -148,14 +148,14 @@ end.
 			# pointers = ", ".join(var.name for var in all_vars)
 			# self.wl("readln(fr, {0});".format(pointers), 1)
 	
-	def CallFunction(self, fun):
+	def call_function(self, fun):
 		parameters = ', '.join([param.name for param in fun.parameters])
 		if fun.type == "":
 			self.wl("{0}({1});".format(fun.name, parameters), 1)
 		else:
 			self.wl("{2} := {0}({1});".format(fun.name, parameters, fun.return_var.name), 1)
 	
-	def WriteArrays(self, all_arrs):
+	def write_arrays(self, all_arrs):
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		
@@ -190,7 +190,7 @@ end.
 				else:
 					self.wl("writeln(fw);", all_dim - i)
 
-	def WriteVariables(self, all_vars):
+	def write_variables(self, all_vars):
 		if self.fast_io:
 			for var in all_vars:
 				self.wl("fast_write_{0}({1});".format(var.type, var.name), 1)

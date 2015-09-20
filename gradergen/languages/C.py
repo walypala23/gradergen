@@ -64,13 +64,13 @@ int main() {
 		if len(self.comments[short_description]) > 0:
 			self.out += "\n" + ("\t"*tabulation) + "// " + self.comments[short_description] +"\n"
 	
-	def DeclareVariable(self, var):
+	def declare_variable(self, var):
 		self.wl("static {0} {1};".format(self.types[var.type], var.name))
 		
-	def DeclareArray(self, arr):
+	def declare_array(self, arr):
 		self.wl("static {0} {1};".format(self.at(arr.type, arr.dim), arr.name) )
 	
-	def DeclareFunction(self, fun):
+	def declare_function(self, fun):
 		typed_parameters = []
 		for i in range(0, len(fun.parameters)):
 			param = fun.parameters[i]
@@ -83,7 +83,7 @@ int main() {
 				typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
 		self.wl("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
 	
-	def AllocateArray(self, arr):
+	def allocate_array(self, arr):
 		for i in range(0, arr.dim):
 			if i != 0:
 				self.wl("for ({0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i-1), arr.sizes[i-1]), i)
@@ -94,7 +94,7 @@ int main() {
 		for i in range(0, arr.dim - 1):
 			self.wl("}", arr.dim - i - 1)
 	
-	def ReadArrays(self, all_arrs):
+	def read_arrays(self, all_arrs):
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		for i in range(0, all_dim):
@@ -113,7 +113,7 @@ int main() {
 		for i in range(0, all_dim):
 			self.wl("}", all_dim - i)
 	
-	def ReadVariables(self, all_vars):
+	def read_variables(self, all_vars):
 		if self.fast_io:
 			for var in all_vars:
 				self.wl("{0} = fast_read_{1}();".format(var.name, var.type), 1)
@@ -123,7 +123,7 @@ int main() {
 			# The space after the format_string is used to ignore all whitespaces
 			self.wl("fscanf(fr, \"{0} \", {1});".format(format_string, pointers), 1)
 	
-	def CallFunction(self, fun):
+	def call_function(self, fun):
 		parameter_names = []
 		for i in range(0, len(fun.parameters)):
 			if fun.by_ref[i]:
@@ -137,7 +137,7 @@ int main() {
 		else:
 			self.wl("{2} = {0}({1});".format(fun.name, parameters, fun.return_var.name), 1)
 	
-	def WriteArrays(self, all_arrs):
+	def write_arrays(self, all_arrs):
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		
@@ -172,7 +172,7 @@ int main() {
 				else:
 					self.wl("fprintf(fw, \"\\n\");", all_dim - i)
 
-	def WriteVariables(self, all_vars):
+	def write_variables(self, all_vars):
 		if self.fast_io:
 			for var in all_vars:
 				self.wl("fast_write_{0}({1});".format(var.type, var.name), 1)
@@ -188,7 +188,7 @@ int main() {
 		self.out += self.headers
 		print(self.data)
 		if self.data["helpers"]:
-			print("TODO: self.DeclareFunction(self.helpers)")
+			print("TODO: self.declare_function(self.helpers)")
 		
 	def insert_main(self):
 		if self.fast_io:

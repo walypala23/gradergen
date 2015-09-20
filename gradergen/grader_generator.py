@@ -37,7 +37,7 @@ def parse_variable(line):
 		var_obj = Variable(var[1], var[0])
 		variables[var[1]] = var_obj
 				
-		languages_serializer.DeclareVariable(var_obj)
+		languages_serializer.declare_variable(var_obj)
 		
 	else:
 		dim = len(var)-2
@@ -51,7 +51,7 @@ def parse_variable(line):
 		arr_obj = Array(var[1], var[0], var[2:])
 		arrays[var[1]] = arr_obj
 		
-		languages_serializer.DeclareArray(arr_obj)
+		languages_serializer.declare_array(arr_obj)
 	
 def parse_function(line):
 	fun_obj = Function()
@@ -103,7 +103,7 @@ def parse_function(line):
 				sys.exit("Parametro di funzione non definito")
 				
 	functions.append(fun_obj)
-	languages_serializer.DeclareFunction(fun_obj)
+	languages_serializer.declare_function(fun_obj)
 	
 def parse_input(line):
 	if "[" in line: # Read arrays
@@ -123,10 +123,10 @@ def parse_input(line):
 				if variables[var].read == False:
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
 					
-			languages_serializer.AllocateArray(arr)
+			languages_serializer.allocate_array(arr)
 			arrays[name].allocated = True
 				
-		languages_serializer.ReadArrays([arrays[name] for name in all_arrs])
+		languages_serializer.read_arrays([arrays[name] for name in all_arrs])
 		
 	else: # Read variables
 		all_vars = re.split(" ", line) # Split line by spaces
@@ -136,7 +136,7 @@ def parse_input(line):
 				sys.exit("Una variabile da leggere non esiste")
 			variables[name].read = True
 		
-		languages_serializer.ReadVariables([variables[name] for name in all_vars])
+		languages_serializer.read_variables([variables[name] for name in all_vars])
 		
 def parse_output(line):
 	if "[" in line: # Write arrays
@@ -151,7 +151,7 @@ def parse_output(line):
 			if arrays[name].sizes != arrays[all_arrs[0]].sizes:
 				sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
 				
-		languages_serializer.WriteArrays([arrays[name] for name in all_arrs])
+		languages_serializer.write_arrays([arrays[name] for name in all_arrs])
 		
 	else: # Write variables
 		all_vars = re.split(" ", line) # Split line by spaces
@@ -161,7 +161,7 @@ def parse_output(line):
 			if name not in variables:
 				sys.exit("Una variable da scrivere non esiste")
 		
-		languages_serializer.WriteVariables([variables[name] for name in all_vars])
+		languages_serializer.write_variables([variables[name] for name in all_vars])
 
 
 # Parsing grader description file
@@ -292,9 +292,9 @@ def main():
 			if type(param) == Array and param.allocated == False:
 				if not all(variables[name].read for name in param.sizes):
 					sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
-				languages_serializer.AllocateArray(param)
+				languages_serializer.allocate_array(param)
 				arrays[param.name].allocated = True
-		languages_serializer.CallFunction(fun)
+		languages_serializer.call_function(fun)
 		if fun.return_var:
 			fun.return_var.read = True
 			

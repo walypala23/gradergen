@@ -10,6 +10,7 @@ FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 
 run_test() {
     pushd ..
+    python setup.py install || sudo python setup.py install
 
     gradergen testing/$1/grader_description.txt --all --task-name $taskname
     for name in grader.c grader.cpp grader.pas fast_grader.c fast_grader.cpp fast_grader.pas
