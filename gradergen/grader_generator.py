@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
 from gradergen.structures import Variable, Array, Function, variables, arrays, functions
 from gradergen.languages import serializer, C, CPP, pascal
 
-languages_list = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
+LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
+TYPES = ["", "int", "longint", "char", "real"]
+DESCRIPTION_FILE = "grader_description.txt"
 
 standard_grader_names = {
 	"C": "grader.c",
@@ -19,13 +22,12 @@ standard_grader_names = {
 }
 
 languages_serializer = {}
-types = ["", "int", "longint", "char", "real"]
 
 def parse_variable(line):
 	var = re.split('[ \[\]]', line) # Split line by square brackets and space
 	var = [x for x in var if x] # Remove empty chunks
 	
-	if not var[0] in types:
+	if not var[0] in TYPES:
 		sys.exit("Tipo non esistente")
 	
 	if not re.match("^[a-zA-Z_$][0-9a-zA-Z_$]*$", var[1]):
@@ -195,12 +197,13 @@ def parse_description(lines):
 
 def main():
 	global languages_serializer
+	global DESCRIPTION_FILE
 
 	parser = argparse.ArgumentParser(description = "Automatically generate grader files in various languages")
 	parser.add_argument(\
 		"grader_description", 
 		metavar="grader_description", 
-		action="store", nargs=1, 
+		action="store", nargs="?",
 		help="the file describing the grader"
 	)
 	parser.add_argument(\
@@ -227,16 +230,33 @@ def main():
 		default=False,
 		help="create grader (with filename 'grader.lang') in all supported languages"
 	)
-		
-	args = parser.parse_args()
 
-	with open(args.grader_description[0], "r") as grader_description:
+	args = parser.parse_args()
+	if args.grader_description is None:
+		# Search for a DESCRIPTION_FILE
+		directory = os.getcwd()
+		while True:
+			description = os.path.join(directory, "DESCRIPTION_FILE")
+
+			if os.path.isfile(description):
+				args.grader_description = description
+				break
+
+			if os.path.dirname(directory) == directory:
+				break
+			else:
+				directory = os.path.dirname(directory)
+
+	if args.grader_description is None:
+		sys.exit("The " + DESCRIPTION_FILE + " file cannot be found.")
+
+	with open(args.grader_description, "r") as grader_description:
 		lines = grader_description.read().splitlines()
 		section_lines = parse_description(lines)
 
 	grader_files = args.languages
 	if args.all:
-		grader_files = [[lang] for lang in languages_list]
+		grader_files = [[lang] for lang in LANGUAGES_LIST]
 
 	data = {
 		"task_name": args.task_name,
@@ -255,7 +275,7 @@ def main():
 	
 	chosed_languages = {}
 	for el in grader_files:
-		if el[0] not in languages_list:
+		if el[0] not in LANGUAGES_LIST:
 			sys.exit("Uno dei linguaggi non è supportato")
 		if len(el) == 1:
 			el.append(standard_grader_names[el[0]])

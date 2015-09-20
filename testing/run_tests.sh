@@ -9,17 +9,8 @@ NC='\033[0m' # No Color
 FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 
 run_test() {
-    pushd ..
-    python setup.py install || sudo python setup.py install
-
-    gradergen testing/$1/grader_description.txt --all --task-name $taskname
-    for name in grader.c grader.cpp grader.pas fast_grader.c fast_grader.cpp fast_grader.pas
-    do
-        mv $name testing/$1/$name
-    done
-
-    popd
     pushd $1
+    gradergen --all --task-name $taskname
 
     # If needed, create the input file
     if [ -f input.py ]; then
@@ -53,12 +44,18 @@ run_test() {
 
 TESTS=$(find . -name "test*" -type d | sort -V)
 
+# Ensure that gradergen is installed
+pushd ..
+python setup.py install || sudo python setup.py install
+popd
+
 for i in $TESTS
 do
     for j in $FILES
     do
         rm -f $i/$j
         rm -f $i/$j.out
+        rm -f $i/$j.time
     done
 
     run_test $i
