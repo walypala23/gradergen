@@ -173,7 +173,7 @@ def parse_input(line):
 				sys.exit("Array da leggere insieme devono avere le stesse dimensioni")
 			
 			for expr in arr.sizes:
-				if expr.var.read == False:
+				if expr.var is not None and expr.var.read == False:
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
 				
 		input_line = IOline("Array", [arrays[name] for name in all_arrs], arrays[all_arrs[0]].sizes)
@@ -407,7 +407,7 @@ def main():
 		for i in range(len(fun.parameters)):
 			param = fun.parameters[i]
 			if type(param) == Array and param.allocated == False:
-				if not all(expr.var.read for expr in param.sizes):
+				if not all((expr.var is None or expr.var.read) for expr in param.sizes):
 					sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
 				languages_serializer.allocate_array(param)
 				param.allocated = True
