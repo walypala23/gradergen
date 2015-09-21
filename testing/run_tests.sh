@@ -12,15 +12,14 @@ FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 
 run_test() {
     pushd $1
-    gradergen --all --task-name $taskname
+    gradergen --all --task-name $taskname 2> $1.errors
 	
 	exitcode=$?
 	if [ $exitcode != "0" ]
 	then
 		for name in $FILES
 		do
-			echo $exitcode > $name.out
-			echo $name
+			cat $1.errors > $name.out
 		done
 		popd
 		return

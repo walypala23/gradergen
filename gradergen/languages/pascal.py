@@ -110,16 +110,16 @@ end.
 		doing_nothing = True
 	
 	def allocate_array(self, arr):
-		self.wl("Setlength({0}, {1});".format(arr.name, ", ".join(arr.sizes)), 1)
+		self.wl("Setlength({0}, {1});".format(arr.name, ", ".join([expr.to_string() for expr in arr.sizes])), 1)
 	
 	def read_arrays(self, all_arrs):
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
-		for i in range(0, all_dim):
-			self.wl("for {0} := 0 to {1}-1 do".format("i" + str(i), all_sizes[i]), i+1)
+		for i in range(all_dim):
+			self.wl("for {0} := 0 to {1}-1 do".format("i" + str(i), all_sizes[i].to_string()), i+1)
 			self.wl("begin", i+1)
 		
-		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
+		indexes = "".join("[i" + str(x) + "]" for x in range(all_dim))
 		if self.fast_io:
 			for arr in all_arrs:
 				self.wl("{0} := fast_read_{1}();".format(arr.name + indexes, arr.type), all_dim+1)
@@ -132,7 +132,7 @@ end.
 				else:
 					self.wl("read(fr, {0});".format(arr.name + indexes), all_dim+1)
 						
-		for i in range(0, all_dim):
+		for i in range(all_dim):
 			self.wl("end;", all_dim - i)
 	
 	def read_variables(self, all_vars):
@@ -159,11 +159,11 @@ end.
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		
-		for i in range(0, all_dim):
-			self.wl("for {0} := 0 to {1}-1 do".format("i" + str(i), all_sizes[i]), i+1)
+		for i in range(all_dim):
+			self.wl("for {0} := 0 to {1}-1 do".format("i" + str(i), all_sizes[i].to_string()), i+1)
 			self.wl("begin", i+1)
 		
-		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
+		indexes = "".join("[i" + str(x) + "]" for x in range(all_dim))
 		if self.fast_io:
 			for arr in all_arrs:
 				self.wl("fast_write_{0}({1});".format(arr.type, arr.name + indexes), all_dim + 1)
@@ -182,7 +182,7 @@ end.
 			else:
 				self.wl("write(fw, {0});".format(antipointers), all_dim+1)
 		
-		for i in range(0, all_dim):
+		for i in range(all_dim):
 			self.wl("end;", all_dim - i)
 			if i == 0 and len(all_arrs) == 1:
 				if self.fast_io:
@@ -221,7 +221,7 @@ end.
 		self.wl("\n{ iterators used in for loops }")
 		if len(self.data["arrays"]) > 0:
 			max_dim = max(arr.dim for name, arr in self.data["arrays"].items())
-			self.wl(", ".join("i" + str(x) for x in range(0, max_dim)) + ": Longint;", 1)
+			self.wl(", ".join("i" + str(x) for x in range(max_dim)) + ": Longint;", 1)
 		
 		if self.fast_io:
 			self.out += self.main_function_fast_io

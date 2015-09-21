@@ -72,7 +72,7 @@ int main() {
 	
 	def declare_function(self, fun):
 		typed_parameters = []
-		for i in range(0, len(fun.parameters)):
+		for i in range(len(fun.parameters)):
 			param = fun.parameters[i]
 			if type(param) == structures.Variable:
 				if fun.by_ref[i]:
@@ -85,21 +85,21 @@ int main() {
 		self.wl("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
 	
 	def allocate_array(self, arr):
-		for i in range(0, arr.dim):
+		for i in range(arr.dim):
 			if i != 0:
-				self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i-1), arr.sizes[i-1]), i)
+				self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i-1), arr.sizes[i-1].to_string()), i)
 				
-			indexes = "".join("[i" + str(x) + "]" for x in range(0,i))
-			self.wl("{0}{1} = ({2}*)malloc({3} * sizeof({2}));".format(arr.name, indexes, self.at(arr.type, arr.dim-i-1), arr.sizes[i]), i+1)
+			indexes = "".join("[i" + str(x) + "]" for x in range(i))
+			self.wl("{0}{1} = ({2}*)malloc(({3}) * sizeof({2}));".format(arr.name, indexes, self.at(arr.type, arr.dim-i-1), arr.sizes[i].to_string()), i+1)
 			
-		for i in range(0, arr.dim - 1):
+		for i in range(arr.dim - 1):
 			self.wl("}", arr.dim - i - 1)
 	
 	def read_arrays(self, all_arrs):
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
-		for i in range(0, all_dim):
-			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
+		for i in range(all_dim):
+			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i].to_string()), i+1)
 			
 		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
 		if self.fast_io:
@@ -111,7 +111,7 @@ int main() {
 			# The space after the format_string is used to ignore all whitespaces
 			self.wl("fscanf(fr, \"{0} \", {1});".format(format_string, pointers), all_dim+1)
 					
-		for i in range(0, all_dim):
+		for i in range(all_dim):
 			self.wl("}", all_dim - i)
 	
 	def read_variables(self, all_vars):
@@ -135,10 +135,10 @@ int main() {
 		all_dim = all_arrs[0].dim
 		all_sizes = all_arrs[0].sizes
 		
-		for i in range(0, all_dim):
-			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i]), i+1)
+		for i in range(all_dim):
+			self.wl("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), all_sizes[i].to_string()), i+1)
 		
-		indexes = "".join("[i" + str(x) + "]" for x in range(0, all_dim))
+		indexes = "".join("[i" + str(x) + "]" for x in range(all_dim))
 		if self.fast_io:
 			for arr in all_arrs:
 				self.wl("fast_write_{0}({1});".format(arr.type, arr.name + indexes), all_dim + 1)
@@ -158,7 +158,7 @@ int main() {
 			else:
 				self.wl("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), all_dim+1)
 		
-		for i in range(0, all_dim):
+		for i in range(all_dim):
 			self.wl("}", all_dim - i)
 			if i == 0 and len(all_arrs) == 1:
 				if self.fast_io:

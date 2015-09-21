@@ -1,4 +1,5 @@
 # For the testsuite
+test*/*.errors
 test*/*.out
 test*/*.time
 test*/*grader*

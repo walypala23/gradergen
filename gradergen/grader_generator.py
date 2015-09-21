@@ -34,40 +34,46 @@ def util_is_integer(s):
 	
 	return True
 
+# Solo cose della forma a*var+-b
 def parse_expression(s):
-	splitted = re.split('[\*\+]', s)
-	splitted = [x.strip() for x in splitted if x.strip()]
-	if not 1 <= len(splitted) <= 3:
-		sys.exit("Un'espressione è malformata (si supportano solo quelle delle forma a*var+b)")
-	
 	a = 1
 	var = None
 	b = 0
 	
-	for i in range(len(splitted)):
-		if util_is_integer(splitted[i]):
-			splitted[i] = int(splitted[i])
-		elif splitted[i] not in variables:
-			sys.exit("Le variabili nelle espressioni devono essere dichiarate")
+	# Parsing a
+	if "*" in s:
+		splitted = re.split("\*", s)
+		splitted = [x.strip() for x in splitted if x.strip()]
+		if len(splitted) != 2:
+			sys.exit("Un'espressione è malformata (si supportano solo quelle delle forma a*var+b)")
+		if util_is_integer(splitted[0]):
+			a = int(splitted[0])
 		else:
-			splitted[i] = variables[splitted[i]]
-	
-	
-	if len(splitted) == 1:
-		if type(splitted[0]) == int:
-			return Expression(None, 1, splitted[0])
-		else:
-			return Expression(splitted[0], 1, 0)
-	
-	if len(splitted) == 2:
-		if type(splitted[0]) == int:
-			return Expression(splitted[1], splitted[0], 0)
-		else:
-			return Expression(splitted[0], 1, splitted[1])
-	
-	if len(splitted) == 3:
-		return Expression(splitted[1], splitted[0], splitted[2])
+			sys.exit("Le costanti nelle espressioni devono essere interi")
 		
+		s = splitted[1]
+	
+	# Parsing var
+	temp_var = re.match("[a-zA-Z_][0-9a-zA-Z_]*", s)
+	if temp_var:
+		name = temp_var.group(0)
+		if name not in variables:
+			sys.exit("Le variabili nelle espressioni devono essere dichiarate")
+		elif variables[name].type not in ["int", "longint"]:
+			sys.exit("Le variabili nelle espressioni devono essere di tipo intero")
+		else:
+			var = variables[name]		
+		s = s[len(name):]
+	
+	# Parsing b
+	if len(s) > 0:
+		if util_is_integer(s):
+			b = int(s)
+		else:
+			sys.exit("Le costanti nelle espressioni devono essere interi")
+				
+	return Expression(var, a, b)
+			
 def parse_variable(line):
 	global variables, arrays, functions
 	
@@ -92,10 +98,9 @@ def parse_variable(line):
 			sys.exit("Nome dell'array già utilizzato")
 		if dim == 0:
 			sys.exit("Dimensioni dell'array non specificate")
-		for num in var[2:]:
-			if num not in variables:
-				sys.exit("Dimensione dell'array non definita")
-		arr_obj = Array(var[1], var[0], var[2:])
+		sizes = [parse_expression(expr) for expr in var[2:]]
+		
+		arr_obj = Array(var[1], var[0], sizes)
 		return arr_obj
 	
 def parse_function(line):
@@ -167,8 +172,8 @@ def parse_input(line):
 			if arr.sizes != arrays[all_arrs[0]].sizes:
 				sys.exit("Array da leggere insieme devono avere le stesse dimensioni")
 			
-			for var in arr.sizes:
-				if variables[var].read == False:
+			for expr in arr.sizes:
+				if expr.var.read == False:
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
 				
 		input_line = IOline("Array", [arrays[name] for name in all_arrs], arrays[all_arrs[0]].sizes)
@@ -402,7 +407,7 @@ def main():
 		for i in range(len(fun.parameters)):
 			param = fun.parameters[i]
 			if type(param) == Array and param.allocated == False:
-				if not all(variables[name].read for name in param.sizes):
+				if not all(expr.var.read for expr in param.sizes):
 					sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
 				languages_serializer.allocate_array(param)
 				param.allocated = True
