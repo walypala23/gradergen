@@ -210,7 +210,7 @@ int main() {
 			else:
 				self.declare_array(decl)
 
-		__import__("pdb").set_trace()
+		# __import__("pdb").set_trace()
 		if use_helper:
 			self.wc("dec_help")
 			for fun in self.data["helpers_order"]:
