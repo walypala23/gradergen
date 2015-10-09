@@ -6,25 +6,28 @@ import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 
 from gradergen.structures import Variable, Array, Function, IOline, Expression
-from gradergen.languages import serializer, C, CPP, pascal
+from gradergen.languages import C, CPP, pascal
 
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
 TYPES = ["", "int", "longint", "char", "real"]
 DESCRIPTION_FILE = "grader_description.txt"
 
-standard_grader_names = {
-	"C": "grader.c",
-	"fast_C": "fast_grader.c",
-	"CPP": "grader.cpp",
-	"fast_CPP": "fast_grader.cpp",
-	"pascal": "grader.pas",
-	"fast_pascal": "fast_grader.pas"
-}
-
 # Global variables used in parsing functions
 variables = {}
 arrays = {}
 functions = {}
+helpers = {}
+
+# Attach the right extension
+def languageize(name, language):
+	return name + {
+		"C": ".c",
+		"fast_C": ".c",
+		"CPP": ".cpp",
+		"fast_CPP": ".cpp",
+		"pascal": ".pas",
+		"fast_pascal": ".pas",
+	}[language]
 
 def util_is_integer(s):
 	try:	
@@ -252,12 +255,13 @@ def parse_description(lines):
 def main():
 	global languages_serializer
 	global DESCRIPTION_FILE
-	global variables, arrays, functions
+	global variables, arrays, functions, helpers
 	
 	declarations_order = []
 	input_order = []
 	output_order = []
 	functions_order = []
+	helpers_order = []
 	
 	parser = argparse.ArgumentParser(description = "Automatically generate grader files in various languages")
 	parser.add_argument(\
@@ -314,9 +318,8 @@ def main():
 		lines = grader_description.read().splitlines()
 		section_lines = parse_description(lines)
 
-	grader_files = args.languages
 	if args.all:
-		grader_files = [[lang] for lang in LANGUAGES_LIST]
+		args.languages = [[lang] for lang in LANGUAGES_LIST]
 		
 	# Parsing variables
 	for line in section_lines["variables"]:
@@ -339,19 +342,35 @@ def main():
 		parsed = parse_input(line)
 		input_order.append(parsed)
 
-	# Parsing output
-	for line in section_lines["output"]:
-		parsed = parse_output(line)
-		output_order.append(parsed)
-	
+	use_helper = False
+
+	if "helpers" in section_lines:
+		use_helper = True
+		
+		# Parsing helpers
+		for line in section_lines["helpers"]:
+			parsed = parse_function(line)
+			helpers[parsed.name] = parsed
+			helpers_order.append(parsed)
+	else:
+		# Parsing output
+		for line in section_lines["output"]:
+			parsed = parse_output(line)
+			output_order.append(parsed)
+
 	# End of parsing
 	
 	data = {
 		"task_name": args.task_name,
 		"variables": variables,
+		"declarations_order": declarations_order,
 		"arrays": arrays,
 		"functions": functions,
-		"helpers": [parse_function(x) for x in section_lines["helpers"]] if "helpers" in section_lines else None
+		"functions_order": functions_order,
+		"helpers": helpers,
+		"helpers_order": helpers_order,
+		"input_order": input_order,
+		"output_order": output_order,
 	}
 	
 	# All languages are initializated (not all are written to file)
@@ -363,73 +382,39 @@ def main():
 		"pascal": pascal.Language(0, data),
 		"fast_pascal": pascal.Language(1, data)
 	}
-	
-	chosed_languages = {}
-	for el in grader_files:
+
+	chosed_languages = []
+	for el in args.languages:
 		if el[0] not in LANGUAGES_LIST:
 			sys.exit("Uno dei linguaggi non è supportato")
+
+		# __import__("pdb").set_trace()
 		if len(el) == 1:
-			el.append(standard_grader_names[el[0]])
-		elif len(el) > 2:
-			sys.exit("Per ogni linguaggio si può indicare soltanto il nome del grader")
-		
-		chosed_languages[el[0]] = language_classes[el[0]]
-	
-	languages_serializer = serializer.Language(chosed_languages)
-	
-	languages_serializer.insert_headers()
+			el.append(languageize("grader", el[0]))
+			if use_helper:
+				# TODO: this name is language specific, at least for pascal...
+				el.append(languageize("helper", el[0]))
+		elif len(el) == 2:
+			if use_helper:
+				sys.exit("You specified a grader name but not a helper name")
+			else:
+				el.append(languageize(el[1], el[0]))
+		elif len(el) == 3:
+			if not use_helper:
+				sys.exit("You specified a helper name even though no helper is needed")
+			else:
+				el.append(languageize(el[1], el[0]))
+				el.append(languageize(el[2], el[0]))
+		elif len(el) > 3:
+			sys.exit("For each language you can specify, at most, the names of the grader/helper")
 
-	languages_serializer.wc("dec_var")
-	for decl in declarations_order:
-		if type(decl) == Variable:
-			languages_serializer.declare_variable(decl)
+		if use_helper:
+			chosed_languages.append((language_classes[el[0]], el[1], el[2]))
 		else:
-			languages_serializer.declare_array(decl)
+			chosed_languages.append((language_classes[el[0]], el[1]))
 
-	languages_serializer.wc("dec_fun")
-	for fun in functions_order:
-		languages_serializer.declare_function(fun)
-		
-	languages_serializer.insert_main()
-	languages_serializer.wc("input", 1)
-	for input_line in input_order:
-		if input_line.type == "Array":
-			for arr in input_line.list:
-				languages_serializer.allocate_array(arr)
-				arrays[arr.name].allocated = True
-			languages_serializer.read_arrays(input_line.list)
-			
-		elif input_line.type == "Variable":
-			languages_serializer.read_variables(input_line.list)
-
-	languages_serializer.wc("call_fun", 1)
-	for fun in functions_order:
-		for i in range(len(fun.parameters)):
-			param = fun.parameters[i]
-			if type(param) == Array and param.allocated == False:
-				if not all((expr.var is None or expr.var.read) for expr in param.sizes):
-					sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
-				languages_serializer.allocate_array(param)
-				param.allocated = True
-			if type(param) == Variable and not param.read and not fun.by_ref[i]:
-				sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
-				
-		languages_serializer.call_function(fun)
-		if fun.return_var:
-			fun.return_var.read = True
-			
-		# Variables passed by reference are "read"
-		for i in range(len(fun.parameters)):
-			param = fun.parameters[i]
-			if type(param) == Variable and fun.by_ref[i]:
-				param.read = True
-	
-	languages_serializer.wc("output", 1)
-	for output_line in output_order:
-		if output_line.type == "Array":
-			languages_serializer.write_arrays(output_line.list)
-		elif output_line.type == "Variable":
-			languages_serializer.write_variables(output_line.list)
-	
-	languages_serializer.insert_footers()
-	languages_serializer.write_grader(grader_files)
+	for x in chosed_languages:
+		if len(x) == 2:
+			x[0].write_files(x[1])
+		else:
+			x[0].write_files(x[1], x[2])

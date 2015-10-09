@@ -1,5 +1,7 @@
 import pkg_resources
 from gradergen import structures
+from gradergen.structures import Variable, Array, Function, IOline, Expression
+
 
 class Language:
 	def __init__(self, fast_io, data):
@@ -78,6 +80,7 @@ end.
 	comments = {
 		"dec_var": "Declaring variables", 
 		"dec_fun": "", 
+		"dec_help": "Declaring helper functions",
 		"input": "Reading input", 
 		"call_fun": "Calling functions", 
 		"output": "Writing output", 
@@ -233,3 +236,96 @@ end.
 			self.out += self.footers_fast_io
 		else:
 			self.out += self.footers
+
+	def write_files(self, grader_name, helper_name=None):
+		self.write_grader()
+		self.write(grader_name)
+
+		if helper_name is not None:
+			self.write_helper()
+			self.write(helper_name)
+
+	def write_grader(self):
+		self.out = ""
+		self.insert_headers()
+
+		self.wc("dec_var")
+		for decl in declarations_order:
+			if type(decl) == Variable:
+				self.declare_variable(decl)
+			else:
+				self.declare_array(decl)
+
+		self.wc("dec_fun")
+		for fun in functions_order:
+			self.declare_function(fun)
+
+		self.insert_main()
+		self.wc("input", 1)
+		for input_line in input_order:
+			if input_line.type == "Array":
+				for arr in input_line.list:
+					self.allocate_array(arr)
+					arrays[arr.name].allocated = True
+				self.read_arrays(input_line.list)
+
+			elif input_line.type == "Variable":
+				self.read_variables(input_line.list)
+
+		self.wc("call_fun", 1)
+		for fun in functions_order:
+			for i in range(len(fun.parameters)):
+				param = fun.parameters[i]
+				if type(param) == Array and param.allocated == False:
+					if not all((expr.var is None or expr.var.read) for expr in param.sizes):
+						sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
+					self.allocate_array(param)
+					param.allocated = True
+				if type(param) == Variable and not param.read and not fun.by_ref[i]:
+					sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
+					
+			self.call_function(fun)
+			if fun.return_var:
+				fun.return_var.read = True
+				
+			# Variables passed by reference are "read"
+			for i in range(len(fun.parameters)):
+				param = fun.parameters[i]
+				if type(param) == Variable and fun.by_ref[i]:
+					param.read = True
+		
+		self.wc("output", 1)
+		for output_line in output_order:
+			if output_line.type == "Array":
+				self.write_arrays(output_line.list)
+			elif output_line.type == "Variable":
+				self.write_variables(output_line.list)
+		
+		self.insert_footers()
+
+	def write_helper(self):
+		# TODO: fix below
+		self.out = """unit nometasklib;
+
+interface
+
+procedure example1;
+procedure example2(index: longint);
+
+implementation
+
+...
+
+initialization
+
+...
+
+finalization
+
+..
+
+end."""
+
+	def write(self, filename):
+		with open(filename, "w") as f:
+			f.write(self.out)
