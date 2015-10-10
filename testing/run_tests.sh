@@ -93,7 +93,7 @@ do
         # echo -n "("$(cat $i/$j.time)"s) "
         md5sum $i/$j.out
     done
-    cat $i/correct_md5
+    cat $i/correct.md5
 
     printf "${NC}"
 
