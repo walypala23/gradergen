@@ -13,18 +13,18 @@ FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 run_test() {
     pushd $1
     gradergen --all --task-name $taskname 2> $1.errors
-	
-	exitcode=$?
-	if [ $exitcode != "0" ]
-	then
-		for name in $FILES
-		do
-			cat $1.errors > $name.out
-		done
-		popd
-		return
-	fi
-	
+
+    exitcode=$?
+    if [ $exitcode != "0" ]
+    then
+        for name in $FILES
+        do
+            cat $1.errors > $name.out
+        done
+        popd
+        return
+    fi
+
     # If needed, create the input file
     if [ -f input.py ]; then
         python input.py > input.txt
@@ -34,6 +34,7 @@ run_test() {
     fi
 
     echo -n "Compiling stuff... "
+
     (gcc -Wall -DEVAL -O2 grader.c $taskname.c -o c >/dev/null 2>/dev/null \
       && gcc -Wall -DEVAL -O2 fast_grader.c $taskname.c -o fast_c >/dev/null 2>/dev/null \
       && g++ -Wall -DEVAL -O2 grader.cpp $taskname.cpp -o cpp >/dev/null 2>/dev/null \
@@ -59,9 +60,9 @@ run_test() {
 
 if [ -z "$1" ]
 then
-	TESTS=$(find . -name "test*" -type d | sort -V)
+    TESTS=$(find . -name "test*" -type d | sort -V)
 else
-	TESTS=(test$1)
+    TESTS=(test$1)
 fi
 
 # Ensure that gradergen is installed
@@ -93,7 +94,7 @@ do
         md5sum $i/$j.out
     done
     cat $i/correct_md5
-    
+
     printf "${NC}"
 
     if [ "$chosen_color" == "$RED" ]; then
