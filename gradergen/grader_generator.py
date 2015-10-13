@@ -369,9 +369,10 @@ def main():
 		input_order.append(parsed)
 
 	# Parsing output
-	for line in section_lines["output"]:
-		parsed = parse_output(line)
-		output_order.append(parsed)
+	if "output" in section_lines:
+		for line in section_lines["output"]:
+			parsed = parse_output(line)
+			output_order.append(parsed)
 
 	# End of parsing
 

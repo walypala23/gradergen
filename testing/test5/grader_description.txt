@@ -24,7 +24,3 @@ Abbatti(indice, direzione)
 
 N
 altezza[]
-
-***output***
-
-N
