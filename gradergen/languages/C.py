@@ -206,8 +206,8 @@ int main() {
 	def insert_footers(self):
 		self.out += self.footers
 
-	def write_files(self, grader_name, helper_name=None):
-		self.write_grader(helper_name is not None)
+	def write_files(self, grader_name, use_helper):
+		self.write_grader(use_helper)
 		self.write(grader_name)
 
 	def write_grader(self, use_helper):
@@ -223,8 +223,7 @@ int main() {
 
 		if use_helper:
 			self.write_comment("dec_help")
-			for fun in self.data["helpers_order"]:
-				self.declare_function(fun)
+			self.out += self.data["helper_data"]
 
 		self.write_comment("dec_fun")
 		for fun in self.data["functions_order"]:

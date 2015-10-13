@@ -237,13 +237,13 @@ end.
 		else:
 			self.out += self.footers
 
-	def write_files(self, grader_name, helper_name=None):
+	def write_files(self, grader_name, use_helper):
 		self.write_grader()
 		self.write(grader_name)
 
-		if helper_name is not None:
+		if use_helper:
 			self.write_helper()
-			self.write(helper_name)
+			self.write(self.data["task_name"] + "lib.pas")
 
 	def write_grader(self):
 		self.out = ""
@@ -302,27 +302,7 @@ end.
 		self.insert_footers()
 
 	def write_helper(self):
-		# TODO: fix below
-		self.out = """unit nometasklib;
-
-interface
-
-procedure example1;
-procedure example2(index: longint);
-
-implementation
-
-...
-
-initialization
-
-...
-
-finalization
-
-..
-
-end."""
+		self.out = self.data["helper_data"]
 
 	def write(self, filename):
 		with open(filename, "w") as f:

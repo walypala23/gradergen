@@ -2,6 +2,7 @@
 test*/*.errors
 test*/*.out
 test*/*.time
+test*/*lib.pas
 test*/*grader*
 !test*/grader_description.txt
 # sometimes the txt it's huge because it's generated, so exclude it:

@@ -287,7 +287,7 @@ def main():
 	group = parser.add_mutually_exclusive_group(required=True)
 
 	group.add_argument(\
-		"-l","--lang",
+		"-l", "--lang",
 		nargs = "+",
 		metavar = ("lang", "grader_filename"),
 		dest = "languages",
@@ -321,6 +321,25 @@ def main():
 	if args.grader_description is None:
 		sys.exit("The " + DESCRIPTION_FILE + " file cannot be found.")
 
+	# Check if helper files exist and load data
+	helper_data = {}
+	directory = os.path.dirname(args.grader_description)
+
+	def load_helper_data(ext, lang):
+		try:
+			with open(os.path.join(directory, "helper_data." + ext)) as f:
+				helper_data[lang] = f.read()
+		except IOError:
+			pass
+
+	load_helper_data("pas", "pascal")
+	load_helper_data("pas", "fast_pascal")
+	load_helper_data("c", "C")
+	load_helper_data("c", "fast_C")
+	load_helper_data("cpp", "CPP")
+	load_helper_data("cpp", "fast_CPP")
+
+	# Parse description file
 	with open(args.grader_description, "r") as grader_description:
 		lines = grader_description.read().splitlines()
 		section_lines = parse_description(lines)
@@ -349,21 +368,10 @@ def main():
 		parsed = parse_input(line)
 		input_order.append(parsed)
 
-	use_helper = False
-
-	if "helpers" in section_lines:
-		use_helper = True
-
-		# Parsing helpers
-		for line in section_lines["helpers"]:
-			parsed = parse_function(line)
-			helpers[parsed.name] = parsed
-			helpers_order.append(parsed)
-	else:
-		# Parsing output
-		for line in section_lines["output"]:
-			parsed = parse_output(line)
-			output_order.append(parsed)
+	# Parsing output
+	for line in section_lines["output"]:
+		parsed = parse_output(line)
+		output_order.append(parsed)
 
 	# End of parsing
 
@@ -374,54 +382,39 @@ def main():
 		"arrays": arrays,
 		"functions": functions,
 		"functions_order": functions_order,
-		"helpers": helpers,
-		"helpers_order": helpers_order,
 		"input_order": input_order,
 		"output_order": output_order,
 	}
 
 	# All languages are initializated (not all are written to file)
-	language_classes = {
-		"C": LanguageC(0, data),
-		"fast_C": LanguageC(1, data),
-		"CPP": LanguageCPP(0, data),
-		"fast_CPP": LanguageCPP(1, data),
-		"pascal": LanguagePascal(0, data),
-		"fast_pascal": LanguagePascal(1, data)
-	}
+	language_classes = {}
+	for lname, lclass, fast_io in [
+		("C", LanguageC, 0),
+		("fast_C", LanguageC, 1),
+		("CPP", LanguageCPP, 0),
+		("fast_CPP", LanguageCPP, 1),
+		("pascal", LanguagePascal, 0),
+		("fast_pascal", LanguagePascal, 1),
+	]:
+		# __import__("pdb").set_trace()
+		data2 = data.copy()
+		if lname in helper_data:
+			data2["helper_data"] = helper_data[lname]
+		language_classes[lname] = lclass(fast_io, data2)
 
 	chosed_languages = []
 	for el in args.languages:
 		if el[0] not in LANGUAGES_LIST:
-			sys.exit("Uno dei linguaggi non è supportato")
+			sys.exit("One of the specified languages is not currently supported")
 
-		# __import__("pdb").set_trace()
 		if len(el) == 1:
 			el.append(languageize("grader", el[0]))
-			if use_helper:
-				# TODO: this name is language specific, at least for pascal...
-				el.append(languageize("helper", el[0]))
 		elif len(el) == 2:
-			if use_helper:
-				sys.exit("You specified a grader name but not a helper name")
-			else:
-				el.append(languageize(el[1], el[0]))
-		elif len(el) == 3:
-			if not use_helper:
-				sys.exit("You specified a helper name even though no helper is needed")
-			else:
-				el.append(languageize(el[1], el[0]))
-				el.append(languageize(el[2], el[0]))
-		elif len(el) > 3:
-			sys.exit("For each language you can specify, at most, the names of the grader/helper")
+			el.append(languageize(el[1], el[0]))
+		elif len(el) > 2:
+			sys.exit("For each language you can specify, at most, the name of the grader")
 
-		if use_helper:
-			chosed_languages.append((language_classes[el[0]], el[1], el[2]))
-		else:
-			chosed_languages.append((language_classes[el[0]], el[1]))
+		chosed_languages.append((language_classes[el[0]], el[1], el[0] in helper_data))
 
-	for x in chosed_languages:
-		if len(x) == 2:
-			x[0].write_files(x[1])
-		else:
-			x[0].write_files(x[1], x[2])
+	for lang, gradername, use_helper in chosed_languages:
+		lang.write_files(gradername, use_helper)

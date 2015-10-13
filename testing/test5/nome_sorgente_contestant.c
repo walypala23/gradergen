@@ -1,21 +1,13 @@
-#include <iostream>
-#include <algorithm>
-#include <limits>
-#include <stack>
-#include <cassert>
-
-using namespace std;
-
 void Abbatti(int, int);
 
-const int MAXN = 2000000;
+#define MAXN 2000000
 int lep[MAXN];  // fissato i, lep[i] contiene l'indice dell'albero più a sinistra
 			    // distrutto dall'abbattimento di i
 int rep[MAXN];  // fissato i, rep[i] contiene l'indice dell'albero più a destra
 			    // distrutto dall'abbattimento di i
 int memo[MAXN];
 int first_tree[MAXN];
-bool direzione[MAXN];
+int direzione[MAXN];
 int n_candidati;
 int candidati[MAXN];
 int min_candidati[MAXN];
@@ -48,7 +40,7 @@ void Pianifica(int N, int H[]) {
 		
 		memo[i] = test;
 		first_tree[i] = i;
-		direzione[i] = false;
+		direzione[i] = 0;
 
 		// Secondo caso: abbatto a destra un albero che abbatte i nella caduta
 		while (n_candidati && rep[*(candidati + n_candidati - 1)] < i)
@@ -64,7 +56,7 @@ void Pianifica(int N, int H[]) {
 			if (test < memo[i]) {
 				memo[i] = test;
 				first_tree[i] = j + 1;
-				direzione[i] = true;
+				direzione[i] = 1;
 			}
 		}
 
@@ -88,7 +80,7 @@ void Pianifica(int N, int H[]) {
 	while (i >= 0) {
 		Abbatti(first_tree[i], direzione[i]);
 		
-		if (direzione[i] == false) // A sinistra
+		if (direzione[i] == 0) // A sinistra
 			i = lep[i] - 1;
 		else
 			i = first_tree[i] - 1;

@@ -1,10 +1,10 @@
-unit taglialegna;
+unit nome_sorgente_contestant;
 
 interface
 procedure Pianifica(N: longint; var H: array of longint);
 
 implementation
-uses taglialegnalib;
+uses nome_sorgente_contestantlib;
 
 const MAXN = 2000000;
 var n_candidati: longint;
