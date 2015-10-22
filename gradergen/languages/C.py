@@ -235,6 +235,7 @@ int main() {
 			if input_line.type == "Array":
 				for arr in input_line.list:
 					self.allocate_array(arr)
+					self.data["arrays"][arr.name].allocated = True
 				self.read_arrays(input_line.list)
 
 			elif input_line.type == "Variable":
@@ -244,10 +245,11 @@ int main() {
 		for fun in self.data["functions_order"]:
 			for i in range(len(fun.parameters)):
 				param = fun.parameters[i]
-				if type(param) == Array:
+				if type(param) == Array and param.allocated == False:
 					if not all((expr.var is None or expr.var.read) for expr in param.sizes):
 						sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
 					self.allocate_array(param)
+					param.allocated = True
 				if type(param) == Variable and not param.read and not fun.by_ref[i]:
 					sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
 

@@ -10,6 +10,7 @@ class Array:
 		self.type = t
 		self.dim = len(s)
 		self.sizes = s
+		self.allocated = False
 
 class Function:
 	def __init__(self, n = None, p = None, b = None, r = None):

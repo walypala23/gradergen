@@ -4,6 +4,7 @@ import sys
 import os
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
+import copy # to avoid making too many / too few "array allocations" in the grader
 
 from gradergen.structures import Variable, Array, Function, IOline, Expression
 from gradergen.languages.C import LanguageC
@@ -397,8 +398,7 @@ def main():
 		("pascal", LanguagePascal, 0),
 		("fast_pascal", LanguagePascal, 1),
 	]:
-		# __import__("pdb").set_trace()
-		data2 = data.copy()
+		data2 = copy.deepcopy(data)
 		if lname in helper_data:
 			data2["helper_data"] = helper_data[lname]
 		language_classes[lname] = lclass(fast_io, data2)
