@@ -4,6 +4,7 @@ taskname='nome_sorgente_contestant'
 
 RED="\033[91m"
 GREEN="\033[92m"
+BOLDW="\e[1;37m"
 NC="\033[0m" # No Color
 OK="$GREEN✓\033[0m"
 NOTOK="$RED✗\033[0m"
@@ -106,6 +107,7 @@ done
 for i in ${TESTS[@]}
 do
     echo
+    printf "${BOLDW}"
     echo $i
     for j in $FILES
     do
