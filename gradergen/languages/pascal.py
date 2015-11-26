@@ -47,13 +47,8 @@ var	\
 	main_function = """\
 
 begin
-{$ifdef EVAL}
-    assign(fr, 'input.txt');
-    assign(fw, 'output.txt');
-{$else}
-    fr := input;
-    fw := output;
-{$endif}
+	%(input)s
+	%(output)s
     reset(fr);
     rewrite(fw);
 """
@@ -229,7 +224,10 @@ end.
 		if self.fast_io:
 			self.out += self.main_function_fast_io
 		else:
-			self.out += self.main_function
+			self.out += self.main_function % {
+				"input": "fr := input;" if self.data["input_file"] == "" else "assign(fr, '" + self.data["input_file"] + "');",
+				"output": "fw := output;" if self.data["output_file"] == "" else "assign(fw, '" + self.data["output_file"] + "');",
+			}
 
 	def insert_footers(self):
 		if self.fast_io:

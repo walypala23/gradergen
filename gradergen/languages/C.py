@@ -30,13 +30,8 @@ static FILE *fr, *fw;
 	main_function = """\
 
 int main() {
-	#ifdef EVAL
-		fr = fopen("input.txt", "r");
-		fw = fopen("output.txt", "w");
-	#else
-		fr = stdin;
-		fw = stdout;
-	#endif
+	%(input)s
+	%(output)s
 """
 
 	footers = """\
@@ -201,7 +196,10 @@ int main() {
 			self.out += "\n" + fast_io_file.read()
 			fast_io_file.close()
 
-		self.out += self.main_function
+		self.out += self.main_function % {
+			"input": "fr = stdin;" if self.data["input_file"] == "" else "fr = fopen(\"" + self.data["input_file"] + "\", \"r\");",
+			"output": "fw = stdout;" if self.data["output_file"] == "" else "fw = fopen(\"" + self.data["output_file"] + "\", \"w\");",
+		}
 
 	def insert_footers(self):
 		self.out += self.footers

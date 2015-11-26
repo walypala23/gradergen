@@ -47,11 +47,25 @@ run_test() {
     do
         echo -n "Running $name... "
 
-        #'time' -f "%e" ./$name 2> $name.time
-        (./$name && echo -e $OK) || echo -e $NOTOK
-        # echo "x.xx" > $name.time
+        infile=$(grep "infile" task.yaml | cut -d":" -f2)
+        infile=${infile:1}
+        outfile=$(grep "outfile" task.yaml | cut -d":" -f2)
+        outfile=${outfile:1}
 
-        mv output.txt $name.out
+        if [ $infile = '""' ];
+        then
+            (./$name < input.txt > output.txt && echo -e $OK) || echo -e $NOTOK
+            mv output.txt $name.out
+        elif [ $infile = "input.txt" ];
+        then
+            (./$name && echo -e $OK) || echo -e $NOTOK
+            mv output.txt $name.out
+        else
+            ln -s input.txt $infile
+            (./$name && echo -e $OK) || echo -e $NOTOK
+            mv $outfile $name.out
+            rm $infile
+        fi
     done
 
     popd
