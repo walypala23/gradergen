@@ -2,11 +2,11 @@
 
 taskname='nome_sorgente_contestant'
 
-RED='\033[0;31m'
-ORANGE='\033[0;33m'
-NC='\033[0m' # No Color
-OK='\033[92m✓\033[0m'
-NOTOK='\033[91m✗\033[0m'
+RED="\033[91m"
+GREEN="\033[92m"
+NC="\033[0m" # No Color
+OK="$GREEN✓\033[0m"
+NOTOK="$RED✗\033[0m"
 
 FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 
@@ -14,12 +14,12 @@ run_test() {
     pushd $1
     gradergen --all 2> $1.errors
 
-    exitcode=$?
-    if [ $exitcode != "0" ]
+    if [ $? != "0" ]
     then
         for name in $FILES
         do
             cat $1.errors > $name.out
+			md5sum $name.out | awk '{print $1}' > $name.out.md5
         done
         popd
         return
@@ -66,6 +66,8 @@ run_test() {
             mv $outfile $name.out
             rm $infile
         fi
+
+        md5sum $name.out | awk '{print $1}' > $name.out.md5
     done
 
     popd
@@ -94,29 +96,34 @@ do
     do
         rm -f $i/$j
         rm -f $i/$j.out
+        rm -f $i/$j.out.md5
         # rm -f $i/$j.time
     done
 
     run_test $i
 done
 
-chosen_color=$RED
-
 for i in ${TESTS[@]}
 do
-    printf "${chosen_color}"
+    echo
+    echo $i
     for j in $FILES
     do
         # echo -n "("$(cat $i/$j.time)"s) "
-        md5sum $i/$j.out
+        #echo $j
+        diff -q $i/correct.md5 $i/$j.out.md5 >/dev/null
+        #diff $i/correct.md5 $i/$j.out.md5
+        if [ $? -ne 0 ];
+        then
+            printf "${RED}"
+            echo $j
+            printf "${NC}"
+            head -c2k $i/$j.out | head -c -1
+            echo
+        else
+            printf "${GREEN}"
+            echo $j
+            printf "${NC}"
+        fi
     done
-    cat $i/correct.md5
-
-    printf "${NC}"
-
-    if [ "$chosen_color" == "$RED" ]; then
-        chosen_color=$ORANGE;
-    else
-        chosen_color=$RED;
-    fi
 done

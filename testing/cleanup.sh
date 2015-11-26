@@ -27,6 +27,7 @@ run_test() {
 
         rm -f $name.time
         rm -f $name.out
+        rm -f $name.out.md5
         rm -f $name
     done
 
