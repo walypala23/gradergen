@@ -111,7 +111,7 @@ int main() {
 			format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
 			pointers = ", ".join("&" + arr.name + indexes for arr in all_arrs)
 			# The space after the format_string is used to ignore all whitespaces
-			self.write_line("fscanf(fr, \"{0} \", {1});".format(format_string, pointers), all_dim+1)
+			self.write_line("fscanf(fr, \" {0}\", {1});".format(format_string, pointers), all_dim+1)
 
 		for i in range(all_dim):
 			self.write_line("}", all_dim - i)
@@ -124,7 +124,7 @@ int main() {
 			format_string = " ".join("%" + self.stdio_types[var.type] for var in all_vars)
 			pointers = ", ".join("&" + var.name for var in all_vars)
 			# The space after the format_string is used to ignore all whitespaces
-			self.write_line("fscanf(fr, \"{0} \", {1});".format(format_string, pointers), 1)
+			self.write_line("fscanf(fr, \" {0}\", {1});".format(format_string, pointers), 1)
 
 	def call_function(self, fun):
 		parameter_names = []
