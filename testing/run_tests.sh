@@ -19,7 +19,7 @@ run_test() {
         for name in $FILES
         do
             cat $1.errors > $name.out
-			md5sum $name.out | awk '{print $1}' > $name.out.md5
+            md5sum $name.out | awk '{print $1}' > $name.out.md5
         done
         popd
         return
