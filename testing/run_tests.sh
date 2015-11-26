@@ -72,11 +72,14 @@ run_test() {
 }
 
 
-if [ -z "$1" ]
-then
+if [[ $# -eq 0 ]] ; then
     TESTS=$(find . -name "test*" -type d | sort -V)
 else
-    TESTS=(test$1)
+    TESTS=()
+    for i in "$@"
+    do
+        TESTS+=("test$i")
+    done
 fi
 
 # Ensure that gradergen is installed
@@ -85,7 +88,7 @@ echo -n "Installation of gradergen... "
 ((python setup.py install >/dev/null 2>/dev/null || sudo python setup.py install >/dev/null 2>/dev/null) && echo -e $OK) || echo -e $NOTOK
 popd
 
-for i in $TESTS
+for i in ${TESTS[@]}
 do
     for j in $FILES
     do
@@ -99,7 +102,7 @@ done
 
 chosen_color=$RED
 
-for i in $TESTS
+for i in ${TESTS[@]}
 do
     printf "${chosen_color}"
     for j in $FILES
