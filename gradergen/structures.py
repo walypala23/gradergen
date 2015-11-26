@@ -47,7 +47,7 @@ class Expression:
 	def to_string(self):
 		res = ""
 		if self.var==None:
-			res += self.b
+			res += str(self.b)
 			return res
 
 		if self.a == -1:
