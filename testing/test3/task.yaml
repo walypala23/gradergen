@@ -1,0 +1,3 @@
+name: nome_sorgente_contestant
+infile: input.txt
+outfile: output.txt

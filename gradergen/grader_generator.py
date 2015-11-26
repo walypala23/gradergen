@@ -5,6 +5,7 @@ import os
 import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 import copy # to avoid making too many / too few "array allocations" in the grader
+import yaml # parse task.yaml
 
 from gradergen.structures import Variable, Array, Function, IOline, Expression
 from gradergen.languages.C import LanguageC
@@ -14,6 +15,7 @@ from gradergen.languages.pascal import LanguagePascal
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
 TYPES = ["", "int", "longint", "char", "real"]
 DESCRIPTION_FILE = "grader_description.txt"
+TASK_YAML = "task.yaml"
 
 # Global variables used in parsing functions
 variables = {}
@@ -279,12 +281,19 @@ def main():
 		help="the file describing the grader"
 	)
 	parser.add_argument(\
-		"--task-name",
-		metavar="task_name",
+		"task_yaml",
+		metavar="task_yaml",
 		action="store", nargs="?",
-		default="the_name_of_the_task",
-		help="the name of the task"
+		help="the file describing the task"
 	)
+	# parser.add_argument(\
+		# "--task-name",
+		# metavar="task_name",
+		# action="store", nargs="?",
+		# default="the_name_of_the_task",
+		# help="the name of the task"
+	# )
+	
 	group = parser.add_mutually_exclusive_group(required=True)
 
 	group.add_argument(\
@@ -321,7 +330,25 @@ def main():
 
 	if args.grader_description is None:
 		sys.exit("The " + DESCRIPTION_FILE + " file cannot be found.")
+	
+	if args.task_yaml is None:
+		# Search for a TASK_YAML
+		directory = os.getcwd()
+		while True:
+			task_yaml = os.path.join(directory, TASK_YAML)
 
+			if os.path.isfile(task_yaml):
+				args.task_yaml = task_yaml
+				break
+
+			if os.path.dirname(directory) == directory:
+				break
+			else:
+				directory = os.path.dirname(directory)
+
+	if args.task_yaml is None:
+		sys.exit("The " + TASK_YAML + " file cannot be found.")
+	
 	# Check if helper files exist and load data
 	helper_data = {}
 	directory = os.path.dirname(args.grader_description)
@@ -375,10 +402,20 @@ def main():
 			parsed = parse_output(line)
 			output_order.append(parsed)
 
-	# End of parsing
+	# End of parsing description file
+	
+	# Parsing task.yaml
+	task_yaml = yaml.safe_load(open(task_yaml, "rt", encoding="utf-8"))
+	task_name = task_yaml["name"]
+	input_file = task_yaml["infile"]
+	output_file = task_yaml["outfile"]
+	
+	# End of parsing task.yaml
 
 	data = {
-		"task_name": args.task_name,
+		"task_name": task_name,
+		"input_file": input_file,
+		"output_file": output_file,
 		"variables": variables,
 		"declarations_order": declarations_order,
 		"arrays": arrays,
