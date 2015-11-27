@@ -293,13 +293,13 @@ def main():
 		# default="the_name_of_the_task",
 		# help="the name of the task"
 	# )
-	
+
 	group = parser.add_mutually_exclusive_group(required=True)
 
 	group.add_argument(\
 		"-l", "--lang",
 		nargs = "+",
-		metavar = ("lang", "grader_filename"),
+		metavar = ("lang", "grader_filename", "template_filename"),
 		dest = "languages",
 		action = "append",
 		help="programming language and grader filename"
@@ -330,7 +330,7 @@ def main():
 
 	if args.grader_description is None:
 		sys.exit("The " + DESCRIPTION_FILE + " file cannot be found.")
-	
+
 	if args.task_yaml is None:
 		# Search for a TASK_YAML
 		directory = os.getcwd()
@@ -348,7 +348,7 @@ def main():
 
 	if args.task_yaml is None:
 		sys.exit("The " + TASK_YAML + " file cannot be found.")
-	
+
 	# Check if helper files exist and load data
 	helper_data = {}
 	directory = os.path.dirname(args.grader_description)
@@ -403,13 +403,13 @@ def main():
 			output_order.append(parsed)
 
 	# End of parsing description file
-	
+
 	# Parsing task.yaml
 	task_yaml = yaml.safe_load(open(task_yaml, "rt", encoding="utf-8"))
 	task_name = task_yaml["name"]
 	input_file = task_yaml["infile"]
 	output_file = task_yaml["outfile"]
-	
+
 	# End of parsing task.yaml
 
 	data = {
@@ -440,7 +440,7 @@ def main():
 			data2["helper_data"] = helper_data[lname]
 		language_classes[lname] = lclass(fast_io, data2)
 
-	chosed_languages = []
+	chosen_languages = []
 	for el in args.languages:
 		if el[0] not in LANGUAGES_LIST:
 			sys.exit("One of the specified languages is not currently supported")
@@ -452,7 +452,7 @@ def main():
 		elif len(el) > 2:
 			sys.exit("For each language you can specify, at most, the name of the grader")
 
-		chosed_languages.append((language_classes[el[0]], el[1], el[0] in helper_data))
+		chosen_languages.append((language_classes[el[0]], el[1], el[0] in helper_data))
 
-	for lang, gradername, use_helper in chosed_languages:
+	for lang, gradername, use_helper in chosen_languages:
 		lang.write_files(gradername, use_helper)
