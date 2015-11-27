@@ -76,7 +76,7 @@ run_test() {
 
 
 if [[ $# -eq 0 ]] ; then
-    TESTS=$(find . -name "test*" -type d | sort -V)
+    TESTS=$(find . -name "test*" -type d | sort -V | sed 's|^./||')
 else
     TESTS=()
     for i in "$@"
