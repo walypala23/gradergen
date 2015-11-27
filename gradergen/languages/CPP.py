@@ -1,4 +1,5 @@
 import pkg_resources
+import sys
 from gradergen import structures
 from gradergen.structures import Variable, Array, Function, IOline, Expression
 from gradergen.languages.C import LanguageC
