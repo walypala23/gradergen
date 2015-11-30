@@ -13,6 +13,15 @@ from gradergen.languages.CPP import LanguageCPP
 from gradergen.languages.pascal import LanguagePascal
 
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
+EXTENSIONS_LIST = \
+{
+	"C": "c",
+	"fast_C": "c",
+	"CPP": "cpp",
+	"fast_CPP": "cpp",
+	"pascal": "pas",
+	"fast_pascal": "pas",
+}
 TYPES = ["", "int", "longint", "char", "real"]
 DESCRIPTION_FILE = "grader_description.txt"
 TASK_YAML = "task.yaml"
@@ -23,22 +32,6 @@ arrays = {}
 functions = {}
 helpers = {}
 
-# Get the correct file name
-def languageize(name, language):
-	name += {
-		"C": ".c",
-		"fast_C": ".c",
-		"CPP": ".cpp",
-		"fast_CPP": ".cpp",
-		"pascal": ".pas",
-		"fast_pascal": ".pas",
-	}[language]
-
-	if "fast" in language:
-		name = "fast_" + name
-
-	return name
-
 def util_is_integer(s):
 	try:
 		n = int(s)
@@ -47,7 +40,7 @@ def util_is_integer(s):
 
 	return True
 
-# Solo cose della forma a*var+-b
+# Parsing expressions like a*var+-b
 def parse_expression(s):
 	a = 1
 	var = None
@@ -444,18 +437,26 @@ def main():
 		language_classes[lname] = lclass(fast_io, data2)
 
 	chosen_languages = []
-	for el in args.languages:
-		if el[0] not in LANGUAGES_LIST:
+	for lang_options in args.languages:
+		lang = lang_options[0]
+		if lang not in LANGUAGES_LIST:
 			sys.exit("One of the specified languages is not currently supported")
+		
+		# grader.extension is the standard name for graders
+		if len(lang_options) <= 1:
+			grader_name = "{0}grader.{1}".format("fast_" if ("fast" in lang) else "", EXTENSIONS_LIST[lang])
+			lang_options.append(grader_name)
+		
+		# template_lang.extension is the standard name for templates
+		if len(lang_options) <= 2:
+			template_name = "template_{0}.{1}".format(lang, EXTENSIONS_LIST[lang])
+			lang_options.append(template_name)
+		
+		elif len(el) > 3:
+			sys.exit("For each language you can specify, at most, the names of grader and template")
 
-		if len(el) == 1:
-			el.append(languageize("grader", el[0]))
-		elif len(el) == 2:
-			el.append(languageize(el[1], el[0]))
-		elif len(el) > 2:
-			sys.exit("For each language you can specify, at most, the name of the grader")
+		chosen_languages.append((language_classes[lang], lang_options[1], lang_options[2], lang in helper_data))
 
-		chosen_languages.append((language_classes[el[0]], el[1], el[0] in helper_data))
-
-	for lang, gradername, use_helper in chosen_languages:
-		lang.write_files(gradername, use_helper)
+	for lang, grader_name, template_name, use_helper in chosen_languages:
+		print(grader_name)
+		lang.write_files(grader_name, template_name, use_helper)

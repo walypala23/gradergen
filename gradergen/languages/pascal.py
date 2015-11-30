@@ -8,13 +8,16 @@ class LanguagePascal(object):
 	def __init__(self, fast_io, data):
 		self.data = data
 
-		self.out = ""
+		self.grader = ""
+		self.template = ""
 		if fast_io == 1:
 			self.fast_io = True
 		else:
 			self.fast_io = False
 
-	types = {'': 'void', 'int':'Longint', 'longint':'Int64', 'char':'Char', 'real':'Double'}
+	types = {'': '', 'int':'Longint', 'longint':'Int64', 'char':'Char', 'real':'Double'}
+	
+	template_types = {'':'', 'int':'1', 'longint':'123456789123', 'char':'\'f\'', 'real':'123.456'}
 
 	headers = """\
 uses %(the_name_of_the_task)s;
@@ -88,12 +91,12 @@ end.
 
 	# write line
 	def write_line(self, line, tabulation = 0):
-		self.out += "\t"*tabulation + line + "\n"
+		self.grader += "\t"*tabulation + line + "\n"
 
 	# write comment
 	def write_comment(self, short_description, tabulation = 0):
 		if len(self.comments[short_description]) > 0:
-			self.out += "\n" + ("\t"*tabulation) + "{ " + self.comments[short_description] +" }\n"
+			self.grader += "\n" + ("\t"*tabulation) + "{ " + self.comments[short_description] +" }\n"
 
 	def declare_variable(self, var):
 		self.write_line("{0} : {1};".format(var.name, self.types[var.type]), 1)
@@ -205,16 +208,16 @@ end.
 			print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
 
 		if self.fast_io:
-			self.out += self.headers_fast_io1 % {"the_name_of_the_task": self.data["task_name"]}
+			self.grader += self.headers_fast_io1 % {"the_name_of_the_task": self.data["task_name"]}
 			fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_input.pas"), "r")
-			self.out += "\n" + fast_io_file.read()
+			self.grader += "\n" + fast_io_file.read()
 			fast_io_file.close()
 			fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_output.pas"), "r")
-			self.out += "\n" + fast_io_file.read()
+			self.grader += "\n" + fast_io_file.read()
 			fast_io_file.close()
-			self.out += self.headers_fast_io2
+			self.grader += self.headers_fast_io2
 		else:
-			self.out += self.headers % {"the_name_of_the_task": self.data["task_name"]}
+			self.grader += self.headers % {"the_name_of_the_task": self.data["task_name"]}
 
 	def insert_main(self):
 		self.write_line("\n{ iterators used in for loops }")
@@ -223,29 +226,31 @@ end.
 			self.write_line(", ".join("i" + str(x) for x in range(max_dim)) + ": Longint;", 1)
 
 		if self.fast_io:
-			self.out += self.main_function_fast_io
+			self.grader += self.main_function_fast_io
 		else:
-			self.out += self.main_function % {
+			self.grader += self.main_function % {
 				"input": "fr := input;" if self.data["input_file"] == "" else "assign(fr, '" + self.data["input_file"] + "');",
 				"output": "fw := output;" if self.data["output_file"] == "" else "assign(fw, '" + self.data["output_file"] + "');",
 			}
 
 	def insert_footers(self):
 		if self.fast_io:
-			self.out += self.footers_fast_io
+			self.grader += self.footers_fast_io
 		else:
-			self.out += self.footers
+			self.grader += self.footers
 
-	def write_files(self, grader_name, use_helper):
+	def write_files(self, grader_name, template_name, use_helper):
 		self.write_grader()
-		self.write(grader_name)
-
+		self.write(grader_name, self.grader)
+		
+		self.write_template()
+		self.write(template_name, self.template)
+		
 		if use_helper:
-			self.write_helper()
-			self.write(self.data["task_name"] + "lib.pas")
+			self.write(self.data["task_name"] + "lib.pas", self.data["helper_data"])
 
 	def write_grader(self):
-		self.out = ""
+		self.grader = ""
 		self.insert_headers()
 
 		self.write_comment("dec_var")
@@ -302,9 +307,60 @@ end.
 
 		self.insert_footers()
 
-	def write_helper(self):
-		self.out = self.data["helper_data"]
+	def write_template(self):
+		self.template = "unit {0};\n\n"
+		self.template += "interface\n\n"
+		
+		for fun in self.data["functions_order"]:
+			typed_parameters = []
+			for i in range(0, len(fun.parameters)):
+				param = fun.parameters[i]
+				if type(param) == structures.Variable:
+					if fun.by_ref[i]:
+						typed_parameters.append("var " + param.name + ": " + self.types[param.type])
+					else:
+						typed_parameters.append(param.name + ": " + self.types[param.type])
+				
+				elif type(param) == structures.Array:
+					typed_parameters.append(param.name + ": " + self.at(param.type, param.dim))
+			
+			if fun.type == '':
+				self.template += "procedure {0}({1});\n\n".format(fun.name, "; ".join(typed_parameters))
+			else:
+				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(typed_parameters), self.types[fun.type])
+			
+		self.template += "implementation\n\n"
+		
+		for fun in self.data["functions_order"]:
+			typed_parameters = []
+			for i in range(0, len(fun.parameters)):
+				param = fun.parameters[i]
+				if type(param) == structures.Variable:
+					if fun.by_ref[i]:
+						typed_parameters.append("var " + param.name + ": " + self.types[param.type])
+					else:
+						typed_parameters.append(param.name + ": " + self.types[param.type])
+				
+				elif type(param) == structures.Array:
+					typed_parameters.append(param.name + ": " + self.at(param.type, param.dim))
+			
+			if fun.type == '':
+				self.template += "procedure {0}({1});\n".format(fun.name, ", ".join(typed_parameters))
+			else:
+				self.template += "function {0}({1}): {2};\n".format(fun.name, ", ".join(typed_parameters), self.types[fun.type])
+			
+			self.template += "begin\n"
+			
+			if fun.type == '':
+				self.template += "\t\n"
+			else:
+				self.template += "\t{0} := {1};\n".format(fun.name, self.template_types[fun.type])
+			
+			self.template += "end;\n\n"
+			
+		
+		self.template += "end.\n"
 
-	def write(self, filename):
+	def write(self, filename, source):
 		with open(filename, "w") as f:
-			f.write(self.out)
+			f.write(source)

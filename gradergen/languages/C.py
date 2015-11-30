@@ -8,7 +8,8 @@ class LanguageC(object):
 	def __init__(self, fast_io, data):
 		self.data = data
 
-		self.out = ""
+		self.grader = ""
+		self.template = ""
 		if fast_io == 1:
 			self.fast_io = True
 		else:
@@ -16,8 +17,10 @@ class LanguageC(object):
 
 	extension = "c"
 
-	types = {'': 'void', 'int':'int', 'longint':'long long int', 'char':'char', 'real':'double'}
-
+	types = {'':'void', 'int':'int', 'longint':'long long int', 'char':'char', 'real':'double'}
+	
+	template_types = {'':'', 'int':'1', 'longint':'123456789123ll', 'char':'\'f\'', 'real':'123.456'}
+	
 	stdio_types = {'int':'d', 'longint':'lld', 'char':'c', 'real':'lf'}
 
 	headers = """\
@@ -60,12 +63,12 @@ int main() {
 
 	# write line
 	def write_line(self, line, tabulation = 0):
-		self.out += "\t"*tabulation + line + "\n"
+		self.grader += "\t"*tabulation + line + "\n"
 
 	# write comment
 	def write_comment(self, short_description, tabulation = 0):
 		if len(self.comments[short_description]) > 0:
-			self.out += "\n" + ("\t"*tabulation) + "// " + self.comments[short_description] +"\n"
+			self.grader += "\n" + ("\t"*tabulation) + "// " + self.comments[short_description] +"\n"
 
 	def declare_variable(self, var):
 		self.write_line("static {0} {1};".format(self.types[var.type], var.name))
@@ -189,28 +192,31 @@ int main() {
 			self.write_line("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), 1)
 
 	def insert_headers(self):
-		self.out += self.headers
+		self.grader += self.headers
 
 	def insert_main(self):
 		if self.fast_io:
 			fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_io." + self.extension), "r")
-			self.out += "\n" + fast_io_file.read()
+			self.grader += "\n" + fast_io_file.read()
 			fast_io_file.close()
 
-		self.out += self.main_function % {
+		self.grader += self.main_function % {
 			"input": "fr = stdin;" if self.data["input_file"] == "" else "fr = fopen(\"" + self.data["input_file"] + "\", \"r\");",
 			"output": "fw = stdout;" if self.data["output_file"] == "" else "fw = fopen(\"" + self.data["output_file"] + "\", \"w\");",
 		}
 
 	def insert_footers(self):
-		self.out += self.footers
+		self.grader += self.footers
 
-	def write_files(self, grader_name, use_helper):
+	def write_files(self, grader_name, template_name, use_helper):
 		self.write_grader(use_helper)
-		self.write(grader_name)
+		self.write(grader_name, self.grader)
+		
+		self.write_template()
+		self.write(template_name, self.template)
 
 	def write_grader(self, use_helper):
-		self.out = ""
+		self.grader = ""
 		self.insert_headers()
 
 		self.write_comment("dec_var")
@@ -226,7 +232,7 @@ int main() {
 
 		if use_helper:
 			self.write_comment("dec_help")
-			self.out += self.data["helper_data"]
+			self.grader += self.data["helper_data"]
 
 		self.insert_main()
 		self.write_comment("input", 1)
@@ -271,9 +277,27 @@ int main() {
 
 		self.insert_footers()
 
-	def write_helper(self):
-		raise Exception("C/C++ can use in-place helpers so why not use them?")
+	def write_template(self):
+		for fun in self.data["functions_order"]:
+			typed_parameters = []
+			for i in range(0, len(fun.parameters)):
+				param = fun.parameters[i]
+				if type(param) == structures.Variable:
+					if fun.by_ref[i]:
+						typed_parameters.append(self.types[param.type] + self.byref_symbol + param.name)
+					else:
+						typed_parameters.append(self.types[param.type] + " " + param.name)
+				elif type(param) == structures.Array:
+					typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
+			
+			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, ", ".join(typed_parameters))
+			
+			# Se ci sono cose passate per ref dovrei riempirle!
+			self.template += "\treturn {0};\n".format(self.template_types[fun.type])
+			
+			self.template += "}\n\n"
+			
 
-	def write(self, filename):
+	def write(self, filename, source):
 		with open(filename, "w") as f:
-			f.write(self.out)
+			f.write(source)
