@@ -148,24 +148,27 @@ def parse_function(line):
 
 		fun_obj.parameters = []
 		fun_obj.by_ref = []
-		parameters = re.split(",", fun[1])
-		for param in parameters:
-			param = param.strip()
+		
+		# Checking if there is at least one parameter
+		if len(fun[1].strip()) > 0:
+			parameters = re.split(",", fun[1])
+			for param in parameters:
+				param = param.strip()
 
-			if param.startswith("&"):
-				param = param[1:]
-				fun_obj.by_ref.append(True)
-			else:
-				fun_obj.by_ref.append(False)
+				if param.startswith("&"):
+					param = param[1:]
+					fun_obj.by_ref.append(True)
+				else:
+					fun_obj.by_ref.append(False)
 
-			if param in variables:
-				fun_obj.parameters.append(variables[param])
-			elif param in arrays:
-				fun_obj.parameters.append(arrays[param])
-				if fun_obj.by_ref[-1]:
-					sys.exit("Gli array non possono essere passati per reference")
-			else:
-				sys.exit("Parametro di funzione non definito")
+				if param in variables:
+					fun_obj.parameters.append(variables[param])
+				elif param in arrays:
+					fun_obj.parameters.append(arrays[param])
+					if fun_obj.by_ref[-1]:
+						sys.exit("Gli array non possono essere passati per reference")
+				else:
+					sys.exit("Parametro di funzione non definito")
 
 	return fun_obj
 

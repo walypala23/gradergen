@@ -1,4 +1,5 @@
 import pkg_resources
+import sys
 from gradergen import structures
 from gradergen.structures import Variable, Array, Function, IOline, Expression
 
@@ -219,13 +220,13 @@ int main() {
 			else:
 				self.declare_array(decl)
 
-		if use_helper:
-			self.write_comment("dec_help")
-			self.out += self.data["helper_data"]
-
 		self.write_comment("dec_fun")
 		for fun in self.data["functions_order"]:
 			self.declare_function(fun)
+
+		if use_helper:
+			self.write_comment("dec_help")
+			self.out += self.data["helper_data"]
 
 		self.insert_main()
 		self.write_comment("input", 1)
@@ -261,13 +262,12 @@ int main() {
 				if type(param) == Variable and fun.by_ref[i]:
 					param.read = True
 
-		if not use_helper:
-			self.write_comment("output", 1)
-			for output_line in self.data["output_order"]:
-				if output_line.type == "Array":
-					self.write_arrays(output_line.list)
-				elif output_line.type == "Variable":
-					self.write_variables(output_line.list)
+		self.write_comment("output", 1)
+		for output_line in self.data["output_order"]:
+			if output_line.type == "Array":
+				self.write_arrays(output_line.list)
+			elif output_line.type == "Variable":
+				self.write_variables(output_line.list)
 
 		self.insert_footers()
 
