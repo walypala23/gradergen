@@ -220,13 +220,13 @@ int main() {
 			else:
 				self.declare_array(decl)
 
-		if use_helper:
-			self.write_comment("dec_help")
-			self.out += self.data["helper_data"]
-
 		self.write_comment("dec_fun")
 		for fun in self.data["functions_order"]:
 			self.declare_function(fun)
+
+		if use_helper:
+			self.write_comment("dec_help")
+			self.out += self.data["helper_data"]
 
 		self.insert_main()
 		self.write_comment("input", 1)
