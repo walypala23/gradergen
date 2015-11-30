@@ -10,3 +10,8 @@
 
 # For python
 __pycache__
+
+# For installation
+build/
+dist/
+gradergen.egg-info/
