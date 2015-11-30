@@ -75,13 +75,14 @@ run_test() {
 }
 
 
-if [[ $# -eq 0 ]] ; then
-    TESTS=$(find . -name "test*" -type d | sort -V | sed 's|^./||')
+if [[ $# -eq 0 ]] 
+then
+    TESTS=$(find . -name "*_test" -type d | sort -V | sed 's|^./||')
 else
     TESTS=()
-    for i in "$@"
+    for name in "$@"
     do
-        TESTS+=("test$i")
+        TESTS+=("$name_test")
     done
 fi
 

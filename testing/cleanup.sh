@@ -11,6 +11,13 @@ run_test() {
     do
         rm -f $name.c $name.cpp $name.pas $name.o $name.ppu $taskname.ppu
     done
+    
+    rm -f *.o
+    rm -f *.ppu
+    rm -f *.errors
+    rm -f *lib.pas
+    
+    rm -f template_CPP.cpp template_fast_CPP.cpp template_C.c template_fast_C.c template_pascal.pas template_fast_pascal.pas  
 
     # If needed, delete the input file
     if [ -f input.py ]; then
@@ -35,7 +42,7 @@ run_test() {
 }
 
 
-TESTS=$(find . -name "test*" -type d | sort -V)
+TESTS=$(find . -name "*_test" -type d | sort -V)
 
 for i in $TESTS
 do
