@@ -13,6 +13,15 @@ from gradergen.languages.CPP import LanguageCPP
 from gradergen.languages.pascal import LanguagePascal
 
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
+CLASSES_LIST = \
+{
+	"C": (LanguageC, 0),
+	"fast_C": (LanguageC, 1),
+	"CPP": (LanguageCPP, 0),
+	"fast_CPP": (LanguageCPP, 1),
+	"pascal": (LanguagePascal, 0),
+	"fast_pascal": (LanguagePascal, 1),
+}
 EXTENSIONS_LIST = \
 {
 	"C": "c",
@@ -269,54 +278,56 @@ def main():
 	functions_order = []
 	helpers_order = []
 
-	parser = argparse.ArgumentParser(description = "Automatically generate grader files in various languages")
+	parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
 	parser.add_argument(\
-		"grader_description",
-		metavar="grader_description",
-		action="store", nargs="?",
-		help="the file describing the grader"
+		"task_spec",
+		metavar = "task_spec",
+		action = "store", nargs="?",
+		help = "the file describing the grader"
 	)
 	parser.add_argument(\
 		"task_yaml",
-		metavar="task_yaml",
-		action="store", nargs="?",
-		help="the file describing the task"
+		metavar = "task_yaml",
+		action = "store", nargs="?",
+		help = "the file describing the task"
 	)
-	# parser.add_argument(\
-		# "--task-name",
-		# metavar="task_name",
-		# action="store", nargs="?",
-		# default="the_name_of_the_task",
-		# help="the name of the task"
-	# )
 
 	group = parser.add_mutually_exclusive_group(required=True)
 
 	group.add_argument(\
 		"-l", "--lang",
 		nargs = "+",
-		metavar = ("lang", "grader_filename", "template_filename"),
+		metavar = ("lang", "filename"),
 		dest = "languages",
 		action = "append",
-		help="programming language and grader filename"
+		help = "programming language, grader and template"
 	)
 
 	group.add_argument(\
 		"-a", "--all",
-		action="store_true",
-		default=False,
-		help="create grader (with filename 'grader.lang') in all supported languages"
+		action = "store_true",
+		default = False,
+		help = "create graders and templates in all supported languages (with standard names)"
+	)
+	
+	group.add_argument(\
+		"--stage",
+		nargs = "?",
+		metavar = "IO_type",
+		const = "normal",
+		default = False,
+		help = "create graders and templates in C++ following stages' standard (sol/ and att/), IO_type decide whether grader in sol/ must have fastIO or not"
 	)
 
 	args = parser.parse_args()
-	if args.grader_description is None:
+	if args.task_spec is None:
 		# Search for a DESCRIPTION_FILE
 		directory = os.getcwd()
 		while True:
 			description = os.path.join(directory, DESCRIPTION_FILE)
 
 			if os.path.isfile(description):
-				args.grader_description = description
+				args.task_spec = description
 				break
 
 			if os.path.dirname(directory) == directory:
@@ -324,7 +335,7 @@ def main():
 			else:
 				directory = os.path.dirname(directory)
 
-	if args.grader_description is None:
+	if args.task_spec is None:
 		sys.exit("The " + DESCRIPTION_FILE + " file cannot be found.")
 
 	if args.task_yaml is None:
@@ -347,7 +358,7 @@ def main():
 
 	# Check if helper files exist and load data
 	helper_data = {}
-	directory = os.path.dirname(args.grader_description)
+	directory = os.path.dirname(args.task_spec)
 
 	def load_helper_data(ext, lang):
 		try:
@@ -363,14 +374,11 @@ def main():
 	load_helper_data("cpp", "CPP")
 	load_helper_data("cpp", "fast_CPP")
 
-	# Parse description file
-	with open(args.grader_description, "r") as grader_description:
-		lines = grader_description.read().splitlines()
+	# Parsing description file
+	with open(args.task_spec, "r") as task_spec:
+		lines = task_spec.read().splitlines()
 		section_lines = parse_description(lines)
-
-	if args.all:
-		args.languages = [[lang] for lang in LANGUAGES_LIST]
-
+	
 	# Parsing variables
 	for line in section_lines["variables"]:
 		parsed = parse_variable(line)
@@ -408,6 +416,25 @@ def main():
 
 	# End of parsing task.yaml
 
+	# --all, --stage
+	if args.all:
+		args.languages = [[lang] for lang in LANGUAGES_LIST]
+
+	
+	if args.stage:
+		if args.stage == "fast":
+			args.languages = [
+				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
+				["fast_CPP", "sol/grader.cpp", "sol/template_cpp.cpp"]
+			]
+		elif args.stage == "normal":
+			args.languages = [
+				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
+				["CPP", "sol/grader.cpp", "sol/template_cpp.cpp"]
+			]
+		else:
+			sys.exit("The argument of --stage must be `normal`, `fast` or empty.")
+	
 	data = {
 		"task_name": task_name,
 		"input_file": input_file,
@@ -420,21 +447,6 @@ def main():
 		"input_order": input_order,
 		"output_order": output_order,
 	}
-
-	# All languages are initializated (not all are written to file)
-	language_classes = {}
-	for lname, lclass, fast_io in [
-		("C", LanguageC, 0),
-		("fast_C", LanguageC, 1),
-		("CPP", LanguageCPP, 0),
-		("fast_CPP", LanguageCPP, 1),
-		("pascal", LanguagePascal, 0),
-		("fast_pascal", LanguagePascal, 1),
-	]:
-		data2 = copy.deepcopy(data)
-		if lname in helper_data:
-			data2["helper_data"] = helper_data[lname]
-		language_classes[lname] = lclass(fast_io, data2)
 
 	chosen_languages = []
 	for lang_options in args.languages:
@@ -452,11 +464,17 @@ def main():
 			template_name = "template_{0}.{1}".format(lang, EXTENSIONS_LIST[lang])
 			lang_options.append(template_name)
 		
-		elif len(el) > 3:
+		if len(lang_options) > 3:
 			sys.exit("For each language you can specify, at most, the names of grader and template")
 
-		chosen_languages.append((language_classes[lang], lang_options[1], lang_options[2], lang in helper_data))
+		chosen_languages.append((lang, lang_options[1], lang_options[2], (lang in helper_data)))
 
 	for lang, grader_name, template_name, use_helper in chosen_languages:
-		print(grader_name)
-		lang.write_files(grader_name, template_name, use_helper)
+		print(grader_name, template_name)
+		
+		data2 = copy.deepcopy(data)
+		if lang in helper_data:
+			data2["helper_data"] = helper_data[lang]
+		
+		LangClass, fast_io = CLASSES_LIST[lang]
+		LangClass(fast_io, data2).write_files(grader_name, template_name, use_helper)

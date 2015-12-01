@@ -1,5 +1,6 @@
 import pkg_resources
 import sys
+import os
 from gradergen import structures
 from gradergen.structures import Variable, Array, Function, IOline, Expression
 
@@ -390,5 +391,11 @@ end.
 		self.template += "end.\n"
 
 	def write(self, filename, source):
+		# Unlink is used to avoid following symlink
+		try:
+			os.unlink(filename)
+		except OSError:
+			pass
+		
 		with open(filename, "w") as f:
 			f.write(source)
