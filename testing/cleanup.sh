@@ -5,40 +5,29 @@ taskname='nome_sorgente_contestant'
 FILES='c fast_c cpp fast_cpp pascal fast_pascal'
 
 run_test() {
-    pushd $1
-
-    for name in grader fast_grader
-    do
-        rm -f $name.c $name.cpp $name.pas $name.o $name.ppu $taskname.ppu
-    done
+    pushd $1 > /dev/null
     
-    rm -f *.o
-    rm -f *.ppu
-    rm -f *.errors
-    rm -f *lib.pas
+    mkdir ../TempDir
+    cp grader_description.txt task.yaml soluzione.* helper_data.* correct.md5 ../TempDir/ > /dev/null 2> /dev/null
     
-    rm -f template_CPP.cpp template_fast_CPP.cpp template_C.c template_fast_C.c template_pascal.pas template_fast_pascal.pas  
-
-    # If needed, delete the input file
-    if [ -f input.py ]; then
-        rm -f input.txt
+    # Save input or input generator
+    if [ -f input.py ]
+    then
+        cp input.py ../TempDir/input.py
+    elif [ -f input.cpp ]
+    then
+        cp input.cpp ../TempDir/input.cpp
+    elif [ -f input.txt ]
+    then
+		cp input.txt ../TempDir/input.txt
     fi
-    if [ -f input.cpp ]; then
-        rm -f input.txt
-        rm -f input
-    fi
-
-    for name in $FILES
-    do
-        echo $name
-
-        rm -f $name.time
-        rm -f $name.out
-        rm -f $name.out.md5
-        rm -f $name
-    done
-
-    popd
+    
+    rm *
+	
+	cp ../TempDir/* .
+	rm -r ../TempDir
+	
+    popd > /dev/null
 }
 
 
@@ -49,4 +38,9 @@ do
     run_test $i
 done
 
-tree -C
+# If quiet flag is passed, tree is not showed
+if [[ "$#" -eq 0 ]] || [ "$1" != "-q" ]
+then
+	tree -C
+fi
+
