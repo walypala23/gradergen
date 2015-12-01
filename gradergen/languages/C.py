@@ -47,6 +47,8 @@ int main() {
 """
 
 	byref_symbol = "* "
+	byref_call = "&"
+	byref_access = "*"
 
 	comments = {
 		"dec_var": "Declaring variables",
@@ -134,7 +136,7 @@ int main() {
 		parameter_names = []
 		for i in range(len(fun.parameters)):
 			if fun.by_ref[i]:
-				parameter_names.append("&" + fun.parameters[i].name)
+				parameter_names.append(self.byref_call + fun.parameters[i].name)
 			else:
 				parameter_names.append(fun.parameters[i].name)
 
@@ -292,7 +294,14 @@ int main() {
 			
 			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, ", ".join(typed_parameters))
 			
-			# Se ci sono cose passate per ref dovrei riempirle!
+			# Variables passed by ref are filled
+			for i in range(0, len(fun.parameters)):
+				param = fun.parameters[i]
+				if fun.by_ref[i]:
+					if type(param) == structures.Variable:
+						self.template += "\t{0}{1} = {2};\n".format(self.byref_access, param.name, self.template_types[param.type])
+					elif type(param) == structurs.Array:
+						self.template += "\t{0}{1} = {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
 			self.template += "\treturn {0};\n".format(self.template_types[fun.type])
 			
 			self.template += "}\n\n"

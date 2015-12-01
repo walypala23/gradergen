@@ -311,25 +311,21 @@ end.
 		self.template = "unit {0};\n\n".format(self.data["task_name"])
 		self.template += "interface\n\n"
 		
+		
+		matrix_types = []
 		for fun in self.data["functions_order"]:
-			typed_parameters = []
-			for i in range(0, len(fun.parameters)):
-				param = fun.parameters[i]
-				if type(param) == structures.Variable:
-					if fun.by_ref[i]:
-						typed_parameters.append("var " + param.name + ": " + self.types[param.type])
-					else:
-						typed_parameters.append(param.name + ": " + self.types[param.type])
-				
-				elif type(param) == structures.Array:
-					typed_parameters.append(param.name + ": " + self.at(param.type, param.dim))
-			
-			if fun.type == '':
-				self.template += "procedure {0}({1});\n\n".format(fun.name, "; ".join(typed_parameters))
-			else:
-				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(typed_parameters), self.types[fun.type])
-			
-		self.template += "implementation\n\n"
+			for param in fun.parameters:
+				if type(param) == structures.Array:
+					if param.dim == 2:
+						matrix_types.append(param.type)
+					elif param.dim > 2:
+						print("WARNING: pascal doesn't support multidimensional array of dimension > 2 passed as argument")
+		
+		if len(matrix_types) > 0:
+			self.template += "type\n"
+			for matrix_type in set(matrix_types):
+				self.template += "\t{0}matrix = array of array of {0};\n".format(matrix_type)
+			self.template += "\n"
 		
 		for fun in self.data["functions_order"]:
 			typed_parameters = []
@@ -339,11 +335,32 @@ end.
 				if type(param) == structures.Variable:
 					typed_param += param.name + ": " + self.types[param.type]
 				elif type(param) == structures.Array:
-					typed_param +=  param.name + ": " + self.at(param.type, param.dim)
+					if param.dim == 1:
+						typed_param += param.name + ": " + self.at(param.type, param.dim)
+					else:
+						typed_param += param.name + ": " + param.type + "matrix"
+				typed_parameters.append(typed_param)
 					
-					if param.dim > 1:
-						print("WARNING: pascal doesn't support multidimensional array passed as argument")
-					
+			if fun.type == '':
+				self.template += "procedure {0}({1});\n\n".format(fun.name, "; ".join(typed_parameters))
+			else:
+				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(typed_parameters), self.types[fun.type])
+			
+		self.template += "implementation\n\n"
+				
+		
+		for fun in self.data["functions_order"]:
+			typed_parameters = []
+			for i in range(0, len(fun.parameters)):
+				param = fun.parameters[i]
+				typed_param = "var " if fun.by_ref[i] else ""
+				if type(param) == structures.Variable:
+					typed_param += param.name + ": " + self.types[param.type]
+				elif type(param) == structures.Array:
+					if param.dim == 1:
+						typed_param += param.name + ": " + self.at(param.type, param.dim)
+					else:
+						typed_param += param.name + ": " + param.type + "matrix"
 				typed_parameters.append(typed_param)
 			
 			if fun.type == '':
@@ -352,6 +369,15 @@ end.
 				self.template += "function {0}({1}): {2};\n".format(fun.name, "; ".join(typed_parameters), self.types[fun.type])
 			
 			self.template += "begin\n"
+			
+			# Variables passed by ref are filled
+			for i in range(0, len(fun.parameters)):
+				param = fun.parameters[i]
+				if fun.by_ref[i]:
+					if type(param) == structures.Variable:
+						self.template += "\t{0} := {1};\n".format(param.name, self.template_types[param.type])
+					elif type(param) == structurs.Array:
+						self.template += "\t{0}{1} := {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
 			
 			if fun.type == '':
 				self.template += "\t\n"
