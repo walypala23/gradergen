@@ -21,7 +21,7 @@ run_test() {
 	outfile=${outfile:1}
     
     gradergen --all 2> $1.errors
-
+    
     if [ $? != "0" ]
     then
         for name in $FILES
@@ -32,7 +32,9 @@ run_test() {
         popd
         return
     fi
-
+	
+	echo 
+	
     # If needed, create the input file
     if [ -f input.py ]; then
         python input.py > input.txt
@@ -79,7 +81,10 @@ run_test() {
 
 	 echo -n "Compiling templates... "
 	
+	
+	
 	cp template_pascal.pas $taskname.pas
+	rm *.o *.ppu # Otherwise fpc seems to be non-deterministic...
 	
     (gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C >template_C.out 2>template_CPP.out \
       && gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C >template_fast_C.out 2>template_fast_C.out \
