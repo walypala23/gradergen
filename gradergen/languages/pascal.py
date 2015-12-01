@@ -308,7 +308,7 @@ end.
 		self.insert_footers()
 
 	def write_template(self):
-		self.template = "unit {0};\n\n"
+		self.template = "unit {0};\n\n".format(self.data["task_name"])
 		self.template += "interface\n\n"
 		
 		for fun in self.data["functions_order"]:
@@ -335,19 +335,21 @@ end.
 			typed_parameters = []
 			for i in range(0, len(fun.parameters)):
 				param = fun.parameters[i]
+				typed_param = "var " if fun.by_ref[i] else ""
 				if type(param) == structures.Variable:
-					if fun.by_ref[i]:
-						typed_parameters.append("var " + param.name + ": " + self.types[param.type])
-					else:
-						typed_parameters.append(param.name + ": " + self.types[param.type])
-				
+					typed_param += param.name + ": " + self.types[param.type]
 				elif type(param) == structures.Array:
-					typed_parameters.append(param.name + ": " + self.at(param.type, param.dim))
+					typed_param +=  param.name + ": " + self.at(param.type, param.dim)
+					
+					if param.dim > 1:
+						print("WARNING: pascal doesn't support multidimensional array passed as argument")
+					
+				typed_parameters.append(typed_param)
 			
 			if fun.type == '':
-				self.template += "procedure {0}({1});\n".format(fun.name, ", ".join(typed_parameters))
+				self.template += "procedure {0}({1});\n".format(fun.name, "; ".join(typed_parameters))
 			else:
-				self.template += "function {0}({1}): {2};\n".format(fun.name, ", ".join(typed_parameters), self.types[fun.type])
+				self.template += "function {0}({1}): {2};\n".format(fun.name, "; ".join(typed_parameters), self.types[fun.type])
 			
 			self.template += "begin\n"
 			
