@@ -23,7 +23,7 @@ EXTENSIONS_LIST = \
 	"fast_pascal": "pas",
 }
 TYPES = ["", "int", "longint", "char", "real"]
-DESCRIPTION_FILE = "grader_description.txt"
+DESCRIPTION_FILE = "task.spec"
 TASK_YAML = "task.yaml"
 
 # Global variables used in parsing functions
