@@ -39,7 +39,6 @@ TASK_YAML = "task.yaml"
 variables = {}
 arrays = {}
 functions = {}
-helpers = {}
 
 def util_is_integer(s):
 	try:
@@ -240,7 +239,7 @@ def parse_output(line):
 
 # Parsing grader description file
 def parse_description(lines):
-	sections = {"variables": False, "functions": False, "input": False, "output": False, "helpers": False}
+	sections = {"variables": False, "functions": False, "input": False, "output": False}
 	section_lines = {}
 	act_section = None
 	for line in lines:
@@ -270,13 +269,12 @@ def parse_description(lines):
 def main():
 	global languages_serializer
 	global DESCRIPTION_FILE
-	global variables, arrays, functions, helpers
+	global variables, arrays, functions
 
 	declarations_order = []
 	input_order = []
 	output_order = []
 	functions_order = []
-	helpers_order = []
 
 	parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
 	parser.add_argument(\

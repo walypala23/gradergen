@@ -16,10 +16,6 @@ int direzione
 
 Pianifica(N, altezza)
 
-***helpers***
-
-Abbatti(indice, direzione)
-
 ***input***
 
 N
