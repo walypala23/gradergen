@@ -86,6 +86,18 @@ end.
 		"output": "Writing output",
 	}
 
+	# Print the string corresponding to a parameter
+	def print_parameter(self, param):
+		printed_param = ("var " if param.by_ref else "") + param.name + ": "
+		if param.dim == 0:
+			typed_param += self.types[param.type]
+		elif param.dim == 1:
+			typed_param += self.at(param.type, param.dim)
+		else:
+			typed_param += param.type + "matrix"
+		
+		return printed_param
+
 	# array type
 	def at(self, type, dim):
 		return "array of "*dim + self.types[type]
@@ -109,7 +121,7 @@ end.
 		if arr.type == "real" and self.fast_io:
 			print("WARNING: pascal doesn't support fast output of floating point variables")
 
-	def declare_function(self, fun):  # forse non serve dichiarare le funzioni
+	def declare_prototype(self, fun):  # In pascal it is not needed to declare user functions in grader.pas
 		pass
 
 	def allocate_array(self, arr):
@@ -152,7 +164,8 @@ end.
 			# self.write_line("readln(fr, {0});".format(pointers), 1)
 
 	def call_function(self, fun):
-		parameters = ', '.join([param.name for param in fun.parameters])
+		parameters = ', '.join([var.name for (var, by_ref) in fun.parameters])
+		
 		if fun.type == "":
 			self.write_line("{0}({1});".format(fun.name, parameters), 1)
 		else:
@@ -255,19 +268,19 @@ end.
 		self.insert_headers()
 
 		self.write_comment("dec_var")
-		for decl in self.data["declarations_order"]:
-			if type(decl) == Variable:
-				self.declare_variable(decl)
+		for var in self.data["variables"]:
+			if var == Variable:
+				self.declare_variable(var)
 			else:
-				self.declare_array(decl)
+				self.declare_array(var)
 
 		self.write_comment("dec_fun")
-		for fun in self.data["functions_order"]:
-			self.declare_function(fun)
+		for fun in self.data["prototypes"]:
+			self.declare_prototype(fun)
 
 		self.insert_main()
 		self.write_comment("input", 1)
-		for input_line in self.data["input_order"]:
+		for input_line in self.data["input"]:
 			if input_line.type == "Array":
 				for arr in input_line.list:
 					self.allocate_array(arr)
@@ -278,15 +291,14 @@ end.
 				self.read_variables(input_line.list)
 
 		self.write_comment("call_fun", 1)
-		for fun in self.data["functions_order"]:
-			for i in range(len(fun.parameters)):
-				param = fun.parameters[i]
-				if type(param) == Array and param.allocated == False:
-					if not all((expr.var is None or expr.var.read) for expr in param.sizes):
+		for fun in self.data["calls"]:
+			for (var, by_ref) in fun.parameters:
+				if type(var) == Array and var.allocated == False:
+					if not all((expr.var is None or expr.var.read) for expr in var.sizes):
 						sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
-					self.allocate_array(param)
-					param.allocated = True
-				if type(param) == Variable and not param.read and not fun.by_ref[i]:
+					self.allocate_array(var)
+					var.allocated = True
+				if type(var) == Variable and not var.read and not by_ref:
 					sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
 
 			self.call_function(fun)
@@ -294,13 +306,12 @@ end.
 				fun.return_var.read = True
 
 			# Variables passed by reference are "read"
-			for i in range(len(fun.parameters)):
-				param = fun.parameters[i]
-				if type(param) == Variable and fun.by_ref[i]:
-					param.read = True
+			for var, by_ref in fun.parameters:
+				if type(var) == Variable and by_ref:
+					var.read = True
 
 		self.write_comment("output", 1)
-		for output_line in self.data["output_order"]:
+		for output_line in self.data["output"]:
 			if output_line.type == "Array":
 				self.write_arrays(output_line.list)
 			elif output_line.type == "Variable":
@@ -314,7 +325,7 @@ end.
 		
 		
 		matrix_types = []
-		for fun in self.data["functions_order"]:
+		for fun in self.data["prototypes"]:
 			for param in fun.parameters:
 				if type(param) == structures.Array:
 					if param.dim == 2:
@@ -328,7 +339,7 @@ end.
 				self.template += "\t{0}matrix = array of array of {0};\n".format(matrix_type)
 			self.template += "\n"
 		
-		for fun in self.data["functions_order"]:
+		for fun in self.data["prototypes"]:
 			typed_parameters = []
 			for i in range(0, len(fun.parameters)):
 				param = fun.parameters[i]
@@ -350,20 +361,8 @@ end.
 		self.template += "implementation\n\n"
 				
 		
-		for fun in self.data["functions_order"]:
-			typed_parameters = []
-			for i in range(0, len(fun.parameters)):
-				param = fun.parameters[i]
-				typed_param = "var " if fun.by_ref[i] else ""
-				if type(param) == structures.Variable:
-					typed_param += param.name + ": " + self.types[param.type]
-				elif type(param) == structures.Array:
-					if param.dim == 1:
-						typed_param += param.name + ": " + self.at(param.type, param.dim)
-					else:
-						typed_param += param.name + ": " + param.type + "matrix"
-				typed_parameters.append(typed_param)
-			
+		for fun in self.data["prototypes"]:
+			printed_parameters = [print_parameter(param) for param in fun.parameters]
 			if fun.type == '':
 				self.template += "procedure {0}({1});\n".format(fun.name, "; ".join(typed_parameters))
 			else:
@@ -372,12 +371,11 @@ end.
 			self.template += "begin\n"
 			
 			# Variables passed by ref are filled
-			for i in range(0, len(fun.parameters)):
-				param = fun.parameters[i]
-				if fun.by_ref[i]:
-					if type(param) == structures.Variable:
+			for param in fun.parameters:
+				if param.by_ref:
+					if param.dim == 0:
 						self.template += "\t{0} := {1};\n".format(param.name, self.template_types[param.type])
-					elif type(param) == structurs.Array:
+					else:
 						self.template += "\t{0}{1} := {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
 			
 			if fun.type == '':

@@ -35,10 +35,36 @@ TYPES = ["", "int", "longint", "char", "real"]
 DESCRIPTION_FILE = "task.spec"
 TASK_YAML = "task.yaml"
 
-# Global variables used in parsing functions
-variables = {}
-arrays = {}
-functions = {}
+# variables is used in parsing functions and must be global
+variables = []
+
+def get_variable(name):
+	global variables
+	for var in variables:
+		if var.name == name:
+			return var
+	sys.exit("Una delle variabili a cui ci si riferisce non è stata dichiarata.")
+
+def get_primitive_variable(name):
+	var = get_variable(name)
+	if type(var) == Array:
+		sys.exit("Una variabile che deve essere primitiva è un array.")
+	
+	return var
+
+def get_array_variable(name):
+	var = get_variable(name)
+	if type(var) == Variable:
+		sys.exit("Una variabile che deve essere array è un tipo primitivo.")
+	
+	return var
+
+
+def add_used_name(s):
+	if s in add_used_name.names:
+		sys.exit("I nomi delle variabili, degli array e delle funzioni non devono coincidere.")
+	add_used_name.names.add(s)
+add_used_name.names = set()
 
 def util_is_integer(s):
 	try:
@@ -50,6 +76,7 @@ def util_is_integer(s):
 
 # Parsing expressions like a*var+-b
 def parse_expression(s):
+	# FIXME: Dovrei usare global variables... ?
 	a = 1
 	var = None
 	b = 0
@@ -71,12 +98,10 @@ def parse_expression(s):
 	temp_var = re.match("[a-zA-Z_][0-9a-zA-Z_]*", s)
 	if temp_var:
 		name = temp_var.group(0)
-		if name not in variables:
-			sys.exit("Le variabili nelle espressioni devono essere dichiarate")
-		elif variables[name].type not in ["int", "longint"]:
+		var = get_primitive_variable(name)
+		if var.type not in ["int", "longint"]:
 			sys.exit("Le variabili nelle espressioni devono essere di tipo intero")
-		else:
-			var = variables[name]
+		
 		s = s[len(name):]
 
 	# Parsing b
@@ -89,8 +114,6 @@ def parse_expression(s):
 	return Expression(var, a, b)
 
 def parse_variable(line):
-	global variables, arrays, functions
-
 	var = re.split('[ \[\]]', line) # Split line by square brackets and space
 	var = [x for x in var if x] # Remove empty chunks
 
@@ -99,17 +122,14 @@ def parse_variable(line):
 
 	if not re.match("^[a-zA-Z_$][0-9a-zA-Z_$]*$", var[1]):
 		sys.exit("Il nome di una variabile contiene dei caratteri non ammessi")
-
+	
+	add_used_name(var[1])
+	
 	if len(var) == 2:
-		if var[1] in variables or var[1] in arrays:
-			sys.exit("Nome della variabile già utilizzata")
 		var_obj = Variable(var[1], var[0])
 		return var_obj;
-
 	else:
 		dim = len(var)-2
-		if var[1] in variables or var[1] in arrays:
-			sys.exit("Nome dell'array già utilizzato")
 		if dim == 0:
 			sys.exit("Dimensioni dell'array non specificate")
 		sizes = [parse_expression(expr) for expr in var[2:]]
@@ -117,94 +137,112 @@ def parse_variable(line):
 		arr_obj = Array(var[1], var[0], sizes)
 		return arr_obj
 
-def parse_function(line):
-	global variables, arrays, functions
+def parse_prototype(line):
+	proto_obj = Prototype()
 
-	fun_obj = Function()
+	first_split = re.split("[\(\)]", line)
+	if len(first_split) != 3:
+		sys.exit("La descrizione di un prototipo ha un numero errato di parentesi tonde")
+	
+	type_name = re.split(" ", first_split[0].strip()) #type name or only name
+	parameters = re.split(",", first_split[1]) # with reference
+	
+	if len(type_name) == 1:
+		proto_obj.name = type_name[0]
+	else if len(type_name) == 2:
+		proto_obj.type = type_name[0]
+		proto_obj.name = type_name[1]
+	else:
+		sys.exit("Uno dei prototipi è malformato.")
+	
+	add_used_name(proto_obj.name)
+	
+	for param in parameter:
+		param = param.strip()
+		if len(param) == 0:
+			continue
+		
+		#TODO: Devo parsare il parametro
+		by_ref = "&" in param
+		dim = param.count("[]")
+		
+		param = re.sub("[&\[\]]", "", param)
+		param = re.sub(" +", " ", param).strip()
+		
+		type_name = re.split(" ")
+		
+		if len(type_name) != 2:
+			sys.exit("Uno dei prototipi è malformato")
+		
+		proto_obj.parameters.append(Parameter(type_name[1], type_name[0], dim, by_ref))
 
-	fun = re.split("=", line)
-	if len(fun) > 2:
+	return proto_obj
+	
+def parse_call(line):
+	fun_obj = Call()
+	
+	line = re.split("=", line)
+	if len(line) > 2:
 		sys.exit("La descrizione di una funzione ha troppi caratteri '='")
-	elif len(fun) == 2:
-		var = fun[0].strip()
-		if var not in variables:
-			sys.exit("Variabile di ritorno di una funzione non definita")
+	elif len(line) == 2:
+		var = line[0].strip()
 
-		fun_obj.type = variables[var].type
-		fun_obj.return_var = variables[var]
-		fun = fun[1].strip()
+		fun_obj.type = get_primitive_variable(var).type
+		fun_obj.return_var = get_primitive_variable(var)
+		line = line[1].strip()
 	else:
 		fun_obj.type = ""
-		fun = fun[0]
+		fun = line[0]
 
-	fun = re.split("[\(\)]", fun)
-	if len(fun) != 3:
+	line = re.split("[\(\)]", line)
+	if len(line) != 3:
 		sys.exit("La descrizione di una funzione ha un numero errato di parentesi")
 	else:
-		name = fun[0].strip()
-		if name in variables or name in arrays:
-			sys.exit("Il nome di una funzione è già usato")
+		name = line[0].strip()
+		add_used_name(name)
 
 		fun_obj.name = name
 
 		fun_obj.parameters = []
-		fun_obj.by_ref = []
 		
-		# Checking if there is at least one parameter
-		if len(fun[1].strip()) > 0:
-			parameters = re.split(",", fun[1])
+		if len(line[1].strip()) > 0:
+			parameters = re.split(",", line[1])
 			for param in parameters:
 				param = param.strip()
-
+				by_ref = False
+				
 				if param.startswith("&"):
 					param = param[1:]
-					fun_obj.by_ref.append(True)
-				else:
-					fun_obj.by_ref.append(False)
-
-				if param in variables:
-					fun_obj.parameters.append(variables[param])
-				elif param in arrays:
-					fun_obj.parameters.append(arrays[param])
-					if fun_obj.by_ref[-1]:
-						sys.exit("Gli array non possono essere passati per reference")
-				else:
-					sys.exit("Parametro di funzione non definito")
+					by_ref = True
+				
+				fun_obj.parameters.append((get_variable(param), by_ref))
 
 	return fun_obj
 
 def parse_input(line):
-	global variables, arrays, functions
-
 	if "[" in line: # Read arrays
 		all_arrs = re.sub("[\[\]]", "", line) # Remove square brackets
 		all_arrs = re.split(" ", all_arrs) # Split line by spaces
-		all_arrs = [x for x in all_arrs if x] # Remove empty chuncks
+		all_arrs = [get_array_variable(name) for name in all_arrs if name] # Remove empty chuncks
 
-		for name in all_arrs:
-			if name not in arrays:
-				sys.exit("Un array da leggere non esiste")
-
-			arr = arrays[name]
-			if arr.sizes != arrays[all_arrs[0]].sizes:
+		for arr in all_arrs:
+			if arr.sizes != all_arrs[0].sizes:
 				sys.exit("Array da leggere insieme devono avere le stesse dimensioni")
 
 			for expr in arr.sizes:
 				if expr.var is not None and expr.var.read == False:
 					sys.exit("Quando si legge un array devono essere note le dimensioni")
 
-		input_line = IOline("Array", [arrays[name] for name in all_arrs], arrays[all_arrs[0]].sizes)
+		input_line = IOline("Array", all_arrs, all_arrs[0].sizes)
 		return input_line
 
 	else: # Read variables
 		all_vars = re.split(" ", line) # Split line by spaces
-		all_vars = [x for x in all_vars if x] # Remove empty chuncks
-		for name in all_vars:
-			if name not in variables:
-				sys.exit("Una variabile da leggere non esiste")
-			variables[name].read = True
+		all_vars = [get_primitive_variable(name) for name in all_vars if name] # Remove empty chuncks
+		for var in all_vars:
+			var.read = True
 
-		input_line = IOline("Variable", [variables[name] for name in all_vars])
+		input_line = IOline("Variable", all_vars)
 		return input_line
 
 def parse_output(line):
@@ -213,38 +251,38 @@ def parse_output(line):
 	if "[" in line: # Write arrays
 		all_arrs = re.sub("[\[\]]", "", line) # Remove square brackets
 		all_arrs = re.split(" ", all_arrs) # Split line by spaces
-		all_arrs = [x for x in all_arrs if x] # Remove empty chuncks
+		all_arrs = [get_array_variable(name) for name in all_arrs if name] # Remove empty chuncks
 
-		for name in all_arrs:
-			if name not in arrays:
-				sys.exit("Un array da scrivere non esiste")
-
-			if arrays[name].sizes != arrays[all_arrs[0]].sizes:
+		for arr in all_arrs:
+			if arr.sizes != all_arrs[0].sizes:
 				sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
 
-		output_line = IOline("Array", [arrays[name] for name in all_arrs], arrays[all_arrs[0]].sizes)
-		return output_line
+			for expr in arr.sizes:
+				if expr.var is not None and expr.var.read == False:
+					sys.exit("Quando si scrive un array devono essere note le dimensioni")
+
+		input_line = IOline("Array", all_arrs, all_arrs[0].sizes)
+		return input_line
 
 	else: # Write variables
 		all_vars = re.split(" ", line) # Split line by spaces
-		all_vars = [x for x in all_vars if x] # Remove empty chuncks
+		all_vars = [get_primitive_variable(name) for name in all_vars if name] # Remove empty chuncks
+		for var in all_vars:
+			var.read = True
 
-		for name in all_vars:
-			if name not in variables:
-				sys.exit("Una variable da scrivere non esiste")
-
-		output_line = IOline("Variable", [variables[name] for name in all_vars])
-		return output_line
+		input_line = IOline("Variable", all_vars)
+		return input_line
 
 
 # Parsing grader description file
 def parse_description(lines):
-	sections = {"variables": False, "functions": False, "input": False, "output": False}
+	sections = {"variables": False, "prototypes": False, "calls": False, "input": False, "output": False}
 	section_lines = {}
 	act_section = None
 	for line in lines:
 		line = line.strip()
-
+		line = re.sub(" +", " ", line) # remove multiple spaces
+		
 		if line.startswith("#") or len(line) == 0:
 			continue
 
@@ -269,12 +307,7 @@ def parse_description(lines):
 def main():
 	global languages_serializer
 	global DESCRIPTION_FILE
-	global variables, arrays, functions
-
-	declarations_order = []
-	input_order = []
-	output_order = []
-	functions_order = []
+	global variables
 
 	parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
 	parser.add_argument(\
@@ -380,29 +413,32 @@ def main():
 	# Parsing variables
 	for line in section_lines["variables"]:
 		parsed = parse_variable(line)
-		if type(parsed) == Variable:
-			variables[parsed.name] = parsed
-			declarations_order.append(parsed)
-		elif type(parsed) == Array:
-			arrays[parsed.name] = parsed
-			declarations_order.append(parsed)
+		variables.append(parsed)
 
-	# Parsing functions
-	for line in section_lines["functions"]:
-		parsed = parse_function(line)
-		functions[parsed.name] = parsed
-		functions_order.append(parsed)
-
+	# Parsing prototypes
+	prototypes = []
+	for line in section_lines["prototypes"]:
+		parsed = parse_prototype(line)
+		prototypes.append(parsed)
+	
+	# Parsing calls
+	calls = []
+	for line in section_lines["calls"]:
+		parsed = parse_calls(line)
+		calls.append(parsed)
+	
 	# Parsing input
+	input_ = [] # the _ is needed as input is a builtin function (it would be bad to use a variable named input, even if possible)
 	for line in section_lines["input"]:
 		parsed = parse_input(line)
-		input_order.append(parsed)
+		input_.append(parsed)
 
 	# Parsing output
+	output =  []
 	if "output" in section_lines:
 		for line in section_lines["output"]:
 			parsed = parse_output(line)
-			output_order.append(parsed)
+			output.append(parsed)
 
 	# End of parsing description file
 
@@ -438,12 +474,10 @@ def main():
 		"input_file": input_file,
 		"output_file": output_file,
 		"variables": variables,
-		"declarations_order": declarations_order,
-		"arrays": arrays,
-		"functions": functions,
-		"functions_order": functions_order,
-		"input_order": input_order,
-		"output_order": output_order,
+		"prototypes": prototypes,
+		"call": calls,
+		"input": input_,
+		"output": output,
 	}
 
 	chosen_languages = []

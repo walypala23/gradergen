@@ -59,7 +59,11 @@ int main() {
 		"call_fun": "Calling functions",
 		"output": "Writing output",
 	}
-
+	
+	# Print the string corresponding to a parameter
+	def print_parameter(self, param):
+		return self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else "") + param.name
+			
 	# array type
 	def at(self, type, dim):
 		return self.types[type] + "*"*dim
@@ -79,19 +83,10 @@ int main() {
 	def declare_array(self, arr):
 		self.write_line("static {0} {1};".format(self.at(arr.type, arr.dim), arr.name) )
 
-	def declare_function(self, fun):
-		typed_parameters = []
-		for i in range(0, len(fun.parameters)):
-			param = fun.parameters[i]
-			if type(param) == structures.Variable:
-				if fun.by_ref[i]:
-					typed_parameters.append(self.types[param.type] + self.byref_symbol + param.name)
-				else:
-					typed_parameters.append(self.types[param.type] + " " + param.name)
-			elif type(param) == structures.Array:
-				typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
-
-		self.write_line("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(typed_parameters)))
+	def declare_prototype(self, fun):
+		printed_parameters = [print_parameter(param) for param in fun.parameters]
+		
+		self.write_line("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(printed_parameters)))
 
 	def allocate_array(self, arr):
 		for i in range(arr.dim):
@@ -134,14 +129,9 @@ int main() {
 			self.write_line("fscanf(fr, \" {0}\", {1});".format(format_string, pointers), 1)
 
 	def call_function(self, fun):
-		parameter_names = []
-		for i in range(len(fun.parameters)):
-			if fun.by_ref[i]:
-				parameter_names.append(self.byref_call + fun.parameters[i].name)
-			else:
-				parameter_names.append(fun.parameters[i].name)
-
+		parameter_names = [(self.byref_call if by_ref else "") + var.name for (var, by_ref) in fun.parameters]
 		parameters = ', '.join(parameter_names)
+		
 		if fun.type == "":
 			self.write_line("{0}({1});".format(fun.name, parameters), 1)
 		else:
@@ -223,15 +213,15 @@ int main() {
 		self.insert_headers()
 
 		self.write_comment("dec_var")
-		for decl in self.data["declarations_order"]:
-			if type(decl) == Variable:
-				self.declare_variable(decl)
-			else:
-				self.declare_array(decl)
+		for var in self.data["variables"]:
+			if type(var) == Variable:
+				self.declare_variable(var)
+			elif type(var) == Array:
+				self.declare_array(var)
 
 		self.write_comment("dec_fun")
-		for fun in self.data["functions_order"]:
-			self.declare_function(fun)
+		for fun in self.data["prototypes"]:
+			self.declare_prototype(fun)
 
 		if use_helper:
 			self.write_comment("dec_help")
@@ -239,7 +229,7 @@ int main() {
 
 		self.insert_main()
 		self.write_comment("input", 1)
-		for input_line in self.data["input_order"]:
+		for input_line in self.data["input"]:
 			if input_line.type == "Array":
 				for arr in input_line.list:
 					self.allocate_array(arr)
@@ -250,15 +240,14 @@ int main() {
 				self.read_variables(input_line.list)
 
 		self.write_comment("call_fun", 1)
-		for fun in self.data["functions_order"]:
-			for i in range(len(fun.parameters)):
-				param = fun.parameters[i]
-				if type(param) == Array and param.allocated == False:
+		for fun in self.data["calls"]:
+			for (var, by_ref) in fun.parameters):
+				if type(var) == Array and var.allocated == False:
 					if not all((expr.var is None or expr.var.read) for expr in param.sizes):
 						sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
-					self.allocate_array(param)
-					param.allocated = True
-				if type(param) == Variable and not param.read and not fun.by_ref[i]:
+					self.allocate_array(var)
+					var.allocated = True
+				if type(var) == Variable and not var.read and not by_ref:
 					sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
 
 			self.call_function(fun)
@@ -266,13 +255,12 @@ int main() {
 				fun.return_var.read = True
 
 			# Variables passed by reference are "read"
-			for i in range(len(fun.parameters)):
-				param = fun.parameters[i]
-				if type(param) == Variable and fun.by_ref[i]:
-					param.read = True
+			for (var, by_ref) in fun.parameters:
+				if type(var) == Variable and by_ref:
+					var.read = True
 
 		self.write_comment("output", 1)
-		for output_line in self.data["output_order"]:
+		for output_line in self.data["output"]:
 			if output_line.type == "Array":
 				self.write_arrays(output_line.list)
 			elif output_line.type == "Variable":
@@ -281,27 +269,16 @@ int main() {
 		self.insert_footers()
 
 	def write_template(self):
-		for fun in self.data["functions_order"]:
-			typed_parameters = []
-			for i in range(0, len(fun.parameters)):
-				param = fun.parameters[i]
-				if type(param) == structures.Variable:
-					if fun.by_ref[i]:
-						typed_parameters.append(self.types[param.type] + self.byref_symbol + param.name)
-					else:
-						typed_parameters.append(self.types[param.type] + " " + param.name)
-				elif type(param) == structures.Array:
-					typed_parameters.append(self.at(param.type, param.dim) + " " + param.name)
-			
-			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, ", ".join(typed_parameters))
+		for fun in self.data["prototypes"]:
+			printed_parameters = [print_parameter(param) for param in fun.parameters]
+			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, ", ".join(printed_parameters))
 			
 			# Variables passed by ref are filled
-			for i in range(0, len(fun.parameters)):
-				param = fun.parameters[i]
-				if fun.by_ref[i]:
-					if type(param) == structures.Variable:
+			for param in fun.parameters:
+				if param.by_ref:
+					if param.dim == 0:
 						self.template += "\t{0}{1} = {2};\n".format(self.byref_access, param.name, self.template_types[param.type])
-					elif type(param) == structurs.Array:
+					else:
 						self.template += "\t{0}{1} = {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
 			self.template += "\treturn {0};\n".format(self.template_types[fun.type])
 			

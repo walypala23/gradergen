@@ -11,12 +11,25 @@ class Array:
 		self.dim = len(s)
 		self.sizes = s
 		self.allocated = False
-
-class Function:
-	def __init__(self, n = None, p = None, b = None, r = None):
+		
+class Parameter:
+	def __init__(self, n, t, d = 0, b = False):
 		self.name = n
-		self.parameters = p
+		self.type = t
+		self.dim = d # This is the dimension, 0 means it is a simple variable
 		self.by_ref = b
+
+class Prototype:
+	def __init__(self, n = "", p = [], t = ""):
+		self.name = n
+		self.parameters = p # List of Parameters
+		self.type = t
+			
+class Calls:
+	def __init__(self, n, p = [], r = None):
+		self.name = n
+		self.parameters = p # List of couple (Variables/Arrays, by_ref)
+		
 		if r != None:
 			self.type = r.type
 			self.return_var = r
