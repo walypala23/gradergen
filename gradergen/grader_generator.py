@@ -35,7 +35,7 @@ TYPES = ["", "int", "longint", "char", "real"]
 DESCRIPTION_FILE = "task.spec"
 TASK_YAML = "task.yaml"
 
-# variables is used in parsing functions and must be global
+# variables is used in parsing functions and must be global (only get_variable refers to it)
 variables = []
 
 def get_variable(name):
@@ -43,6 +43,7 @@ def get_variable(name):
 	for var in variables:
 		if var.name == name:
 			return var
+			
 	sys.exit("Una delle variabili a cui ci si riferisce non è stata dichiarata.")
 
 def get_primitive_variable(name):
@@ -139,11 +140,6 @@ def parse_variable(line):
 
 def parse_prototype(line):
 	proto_obj = Prototype()
-	
-	# print("PROTOTIPI_PARSE")
-	# print(proto_obj.name)
-	# for param in proto_obj.parameters:
-		# print("\t", param.name)
 
 	first_split = re.split("[\(\)]", line)
 	if len(first_split) != 3:
@@ -421,13 +417,6 @@ def main():
 	for line in section_lines["prototypes"]:
 		parsed = parse_prototype(line)
 		prototypes.append(parsed)
-		
-		
-		# print("PROTOTIPI")
-		# for proto in prototypes:
-			# print(proto.name)
-			# for param in proto.parameters:
-				# print("\t", param.name)
 	
 	# Parsing calls
 	calls = []

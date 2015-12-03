@@ -129,7 +129,7 @@ int main() {
 			self.write_line("fscanf(fr, \" {0}\", {1});".format(format_string, pointers), 1)
 
 	def call_function(self, fun):
-		parameter_names = [(self.byref_call if by_ref else "") + var.name for (var, by_ref) in fun.parameters]
+		parameter_names = [(self.byref_call if (by_ref and type(var) is not Array) else "") + var.name for (var, by_ref) in fun.parameters]
 		parameters = ', '.join(parameter_names)
 		
 		if fun.return_var is None:

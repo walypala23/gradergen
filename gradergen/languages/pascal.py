@@ -328,11 +328,10 @@ end.
 		matrix_types = []
 		for fun in self.data["prototypes"]:
 			for param in fun.parameters:
-				if type(param) == structures.Array:
-					if param.dim == 2:
-						matrix_types.append(param.type)
-					elif param.dim > 2:
-						print("WARNING: pascal doesn't support multidimensional array of dimension > 2 passed as argument")
+				if param.dim == 2:
+					matrix_types.append(param.type)
+				elif param.dim > 2:
+					print("WARNING: pascal doesn't support multidimensional array of dimension > 2 passed as argument")
 		
 		if len(matrix_types) > 0:
 			self.template += "type\n"
