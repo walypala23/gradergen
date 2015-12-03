@@ -5,21 +5,20 @@
 
 
 ***variables***
-
 int N
 int A[3*N-5]
 int B[3*N-5]
 int C[3*N-5]
 
-***functions***
+***prototypes***
+moltiplica(int N, int[] X, int[] Y, int[] &res)
 
-moltiplica(N, A, B, C)
+***calls***
+moltiplica(N, A, B, &C)
 
 ***input***
-
 N
 A[] B[]
 
 ***output***
-
 C[]

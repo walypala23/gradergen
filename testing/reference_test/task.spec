@@ -5,7 +5,6 @@
 
 
 ***variables***
-
 int N
 char mat[N][N]
 
@@ -14,17 +13,17 @@ int B
 int C
 
 
-***functions***
+***prototypes***
+cerca(int N, char[][] mat, int &A, int &B, int &C)
 
+***calls***
 cerca(N, mat, &A, &B, &C)
 
 
 ***input***
-
 N
 mat[][]
 
 
 ***output***
-
 A B C

@@ -5,21 +5,20 @@
 
 
 ***variables***
-
 int N
 int A[N]
 int B[N]
 
 
-***functions***
+***prototypes***
+int moltiplica(int x, int y)
 
+***calls***
 repeat N: B[i0] = moltiplica(A[i0], i0)
 
 ***input***
-
 N
 A[]
 
 ***output***
-
 B[]

@@ -5,18 +5,20 @@
 
 
 ***variables***
-
 int N
 int altezza[N]
 
 int indice
 int direzione
 
-***functions***
+***prototypes***
+Pianifica(int N, int[] altezza)
 
+***calls***
 Pianifica(N, altezza)
 
 ***input***
-
 N
 altezza[]
+
+***output***

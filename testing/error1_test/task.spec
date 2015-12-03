@@ -5,28 +5,22 @@
 
 
 ***variables***
-
 int N
 
 # M non esiste e dovrebbe dare errore
 int A[M]
 int res
 
+***prototypes***
+int f(int N)
 
-***functions***
-
+***calls***
 res = f(N)
 
 
 ***input***
-
 N
 A[N]
 
 ***output***
-
 res
-
-
-#***adhoc***
-#C 
