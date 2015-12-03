@@ -2,7 +2,7 @@ import pkg_resources
 import sys
 import os
 from gradergen import structures
-from gradergen.structures import Variable, Array, Function, IOline, Expression
+from gradergen.structures import Variable, Array, Parameter, Prototype, Call, IOline, Expression
 
 
 class LanguagePascal(object):
@@ -90,11 +90,11 @@ end.
 	def print_parameter(self, param):
 		printed_param = ("var " if param.by_ref else "") + param.name + ": "
 		if param.dim == 0:
-			typed_param += self.types[param.type]
+			printed_param += self.types[param.type]
 		elif param.dim == 1:
-			typed_param += self.at(param.type, param.dim)
+			printed_param += self.at(param.type, param.dim)
 		else:
-			typed_param += param.type + "matrix"
+			printed_param += param.type + "matrix"
 		
 		return printed_param
 
@@ -166,7 +166,7 @@ end.
 	def call_function(self, fun):
 		parameters = ', '.join([var.name for (var, by_ref) in fun.parameters])
 		
-		if fun.type == "":
+		if fun.return_var is None:
 			self.write_line("{0}({1});".format(fun.name, parameters), 1)
 		else:
 			self.write_line("{2} := {0}({1});".format(fun.name, parameters, fun.return_var.name), 1)
@@ -235,8 +235,9 @@ end.
 
 	def insert_main(self):
 		self.write_line("\n{ iterators used in for loops }")
-		if len(self.data["arrays"]) > 0:
-			max_dim = max(arr.dim for name, arr in self.data["arrays"].items())
+		
+		max_dim = max(arr.dim for arr in self.data["variables"] if type(arr) == Array)
+		if max_dim > 0:
 			self.write_line(", ".join("i" + str(x) for x in range(max_dim)) + ": Longint;", 1)
 
 		if self.fast_io:
@@ -269,7 +270,7 @@ end.
 
 		self.write_comment("dec_var")
 		for var in self.data["variables"]:
-			if var == Variable:
+			if type(var) == Variable:
 				self.declare_variable(var)
 			else:
 				self.declare_array(var)
@@ -284,7 +285,7 @@ end.
 			if input_line.type == "Array":
 				for arr in input_line.list:
 					self.allocate_array(arr)
-					self.data["arrays"][arr.name].allocated = True
+					arr.allocated = True
 				self.read_arrays(input_line.list)
 
 			elif input_line.type == "Variable":
@@ -340,33 +341,20 @@ end.
 			self.template += "\n"
 		
 		for fun in self.data["prototypes"]:
-			typed_parameters = []
-			for i in range(0, len(fun.parameters)):
-				param = fun.parameters[i]
-				typed_param = "var " if fun.by_ref[i] else ""
-				if type(param) == structures.Variable:
-					typed_param += param.name + ": " + self.types[param.type]
-				elif type(param) == structures.Array:
-					if param.dim == 1:
-						typed_param += param.name + ": " + self.at(param.type, param.dim)
-					else:
-						typed_param += param.name + ": " + param.type + "matrix"
-				typed_parameters.append(typed_param)
-					
+			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
 			if fun.type == '':
-				self.template += "procedure {0}({1});\n\n".format(fun.name, "; ".join(typed_parameters))
+				self.template += "procedure {0}({1});\n\n".format(fun.name, "; ".join(printed_parameters))
 			else:
-				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(typed_parameters), self.types[fun.type])
-			
-		self.template += "implementation\n\n"
-				
+				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(printed_parameters), self.types[fun.type])
+						
+		self.template += "implementation\n\n"		
 		
 		for fun in self.data["prototypes"]:
-			printed_parameters = [print_parameter(param) for param in fun.parameters]
+			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
 			if fun.type == '':
-				self.template += "procedure {0}({1});\n".format(fun.name, "; ".join(typed_parameters))
+				self.template += "procedure {0}({1});\n".format(fun.name, "; ".join(printed_parameters))
 			else:
-				self.template += "function {0}({1}): {2};\n".format(fun.name, "; ".join(typed_parameters), self.types[fun.type])
+				self.template += "function {0}({1}): {2};\n".format(fun.name, "; ".join(printed_parameters), self.types[fun.type])
 			
 			self.template += "begin\n"
 			

@@ -2,7 +2,7 @@ import pkg_resources
 import sys
 import os
 from gradergen import structures
-from gradergen.structures import Variable, Array, Function, IOline, Expression
+from gradergen.structures import Variable, Array, Parameter, Prototype, Call, IOline, Expression
 
 
 class LanguageC(object):
@@ -62,7 +62,7 @@ int main() {
 	
 	# Print the string corresponding to a parameter
 	def print_parameter(self, param):
-		return self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else "") + param.name
+		return self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name
 			
 	# array type
 	def at(self, type, dim):
@@ -84,7 +84,7 @@ int main() {
 		self.write_line("static {0} {1};".format(self.at(arr.type, arr.dim), arr.name) )
 
 	def declare_prototype(self, fun):
-		printed_parameters = [print_parameter(param) for param in fun.parameters]
+		printed_parameters = [self.print_parameter(param) for param in fun.parameters]
 		
 		self.write_line("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(printed_parameters)))
 
@@ -132,7 +132,7 @@ int main() {
 		parameter_names = [(self.byref_call if by_ref else "") + var.name for (var, by_ref) in fun.parameters]
 		parameters = ', '.join(parameter_names)
 		
-		if fun.type == "":
+		if fun.return_var is None:
 			self.write_line("{0}({1});".format(fun.name, parameters), 1)
 		else:
 			self.write_line("{2} = {0}({1});".format(fun.name, parameters, fun.return_var.name), 1)
@@ -233,7 +233,7 @@ int main() {
 			if input_line.type == "Array":
 				for arr in input_line.list:
 					self.allocate_array(arr)
-					self.data["arrays"][arr.name].allocated = True
+					arr.allocated = True
 				self.read_arrays(input_line.list)
 
 			elif input_line.type == "Variable":
@@ -241,9 +241,9 @@ int main() {
 
 		self.write_comment("call_fun", 1)
 		for fun in self.data["calls"]:
-			for (var, by_ref) in fun.parameters):
+			for (var, by_ref) in fun.parameters:
 				if type(var) == Array and var.allocated == False:
-					if not all((expr.var is None or expr.var.read) for expr in param.sizes):
+					if not all((expr.var is None or expr.var.read) for expr in var.sizes):
 						sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
 					self.allocate_array(var)
 					var.allocated = True
@@ -270,7 +270,7 @@ int main() {
 
 	def write_template(self):
 		for fun in self.data["prototypes"]:
-			printed_parameters = [print_parameter(param) for param in fun.parameters]
+			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
 			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, ", ".join(printed_parameters))
 			
 			# Variables passed by ref are filled

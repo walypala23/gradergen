@@ -7,7 +7,7 @@ import argparse # to parse command line arguments
 import copy # to avoid making too many / too few "array allocations" in the grader
 import yaml # parse task.yaml
 
-from gradergen.structures import Variable, Array, Function, IOline, Expression
+from gradergen.structures import Variable, Array, Parameter, Prototype, Call, IOline, Expression
 from gradergen.languages.C import LanguageC
 from gradergen.languages.CPP import LanguageCPP
 from gradergen.languages.pascal import LanguagePascal
@@ -139,6 +139,11 @@ def parse_variable(line):
 
 def parse_prototype(line):
 	proto_obj = Prototype()
+	
+	# print("PROTOTIPI_PARSE")
+	# print(proto_obj.name)
+	# for param in proto_obj.parameters:
+		# print("\t", param.name)
 
 	first_split = re.split("[\(\)]", line)
 	if len(first_split) != 3:
@@ -149,7 +154,7 @@ def parse_prototype(line):
 	
 	if len(type_name) == 1:
 		proto_obj.name = type_name[0]
-	else if len(type_name) == 2:
+	elif len(type_name) == 2:
 		proto_obj.type = type_name[0]
 		proto_obj.name = type_name[1]
 	else:
@@ -157,19 +162,18 @@ def parse_prototype(line):
 	
 	add_used_name(proto_obj.name)
 	
-	for param in parameter:
+	for param in parameters:
 		param = param.strip()
 		if len(param) == 0:
 			continue
 		
-		#TODO: Devo parsare il parametro
 		by_ref = "&" in param
 		dim = param.count("[]")
 		
 		param = re.sub("[&\[\]]", "", param)
 		param = re.sub(" +", " ", param).strip()
 		
-		type_name = re.split(" ")
+		type_name = re.split(" ", param)
 		
 		if len(type_name) != 2:
 			sys.exit("Uno dei prototipi è malformato")
@@ -186,22 +190,19 @@ def parse_call(line):
 		sys.exit("La descrizione di una funzione ha troppi caratteri '='")
 	elif len(line) == 2:
 		var = line[0].strip()
-
-		fun_obj.type = get_primitive_variable(var).type
 		fun_obj.return_var = get_primitive_variable(var)
+		
 		line = line[1].strip()
 	else:
-		fun_obj.type = ""
-		fun = line[0]
+		line = line[0].strip()
 
 	line = re.split("[\(\)]", line)
 	if len(line) != 3:
 		sys.exit("La descrizione di una funzione ha un numero errato di parentesi")
 	else:
 		name = line[0].strip()
-		add_used_name(name)
 
-		fun_obj.name = name
+		fun_obj.name = name # It is not added to used names, as it might already be declared or it might be in the helper file
 
 		fun_obj.parameters = []
 		
@@ -420,11 +421,18 @@ def main():
 	for line in section_lines["prototypes"]:
 		parsed = parse_prototype(line)
 		prototypes.append(parsed)
+		
+		
+		# print("PROTOTIPI")
+		# for proto in prototypes:
+			# print(proto.name)
+			# for param in proto.parameters:
+				# print("\t", param.name)
 	
 	# Parsing calls
 	calls = []
 	for line in section_lines["calls"]:
-		parsed = parse_calls(line)
+		parsed = parse_call(line)
 		calls.append(parsed)
 	
 	# Parsing input
@@ -475,7 +483,7 @@ def main():
 		"output_file": output_file,
 		"variables": variables,
 		"prototypes": prototypes,
-		"call": calls,
+		"calls": calls,
 		"input": input_,
 		"output": output,
 	}

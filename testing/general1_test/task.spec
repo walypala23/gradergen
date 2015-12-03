@@ -25,13 +25,15 @@ int res
 int scelti[res]
 real colore[res]
 
+***prototypes***
+int contapersone(int M, int da[], int a[])
 
-***functions***
+sceglicolori(int dim, int[] &scelti, real[] &colori)
 
+***calls***
 res = contapersone(M, from, too)
 
 sceglicolori(res, scelti, colore)
-
 
 ***input***
 
@@ -48,7 +50,3 @@ R[][] G[][] B[][]
 res
 scelti[] colore[]
 R[][]
-
-
-#***adhoc***
-#C 

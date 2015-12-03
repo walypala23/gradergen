@@ -20,22 +20,21 @@ class Parameter:
 		self.by_ref = b
 
 class Prototype:
-	def __init__(self, n = "", p = [], t = ""):
+	def __init__(self, n = "", p = None, t = ""):
+		if p is None:
+			p = []
+		
 		self.name = n
 		self.parameters = p # List of Parameters
 		self.type = t
 			
-class Calls:
-	def __init__(self, n, p = [], r = None):
+class Call:
+	def __init__(self, n = "", p = None, r = None):
+		if p is None:
+			p = []
 		self.name = n
 		self.parameters = p # List of couple (Variables/Arrays, by_ref)
-		
-		if r != None:
-			self.type = r.type
-			self.return_var = r
-		else:
-			self.type = ""
-			self.return_var = None
+		self.return_var = r
 
 class IOline:
 	def __init__(self, t = None, l = None, s = None):
