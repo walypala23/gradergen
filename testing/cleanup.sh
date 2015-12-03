@@ -8,7 +8,7 @@ run_test() {
     pushd $1 > /dev/null
     
     mkdir ../TempDir
-    cp task.spec task.yaml soluzione.* helper_data.* correct.md5 ../TempDir/ > /dev/null 2> /dev/null
+    cp task.spec task.yaml soluzione.* include_grader.* include_callable.* correct.md5 ../TempDir/ > /dev/null 2> /dev/null
     
     # Save input or input generator
     if [ -f input.py ]

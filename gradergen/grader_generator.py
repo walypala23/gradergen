@@ -60,7 +60,7 @@ def get_array_variable(name):
 	
 	return var
 
-
+# FIXME: Pascal is case-insensitive, so this function should be too.
 def add_used_name(s):
 	if s in add_used_name.names:
 		sys.exit("I nomi delle variabili, degli array e delle funzioni non devono coincidere.")
@@ -201,7 +201,7 @@ def parse_call(line):
 	else:
 		name = line[0].strip()
 
-		fun_obj.name = name # It is not added to used names, as it might already be declared or it might be in the helper file
+		fun_obj.name = name # It is not added to used names, as it might already be declared or it might be in include_grader
 
 		fun_obj.parameters = []
 		
@@ -387,24 +387,29 @@ def main():
 	if args.task_yaml is None:
 		sys.exit("The " + TASK_YAML + " file cannot be found.")
 
-	# Check if helper files exist and load data
-	helper_data = {}
+	# Sarebbe bello se si potesse impostare anche dove andare a cercare gli include
+	# Searching for include_grader and include_callable
+	include_grader = {}
 	directory = os.path.dirname(args.task_spec)
-
-	def load_helper_data(ext, lang):
+	for lang in LANGUAGES_LIST:
+		ext = EXTENSIONS_LIST[lang]
 		try:
-			with open(os.path.join(directory, "helper_data." + ext)) as f:
-				helper_data[lang] = f.read()
+			with open(os.path.join(directory, "include_grader." + ext)) as f:
+				include_grader[lang] = f.read()
 		except IOError:
 			pass
-
-	load_helper_data("pas", "pascal")
-	load_helper_data("pas", "fast_pascal")
-	load_helper_data("c", "C")
-	load_helper_data("c", "fast_C")
-	load_helper_data("cpp", "CPP")
-	load_helper_data("cpp", "fast_CPP")
-
+	
+	include_callable = {}
+	directory = os.path.dirname(args.task_spec)
+	for lang in LANGUAGES_LIST:
+		ext = EXTENSIONS_LIST[lang]
+		try:
+			with open(os.path.join(directory, "include_callable." + ext)) as f:
+				include_callable[lang] = f.read()
+		except IOError:
+			pass
+	
+	
 	# Parsing description file
 	with open(args.task_spec, "r") as task_spec:
 		lines = task_spec.read().splitlines()
@@ -499,14 +504,16 @@ def main():
 		if len(lang_options) > 3:
 			sys.exit("For each language you can specify, at most, the names of grader and template")
 
-		chosen_languages.append((lang, lang_options[1], lang_options[2], (lang in helper_data)))
+		chosen_languages.append((lang, lang_options[1], lang_options[2]))
 
-	for lang, grader_name, template_name, use_helper in chosen_languages:
+	for lang, grader_name, template_name in chosen_languages:
 		print(grader_name, template_name)
 		
 		data2 = copy.deepcopy(data)
-		if lang in helper_data:
-			data2["helper_data"] = helper_data[lang]
+		if lang in include_grader:
+			data2["include_grader"] = include_grader[lang]
+		if lang in include_callable:
+			data2["include_callable"] = include_callable[lang]
 		
 		LangClass, fast_io = CLASSES_LIST[lang]
-		LangClass(fast_io, data2).write_files(grader_name, template_name, use_helper)
+		LangClass(fast_io, data2).write_files(grader_name, template_name)

@@ -79,8 +79,10 @@ end.
 
 	comments = {
 		"dec_var": "Declaring variables",
-		"dec_fun": "",
-		"dec_help": "Declaring helper functions",
+		"loop_iters": "Declaring iterators used in for loops",
+		"prototypes": "",
+		"include_grader": "Functions ad-hoc for this grader",
+		"include_callable": "Functions called by the contestant solution",
 		"input": "Reading input",
 		"call_fun": "Calling functions",
 		"output": "Writing output",
@@ -234,12 +236,6 @@ end.
 			self.grader += self.headers % {"the_name_of_the_task": self.data["task_name"]}
 
 	def insert_main(self):
-		self.write_line("\n{ iterators used in for loops }")
-		
-		max_dim = max(arr.dim for arr in self.data["variables"] if type(arr) == Array)
-		if max_dim > 0:
-			self.write_line(", ".join("i" + str(x) for x in range(max_dim)) + ": Longint;", 1)
-
 		if self.fast_io:
 			self.grader += self.main_function_fast_io
 		else:
@@ -254,15 +250,15 @@ end.
 		else:
 			self.grader += self.footers
 
-	def write_files(self, grader_name, template_name, use_helper):
+	def write_files(self, grader_name, template_name):
 		self.write_grader()
 		self.write(grader_name, self.grader)
 		
 		self.write_template()
 		self.write(template_name, self.template)
 		
-		if use_helper:
-			self.write(self.data["task_name"] + "lib.pas", self.data["helper_data"])
+		if "include_callable" in self.data:
+			self.write(self.data["task_name"] + "lib.pas", self.data["include_callable"])
 
 	def write_grader(self):
 		self.grader = ""
@@ -274,11 +270,21 @@ end.
 				self.declare_variable(var)
 			else:
 				self.declare_array(var)
+		
+		# Declaring iterator used in for loops
+		max_dim = max(arr.dim for arr in self.data["variables"] if type(arr) == Array)
+		if max_dim > 0:
+			self.write_comment("loop_iters")
+			self.write_line(", ".join("i" + str(x) for x in range(max_dim)) + ": Longint;", 1)
 
-		self.write_comment("dec_fun")
+		self.write_comment("prototypes")
 		for fun in self.data["prototypes"]:
 			self.declare_prototype(fun)
-
+		
+		if "include_grader" in self.data:
+			self.write_comment("include_grader")
+			self.grader += self.data["include_grader"] + "\n"
+		
 		self.insert_main()
 		self.write_comment("input", 1)
 		for input_line in self.data["input"]:
@@ -347,6 +353,9 @@ end.
 				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(printed_parameters), self.types[fun.type])
 						
 		self.template += "implementation\n\n"		
+		
+		if "include_callable" in self.data:
+			self.template += "uses {0}lib;\n\n".format(self.data["task_name"])
 		
 		for fun in self.data["prototypes"]:
 			printed_parameters = [self.print_parameter(param) for param in fun.parameters]

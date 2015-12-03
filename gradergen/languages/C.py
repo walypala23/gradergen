@@ -53,8 +53,9 @@ int main() {
 
 	comments = {
 		"dec_var": "Declaring variables",
-		"dec_fun": "Declaring functions",
-		"dec_help": "Declaring helper functions",
+		"prototypes": "Declaring functions",
+		"include_grader": "Functions ad-hoc for this grader",
+		"include_callable": "Functions called by the contestant solution",
 		"input": "Reading input",
 		"call_fun": "Calling functions",
 		"output": "Writing output",
@@ -201,14 +202,14 @@ int main() {
 	def insert_footers(self):
 		self.grader += self.footers
 
-	def write_files(self, grader_name, template_name, use_helper):
-		self.write_grader(use_helper)
+	def write_files(self, grader_name, template_name):
+		self.write_grader()
 		self.write(grader_name, self.grader)
 		
 		self.write_template()
 		self.write(template_name, self.template)
 
-	def write_grader(self, use_helper):
+	def write_grader(self):
 		self.grader = ""
 		self.insert_headers()
 
@@ -219,13 +220,17 @@ int main() {
 			elif type(var) == Array:
 				self.declare_array(var)
 
-		self.write_comment("dec_fun")
+		self.write_comment("prototypes")
 		for fun in self.data["prototypes"]:
 			self.declare_prototype(fun)
 
-		if use_helper:
-			self.write_comment("dec_help")
-			self.grader += self.data["helper_data"]
+		if "include_grader" in self.data:
+			self.write_comment("include_grader")
+			self.grader += self.data["include_grader"]
+	
+		if "include_callable" in self.data:
+			self.write_comment("include_callable")
+			self.grader += self.data["include_callable"]
 
 		self.insert_main()
 		self.write_comment("input", 1)
