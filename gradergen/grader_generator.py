@@ -156,6 +156,9 @@ def parse_prototype(line):
 	else:
 		sys.exit("Uno dei prototipi è malformato.")
 	
+	if proto_obj.type not in TYPES:
+		sys.exit("Il tipo di ritorno di un prototipo non esiste.")
+	
 	add_used_name(proto_obj.name)
 	
 	for param in parameters:
