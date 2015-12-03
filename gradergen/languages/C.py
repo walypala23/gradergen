@@ -70,7 +70,7 @@ int main() {
 		return self.types[type] + "*"*dim
 
 	# write line
-	def write_line(self, line, tabulation = 0):
+	def write_line(self, line = "", tabulation = 0):
 		self.grader += "\t"*tabulation + line + "\n"
 
 	# write comment
@@ -227,6 +227,7 @@ int main() {
 		if "include_grader" in self.data:
 			self.write_comment("include_grader")
 			self.grader += self.data["include_grader"]
+			self.write_line()
 	
 		if "include_callable" in self.data:
 			self.write_comment("include_callable")

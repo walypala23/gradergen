@@ -311,16 +311,22 @@ def main():
 
 	parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
 	parser.add_argument(\
-		"task_spec",
+		"--task_spec",
 		metavar = "task_spec",
 		action = "store", nargs="?",
 		help = "the file describing the grader"
 	)
 	parser.add_argument(\
-		"task_yaml",
+		"--task_yaml",
 		metavar = "task_yaml",
 		action = "store", nargs="?",
-		help = "the file describing the task"
+		help = "the yaml file describing the task"
+	)
+	parser.add_argument(\
+		"--include_dir",
+		metavar = "include_dir",
+		action = "store", nargs="?",
+		help = "the folder containing include_callable and include_grader"
 	)
 
 	group = parser.add_mutually_exclusive_group(required=True)
@@ -387,24 +393,46 @@ def main():
 	if args.task_yaml is None:
 		sys.exit("The " + TASK_YAML + " file cannot be found.")
 
-	# Sarebbe bello se si potesse impostare anche dove andare a cercare gli include
+	# --all, --stage
+	if args.all:
+		args.languages = [[lang] for lang in LANGUAGES_LIST]
+
+	
+	if args.stage:
+		arg.include_dir = "sol"
+		if args.stage == "fast":
+			args.languages = [
+				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
+				["fast_CPP", "sol/grader.cpp", "sol/template_cpp.cpp"]
+			]
+		elif args.stage == "normal":
+			args.languages = [
+				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
+				["CPP", "sol/grader.cpp", "sol/template_cpp.cpp"]
+			]
+		else:
+			sys.exit("The argument of --stage must be `normal`, `fast` or empty.")
+
 	# Searching for include_grader and include_callable
+	
+	include_dir = os.path.dirname(args.task_spec)
+	if args.include_dir is not None:
+		include_dir = args.include_folder
+	
 	include_grader = {}
-	directory = os.path.dirname(args.task_spec)
 	for lang in LANGUAGES_LIST:
 		ext = EXTENSIONS_LIST[lang]
 		try:
-			with open(os.path.join(directory, "include_grader." + ext)) as f:
+			with open(os.path.join(include_dir, "include_grader." + ext)) as f:
 				include_grader[lang] = f.read()
 		except IOError:
 			pass
 	
 	include_callable = {}
-	directory = os.path.dirname(args.task_spec)
 	for lang in LANGUAGES_LIST:
 		ext = EXTENSIONS_LIST[lang]
 		try:
-			with open(os.path.join(directory, "include_callable." + ext)) as f:
+			with open(os.path.join(include_dir, "include_callable." + ext)) as f:
 				include_callable[lang] = f.read()
 		except IOError:
 			pass
@@ -454,25 +482,6 @@ def main():
 	output_file = task_yaml["outfile"]
 
 	# End of parsing task.yaml
-
-	# --all, --stage
-	if args.all:
-		args.languages = [[lang] for lang in LANGUAGES_LIST]
-
-	
-	if args.stage:
-		if args.stage == "fast":
-			args.languages = [
-				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
-				["fast_CPP", "sol/grader.cpp", "sol/template_cpp.cpp"]
-			]
-		elif args.stage == "normal":
-			args.languages = [
-				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
-				["CPP", "sol/grader.cpp", "sol/template_cpp.cpp"]
-			]
-		else:
-			sys.exit("The argument of --stage must be `normal`, `fast` or empty.")
 	
 	data = {
 		"task_name": task_name,

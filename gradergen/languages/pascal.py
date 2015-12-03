@@ -105,7 +105,7 @@ end.
 		return "array of "*dim + self.types[type]
 
 	# write line
-	def write_line(self, line, tabulation = 0):
+	def write_line(self, line = "", tabulation = 0):
 		self.grader += "\t"*tabulation + line + "\n"
 
 	# write comment
@@ -283,7 +283,8 @@ end.
 		
 		if "include_grader" in self.data:
 			self.write_comment("include_grader")
-			self.grader += self.data["include_grader"] + "\n"
+			self.grader += self.data["include_grader"]
+			self.write_line()
 		
 		self.insert_main()
 		self.write_comment("input", 1)
