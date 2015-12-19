@@ -393,13 +393,22 @@ def main():
 	if args.task_yaml is None:
 		sys.exit("The " + TASK_YAML + " file cannot be found.")
 
+	
+	# Parsing task.yaml
+	task_yaml = yaml.safe_load(open(task_yaml, "rt", encoding="utf-8"))
+	task_name = task_yaml["name"]
+	input_file = task_yaml["infile"]
+	output_file = task_yaml["outfile"]
+
+	# End of parsing task.yaml
+
 	# --all, --stage
 	if args.all:
 		args.languages = [[lang] for lang in LANGUAGES_LIST]
 
 	
 	if args.stage:
-		arg.include_dir = "sol"
+		args.include_dir = "sol"
 		if args.stage == "fast":
 			args.languages = [
 				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
@@ -417,7 +426,7 @@ def main():
 	
 	include_dir = os.path.dirname(args.task_spec)
 	if args.include_dir is not None:
-		include_dir = args.include_folder
+		include_dir = args.include_dir
 	
 	include_grader = {}
 	for lang in LANGUAGES_LIST:
@@ -474,14 +483,6 @@ def main():
 			output.append(parsed)
 
 	# End of parsing description file
-
-	# Parsing task.yaml
-	task_yaml = yaml.safe_load(open(task_yaml, "rt", encoding="utf-8"))
-	task_name = task_yaml["name"]
-	input_file = task_yaml["infile"]
-	output_file = task_yaml["outfile"]
-
-	# End of parsing task.yaml
 	
 	data = {
 		"task_name": task_name,
