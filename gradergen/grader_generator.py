@@ -43,21 +43,21 @@ def get_variable(name):
 	for var in variables:
 		if var.name == name:
 			return var
-			
+
 	sys.exit("Una delle variabili a cui ci si riferisce non è stata dichiarata.")
 
 def get_primitive_variable(name):
 	var = get_variable(name)
 	if type(var) == Array:
 		sys.exit("Una variabile che deve essere primitiva è un array.")
-	
+
 	return var
 
 def get_array_variable(name):
 	var = get_variable(name)
 	if type(var) == Variable:
 		sys.exit("Una variabile che deve essere array è un tipo primitivo.")
-	
+
 	return var
 
 # FIXME: Pascal is case-insensitive, so this function should be too.
@@ -102,7 +102,7 @@ def parse_expression(s):
 		var = get_primitive_variable(name)
 		if var.type not in ["int", "longint"]:
 			sys.exit("Le variabili nelle espressioni devono essere di tipo intero")
-		
+
 		s = s[len(name):]
 
 	# Parsing b
@@ -123,9 +123,9 @@ def parse_variable(line):
 
 	if not re.match("^[a-zA-Z_$][0-9a-zA-Z_$]*$", var[1]):
 		sys.exit("Il nome di una variabile contiene dei caratteri non ammessi")
-	
+
 	add_used_name(var[1])
-	
+
 	if len(var) == 2:
 		var_obj = Variable(var[1], var[0])
 		return var_obj;
@@ -144,10 +144,10 @@ def parse_prototype(line):
 	first_split = re.split("[\(\)]", line)
 	if len(first_split) != 3:
 		sys.exit("La descrizione di un prototipo ha un numero errato di parentesi tonde")
-	
+
 	type_name = re.split(" ", first_split[0].strip()) #type name or only name
 	parameters = re.split(",", first_split[1]) # with reference
-	
+
 	if len(type_name) == 1:
 		proto_obj.name = type_name[0]
 	elif len(type_name) == 2:
@@ -155,42 +155,42 @@ def parse_prototype(line):
 		proto_obj.name = type_name[1]
 	else:
 		sys.exit("Uno dei prototipi è malformato.")
-	
+
 	if proto_obj.type not in TYPES:
 		sys.exit("Il tipo di ritorno di un prototipo non esiste.")
-	
+
 	add_used_name(proto_obj.name)
-	
+
 	for param in parameters:
 		param = param.strip()
 		if len(param) == 0:
 			continue
-		
+
 		by_ref = "&" in param
 		dim = param.count("[]")
-		
+
 		param = re.sub("[&\[\]]", "", param)
 		param = re.sub(" +", " ", param).strip()
-		
+
 		type_name = re.split(" ", param)
-		
+
 		if len(type_name) != 2:
 			sys.exit("Uno dei prototipi è malformato")
-		
+
 		proto_obj.parameters.append(Parameter(type_name[1], type_name[0], dim, by_ref))
 
 	return proto_obj
-	
+
 def parse_call(line):
 	fun_obj = Call()
-	
+
 	line = re.split("=", line)
 	if len(line) > 2:
 		sys.exit("La descrizione di una funzione ha troppi caratteri '='")
 	elif len(line) == 2:
 		var = line[0].strip()
 		fun_obj.return_var = get_primitive_variable(var)
-		
+
 		line = line[1].strip()
 	else:
 		line = line[0].strip()
@@ -204,17 +204,17 @@ def parse_call(line):
 		fun_obj.name = name # It is not added to used names, as it might already be declared or it might be in include_grader
 
 		fun_obj.parameters = []
-		
+
 		if len(line[1].strip()) > 0:
 			parameters = re.split(",", line[1])
 			for param in parameters:
 				param = param.strip()
 				by_ref = False
-				
+
 				if param.startswith("&"):
 					param = param[1:]
 					by_ref = True
-				
+
 				fun_obj.parameters.append((get_variable(param), by_ref))
 
 	return fun_obj
@@ -282,7 +282,7 @@ def parse_description(lines):
 	for line in lines:
 		line = line.strip()
 		line = re.sub(" +", " ", line) # remove multiple spaces
-		
+
 		if line.startswith("#") or len(line) == 0:
 			continue
 
@@ -346,7 +346,7 @@ def main():
 		default = False,
 		help = "create graders and templates in all supported languages (with standard names)"
 	)
-	
+
 	group.add_argument(\
 		"--stage",
 		nargs = "?",
@@ -393,7 +393,7 @@ def main():
 	if args.task_yaml is None:
 		sys.exit("The " + TASK_YAML + " file cannot be found.")
 
-	
+
 	# Parsing task.yaml
 	task_yaml = yaml.safe_load(open(task_yaml, "rt", encoding="utf-8"))
 	task_name = task_yaml["name"]
@@ -406,7 +406,7 @@ def main():
 	if args.all:
 		args.languages = [[lang] for lang in LANGUAGES_LIST]
 
-	
+
 	if args.stage:
 		args.include_dir = "sol"
 		if args.stage == "fast":
@@ -423,11 +423,11 @@ def main():
 			sys.exit("The argument of --stage must be `normal`, `fast` or empty.")
 
 	# Searching for include_grader and include_callable
-	
+
 	include_dir = os.path.dirname(args.task_spec)
 	if args.include_dir is not None:
 		include_dir = args.include_dir
-	
+
 	include_grader = {}
 	for lang in LANGUAGES_LIST:
 		ext = EXTENSIONS_LIST[lang]
@@ -436,7 +436,7 @@ def main():
 				include_grader[lang] = f.read()
 		except IOError:
 			pass
-	
+
 	include_callable = {}
 	for lang in LANGUAGES_LIST:
 		ext = EXTENSIONS_LIST[lang]
@@ -445,13 +445,13 @@ def main():
 				include_callable[lang] = f.read()
 		except IOError:
 			pass
-	
-	
+
+
 	# Parsing description file
 	with open(args.task_spec, "r") as task_spec:
 		lines = task_spec.read().splitlines()
 		section_lines = parse_description(lines)
-	
+
 	# Parsing variables
 	for line in section_lines["variables"]:
 		parsed = parse_variable(line)
@@ -462,13 +462,13 @@ def main():
 	for line in section_lines["prototypes"]:
 		parsed = parse_prototype(line)
 		prototypes.append(parsed)
-	
+
 	# Parsing calls
 	calls = []
 	for line in section_lines["calls"]:
 		parsed = parse_call(line)
 		calls.append(parsed)
-	
+
 	# Parsing input
 	input_ = [] # the _ is needed as input is a builtin function (it would be bad to use a variable named input, even if possible)
 	for line in section_lines["input"]:
@@ -483,7 +483,7 @@ def main():
 			output.append(parsed)
 
 	# End of parsing description file
-	
+
 	data = {
 		"task_name": task_name,
 		"input_file": input_file,
@@ -500,17 +500,17 @@ def main():
 		lang = lang_options[0]
 		if lang not in LANGUAGES_LIST:
 			sys.exit("One of the specified languages is not currently supported")
-		
+
 		# grader.extension is the standard name for graders
 		if len(lang_options) <= 1:
 			grader_name = "{0}grader.{1}".format("fast_" if ("fast" in lang) else "", EXTENSIONS_LIST[lang])
 			lang_options.append(grader_name)
-		
+
 		# template_lang.extension is the standard name for templates
 		if len(lang_options) <= 2:
 			template_name = "template_{0}.{1}".format(lang, EXTENSIONS_LIST[lang])
 			lang_options.append(template_name)
-		
+
 		if len(lang_options) > 3:
 			sys.exit("For each language you can specify, at most, the names of grader and template")
 
@@ -518,12 +518,12 @@ def main():
 
 	for lang, grader_name, template_name in chosen_languages:
 		print(grader_name, template_name)
-		
+
 		data2 = copy.deepcopy(data)
 		if lang in include_grader:
 			data2["include_grader"] = include_grader[lang]
 		if lang in include_callable:
 			data2["include_callable"] = include_callable[lang]
-		
+
 		LangClass, fast_io = CLASSES_LIST[lang]
 		LangClass(fast_io, data2).write_files(grader_name, template_name)

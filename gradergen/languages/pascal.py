@@ -17,7 +17,7 @@ class LanguagePascal(object):
 			self.fast_io = False
 
 	types = {'': '', 'int':'Longint', 'longint':'Int64', 'char':'Char', 'real':'Double'}
-	
+
 	template_types = {'':'', 'int':'1', 'longint':'123456789123', 'char':'\'f\'', 'real':'123.456'}
 
 	headers = """\
@@ -97,7 +97,7 @@ end.
 			printed_param += self.at(param.type, param.dim)
 		else:
 			printed_param += param.type + "matrix"
-		
+
 		return printed_param
 
 	# array type
@@ -167,7 +167,7 @@ end.
 
 	def call_function(self, fun):
 		parameters = ', '.join([var.name for (var, by_ref) in fun.parameters])
-		
+
 		if fun.return_var is None:
 			self.write_line("{0}({1});".format(fun.name, parameters), 1)
 		else:
@@ -253,10 +253,10 @@ end.
 	def write_files(self, grader_name, template_name):
 		self.write_grader()
 		self.write(grader_name, self.grader)
-		
+
 		self.write_template()
 		self.write(template_name, self.template)
-		
+
 		if "include_callable" in self.data:
 			self.write(self.data["task_name"] + "lib.pas", self.data["include_callable"])
 
@@ -270,7 +270,7 @@ end.
 				self.declare_variable(var)
 			else:
 				self.declare_array(var)
-		
+
 		# Declaring iterator used in for loops
 		max_dim = max(arr.dim for arr in self.data["variables"] if type(arr) == Array)
 		if max_dim > 0:
@@ -280,12 +280,12 @@ end.
 		self.write_comment("prototypes")
 		for fun in self.data["prototypes"]:
 			self.declare_prototype(fun)
-		
+
 		if "include_grader" in self.data:
 			self.write_comment("include_grader")
 			self.grader += self.data["include_grader"]
 			self.write_line()
-		
+
 		self.insert_main()
 		self.write_comment("input", 1)
 		for input_line in self.data["input"]:
@@ -330,8 +330,8 @@ end.
 	def write_template(self):
 		self.template = "unit {0};\n\n".format(self.data["task_name"])
 		self.template += "interface\n\n"
-		
-		
+
+
 		matrix_types = []
 		for fun in self.data["prototypes"]:
 			for param in fun.parameters:
@@ -339,34 +339,34 @@ end.
 					matrix_types.append(param.type)
 				elif param.dim > 2:
 					print("WARNING: pascal doesn't support multidimensional array of dimension > 2 passed as argument")
-		
+
 		if len(matrix_types) > 0:
 			self.template += "type\n"
 			for matrix_type in set(matrix_types):
 				self.template += "\t{0}matrix = array of array of {0};\n".format(matrix_type)
 			self.template += "\n"
-		
+
 		for fun in self.data["prototypes"]:
 			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
 			if fun.type == '':
 				self.template += "procedure {0}({1});\n\n".format(fun.name, "; ".join(printed_parameters))
 			else:
 				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(printed_parameters), self.types[fun.type])
-						
-		self.template += "implementation\n\n"		
-		
+
+		self.template += "implementation\n\n"
+
 		if "include_callable" in self.data:
 			self.template += "uses {0}lib;\n\n".format(self.data["task_name"])
-		
+
 		for fun in self.data["prototypes"]:
 			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
 			if fun.type == '':
 				self.template += "procedure {0}({1});\n".format(fun.name, "; ".join(printed_parameters))
 			else:
 				self.template += "function {0}({1}): {2};\n".format(fun.name, "; ".join(printed_parameters), self.types[fun.type])
-			
+
 			self.template += "begin\n"
-			
+
 			# Variables passed by ref are filled
 			for param in fun.parameters:
 				if param.by_ref:
@@ -374,15 +374,15 @@ end.
 						self.template += "\t{0} := {1};\n".format(param.name, self.template_types[param.type])
 					else:
 						self.template += "\t{0}{1} := {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
-			
+
 			if fun.type == '':
 				self.template += "\t\n"
 			else:
 				self.template += "\t{0} := {1};\n".format(fun.name, self.template_types[fun.type])
-			
+
 			self.template += "end;\n\n"
-			
-		
+
+
 		self.template += "end.\n"
 
 	def write(self, filename, source):
@@ -391,6 +391,6 @@ end.
 			os.unlink(filename)
 		except OSError:
 			pass
-		
+
 		with open(filename, "w") as f:
 			f.write(source)

@@ -19,9 +19,9 @@ class LanguageC(object):
 	extension = "c"
 
 	types = {'':'void', 'int':'int', 'longint':'long long int', 'char':'char', 'real':'double'}
-	
+
 	template_types = {'':'', 'int':'1', 'longint':'123456789123ll', 'char':'\'f\'', 'real':'123.456'}
-	
+
 	stdio_types = {'int':'d', 'longint':'lld', 'char':'c', 'real':'lf'}
 
 	headers = """\
@@ -60,11 +60,11 @@ int main() {
 		"call_fun": "Calling functions",
 		"output": "Writing output",
 	}
-	
+
 	# Print the string corresponding to a parameter
 	def print_parameter(self, param):
 		return self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name
-			
+
 	# array type
 	def at(self, type, dim):
 		return self.types[type] + "*"*dim
@@ -86,7 +86,7 @@ int main() {
 
 	def declare_prototype(self, fun):
 		printed_parameters = [self.print_parameter(param) for param in fun.parameters]
-		
+
 		self.write_line("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(printed_parameters)))
 
 	def allocate_array(self, arr):
@@ -132,7 +132,7 @@ int main() {
 	def call_function(self, fun):
 		parameter_names = [(self.byref_call if (by_ref and type(var) is not Array) else "") + var.name for (var, by_ref) in fun.parameters]
 		parameters = ', '.join(parameter_names)
-		
+
 		if fun.return_var is None:
 			self.write_line("{0}({1});".format(fun.name, parameters), 1)
 		else:
@@ -205,7 +205,7 @@ int main() {
 	def write_files(self, grader_name, template_name):
 		self.write_grader()
 		self.write(grader_name, self.grader)
-		
+
 		self.write_template()
 		self.write(template_name, self.template)
 
@@ -228,7 +228,7 @@ int main() {
 			self.write_comment("include_grader")
 			self.grader += self.data["include_grader"]
 			self.write_line()
-	
+
 		if "include_callable" in self.data:
 			self.write_comment("include_callable")
 			self.grader += self.data["include_callable"]
@@ -278,7 +278,7 @@ int main() {
 		for fun in self.data["prototypes"]:
 			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
 			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, ", ".join(printed_parameters))
-			
+
 			# Variables passed by ref are filled
 			for param in fun.parameters:
 				if param.by_ref:
@@ -287,9 +287,9 @@ int main() {
 					else:
 						self.template += "\t{0}{1} = {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
 			self.template += "\treturn {0};\n".format(self.template_types[fun.type])
-			
+
 			self.template += "}\n\n"
-			
+
 
 	def write(self, filename, source):
 		# Unlink is used to avoid following symlink
@@ -297,6 +297,6 @@ int main() {
 			os.unlink(filename)
 		except OSError:
 			pass
-		
+
 		with open(filename, "w") as f:
 			f.write(source)
