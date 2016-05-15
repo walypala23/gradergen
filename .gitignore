@@ -1,5 +1,5 @@
-# The following three rules are equivalent to "ignore files without a dot in the name"
-# Is useful to avoid putting binaries in the repository
+# The following three rules are equivalent to "ignore files without a dot in the name".
+# They're useful in order to avoid putting binaries in the repository.
 *
 !*/
 !*.*
@@ -15,3 +15,6 @@ __pycache__
 build/
 dist/
 gradergen.egg-info/
+
+# For testing
+pip_modules/
