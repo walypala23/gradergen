@@ -118,12 +118,12 @@ run_test() {
     cp template_pascal.pas $taskname.pas
     rm *.o *.ppu # Otherwise fpc seems to be non-deterministic...
 
-    CHECK gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C >template_C.out 2>template_C.out
-    CHECK gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C >template_fast_C.out 2>template_fast_C.out
-    CHECK g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp >template_CPP.out 2>template_CPP.out
-    CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP >template_fast_CPP.out 2>template_fast_CPP.out
-    CHECK fpc -dEVAL grader.pas -otemplate_pascal >template_pascal.out 2>template_pascal.out
-    CHECK fpc -dEVAL fast_grader.pas -otemplate_fast_pascal >template_fast_pascal.out 2>template_fast_pascal.out
+    gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C >template_C.out 2>template_C.out
+    gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C >template_fast_C.out 2>template_fast_C.out
+    g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp >template_CPP.out 2>template_CPP.out
+    g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP >template_fast_CPP.out 2>template_fast_CPP.out
+    fpc -dEVAL grader.pas -otemplate_pascal >template_pascal.out 2>template_pascal.out
+    fpc -dEVAL fast_grader.pas -otemplate_fast_pascal >template_fast_pascal.out 2>template_fast_pascal.out
 
     rm $taskname.pas
 
