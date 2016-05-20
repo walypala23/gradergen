@@ -26,13 +26,16 @@ CHECK() {
 
 #### Install gradergen; Enter test directory ####
 
+PYTHONPATH="$(pwd)"
+
 cd testing
 
 echo -n "Cleaning testing directories... "
 CHECK ./cleanup.sh -q
 
 mkdir -p pip_modules/lib/python
-export PYTHONPATH=`realpath ./pip_modules/lib/python`
+PYTHONPATH="$PYTHONPATH:$(realpath ./pip_modules/lib/python)"
+export PYTHONPATH
 
 echo -n "Installation of gradergen dependencies... "
 CHECK pip install -t ./pip_modules -r ../requirements.txt
