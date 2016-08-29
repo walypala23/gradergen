@@ -346,6 +346,13 @@ def main():
 		default = False,
 		help = "create graders and templates in all supported languages (with standard names)"
 	)
+	
+	group.add_argument(\
+		"--oii",
+		action = "store_true",
+		default = False,
+		help = "create graders and templates in all supported languages following oii's standard (sol/ and att/)"
+	)
 
 	group.add_argument(\
 		"--stage",
@@ -402,13 +409,13 @@ def main():
 
 	# End of parsing task.yaml
 
-	# --all, --stage
+	# --all, --stage, --oii
 	if args.all:
 		args.languages = [[lang] for lang in LANGUAGES_LIST]
 
 
 	if args.stage:
-		args.include_dir = "sol"
+		args.include_dir = "gradergen"
 		if args.stage == "fast":
 			args.languages = [
 				["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
@@ -421,7 +428,19 @@ def main():
 			]
 		else:
 			sys.exit("The argument of --stage must be `normal`, `fast` or empty.")
+	
+	if args.oii:
+		args.include_dir = "gradergen"
+		args.languages = [
+			["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
+			["fast_CPP", "sol/grader.cpp", "sol/template_cpp.cpp"],
+			["C", "att/grader.c", "att/"+task_name+".c"],
+			["fast_C", "sol/grader.c", "sol/template_c.c"],
+			["pascal", "att/grader.pas", "att/"+task_name+".pas"],
+			["fast_pascal", "sol/grader.pas", "sol/template_pascal.pas"],
+		]
 
+	
 	# Searching for include_grader and include_callable
 
 	include_dir = os.path.dirname(args.task_spec)
