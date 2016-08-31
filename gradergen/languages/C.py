@@ -63,7 +63,10 @@ int main() {
 
 	# Print the string corresponding to a parameter
 	def print_parameter(self, param):
-		return self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name
+		if param.dim == 1:
+			return self.types[param.type] + " " + param.name + "[]"
+		else:
+			return self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name
 
 	# array type
 	def at(self, type, dim):

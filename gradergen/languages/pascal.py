@@ -16,7 +16,7 @@ class LanguagePascal(object):
 		else:
 			self.fast_io = False
 
-	types = {'': '', 'int':'Longint', 'longint':'Int64', 'char':'Char', 'real':'Double'}
+	types = {'': '', 'int':'longint', 'longint':'int64', 'char':'char', 'real':'double'}
 
 	template_types = {'':'', 'int':'1', 'longint':'123456789123', 'char':'\'f\'', 'real':'123.456'}
 
@@ -275,7 +275,7 @@ end.
 		max_dim = max(arr.dim for arr in self.data["variables"] if type(arr) == Array)
 		if max_dim > 0:
 			self.write_comment("loop_iters")
-			self.write_line(", ".join("i" + str(x) for x in range(max_dim)) + ": Longint;", 1)
+			self.write_line(", ".join("i" + str(x) for x in range(max_dim)) + ": longint;", 1)
 
 		self.write_comment("prototypes")
 		for fun in self.data["prototypes"]:
