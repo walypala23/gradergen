@@ -62,11 +62,16 @@ int main() {
 	}
 
 	# Print the string corresponding to a parameter
-	def print_parameter(self, param):
-		if param.dim == 1:
-			return self.types[param.type] + " " + param.name + "[]"
-		else:
-			return self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name
+	def print_parameters(self, params):
+		parameters_string = []
+		
+		for param in params:
+			if param.dim == 1:
+				parameters_string.append(self.types[param.type] + " " + param.name + "[]")
+			else:
+				parameters_string.append(self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name)
+		
+		return ", ".join(parameters_string)
 
 	# array type
 	def at(self, type, dim):
@@ -88,9 +93,9 @@ int main() {
 		self.write_line("static {0} {1};".format(self.at(arr.type, arr.dim), arr.name) )
 
 	def declare_prototype(self, fun):
-		printed_parameters = [self.print_parameter(param) for param in fun.parameters]
+		printed_parameters = self.print_parameters(fun.parameters)
 
-		self.write_line("{0} {1}({2});".format(self.types[fun.type], fun.name, ", ".join(printed_parameters)))
+		self.write_line("{0} {1}({2});".format(self.types[fun.type], fun.name, printed_parameters))
 
 	def allocate_array(self, arr):
 		for i in range(arr.dim):
@@ -279,8 +284,8 @@ int main() {
 
 	def write_template(self):
 		for fun in self.data["prototypes"]:
-			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
-			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, ", ".join(printed_parameters))
+			printed_parameters = self.print_parameters(fun.parameters)
+			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, printed_parameters)
 
 			# Variables passed by ref are filled
 			for param in fun.parameters:

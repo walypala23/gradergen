@@ -89,16 +89,28 @@ end.
 	}
 
 	# Print the string corresponding to a parameter
-	def print_parameter(self, param):
-		printed_param = ("var " if param.by_ref else "") + param.name + ": "
-		if param.dim == 0:
-			printed_param += self.types[param.type]
-		elif param.dim == 1:
-			printed_param += self.at(param.type, param.dim)
-		else:
-			printed_param += param.type + "matrix"
-
-		return printed_param
+	def print_parameters(self, params):
+		parameters_string = []
+		
+		i = 0
+		while i  < len(params):
+			j = i+1
+			while j < len(params) and params[i].type == params[j].type and params[i].by_ref == params[j].by_ref:
+				j += 1
+			
+			param = params[i]
+			printed_param = ("var " if param.by_ref else "") + ', '.join([params[k].name for k in range(i, j)]) + ": "
+			if param.dim == 0:
+				printed_param += self.types[param.type]
+			elif param.dim == 1:
+				printed_param += self.at(param.type, param.dim)
+			else:
+				printed_param += param.type + "matrix"
+			parameters_string.append(printed_param)
+			
+			i = j
+		
+		return ", ".join(parameters_string)
 
 	# array type
 	def at(self, type, dim):
@@ -347,11 +359,11 @@ end.
 			self.template += "\n"
 
 		for fun in self.data["prototypes"]:
-			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
+			printed_parameters = self.print_parameters(fun.parameters)
 			if fun.type == '':
-				self.template += "procedure {0}({1});\n\n".format(fun.name, "; ".join(printed_parameters))
+				self.template += "procedure {0}({1});\n\n".format(fun.name, printed_parameters)
 			else:
-				self.template += "function {0}({1}): {2};\n\n".format(fun.name, "; ".join(printed_parameters), self.types[fun.type])
+				self.template += "function {0}({1}): {2};\n\n".format(fun.name, printed_parameters, self.types[fun.type])
 
 		self.template += "implementation\n\n"
 
@@ -359,11 +371,11 @@ end.
 			self.template += "uses {0}lib;\n\n".format(self.data["task_name"])
 
 		for fun in self.data["prototypes"]:
-			printed_parameters = [self.print_parameter(param) for param in fun.parameters]
+			printed_parameters = self.print_parameters(fun.parameters)
 			if fun.type == '':
-				self.template += "procedure {0}({1});\n".format(fun.name, "; ".join(printed_parameters))
+				self.template += "procedure {0}({1});\n".format(fun.name, printed_parameters)
 			else:
-				self.template += "function {0}({1}): {2};\n".format(fun.name, "; ".join(printed_parameters), self.types[fun.type])
+				self.template += "function {0}({1}): {2};\n".format(fun.name, printed_parameters, self.types[fun.type])
 
 			self.template += "begin\n"
 
