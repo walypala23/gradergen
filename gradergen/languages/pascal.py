@@ -95,7 +95,7 @@ end.
 		i = 0
 		while i  < len(params):
 			j = i+1
-			while j < len(params) and params[i].type == params[j].type and params[i].by_ref == params[j].by_ref:
+			while j < len(params) and params[i].type == params[j].type and params[i].by_ref == params[j].by_ref and params[i].dim == params[j].dim:
 				j += 1
 			
 			param = params[i]
@@ -110,7 +110,7 @@ end.
 			
 			i = j
 		
-		return ", ".join(parameters_string)
+		return "; ".join(parameters_string)
 
 	# array type
 	def at(self, type, dim):
