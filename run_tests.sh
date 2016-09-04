@@ -118,12 +118,12 @@ run_test() {
     cp template_pascal.pas $taskname.pas
     rm *.o *.ppu # Otherwise fpc seems to be non-deterministic...
 
-    gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C >template_C.out 2>template_C.out
-    gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C >template_fast_C.out 2>template_fast_C.out
-    g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp >template_CPP.out 2>template_CPP.out
-    g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP >template_fast_CPP.out 2>template_fast_CPP.out
-    fpc -dEVAL grader.pas -otemplate_pascal >template_pascal.out 2>template_pascal.out
-    fpc -dEVAL fast_grader.pas -otemplate_fast_pascal >template_fast_pascal.out 2>template_fast_pascal.out
+    CHECK gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C || touch template_c.errors
+    CHECK gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C || touch template_fast_c.errors
+    CHECK g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp || touch template_cpp.errors
+    CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP || touch template_fast_cpp.errors
+    CHECK fpc -dEVAL grader.pas -otemplate_pascal || touch template_pascal.errors
+    CHECK fpc -dEVAL fast_grader.pas -otemplate_fast_pascal || touch template_fast_pascal.errors
 
     rm $taskname.pas
 
@@ -153,42 +153,49 @@ do
     run_test $test
 done
 
+printf "${BOLDW}"
+echo
+echo
+echo "###################################################"
+echo "###################################################"
+echo "#################### RESULTS ######################"
+echo "###################################################"
+echo "###################################################"
+echo
+printf "${NC}" 
 for test in ${TESTS[@]}
 do
     echo
     printf "${BOLDW}"
     echo $test
+    printf "${NC}"
     for j in $FILES
     do
-        # echo -n "("$(cat $i/$j.time)"s) "
-        #echo $j
-        chronic diff -q $test/correct.md5 $test/$j.out.md5
+		echo -n "$j: "
+        diff -q $test/correct.md5 $test/$j.out.md5 > /dev/null
         if [ $? -ne 0 ]
         then
             printf "${RED}"
-            echo $j
+            echo -n "grader "
             printf "${NC}"
-            head -c2k $test/$j.out | head -c -1
-            echo
+            # head -c2k $test/$j.out | head -c -1
+            # echo
         else
             printf "${GREEN}"
-            echo $j
+            echo -n "grader "
             printf "${NC}"
         fi
-    done
-
-    echo
-
-    if [ -f $test/template.errors ]
-    then
-        printf "${RED}"
-        echo "template"
-        printf "${NC}"
-        head -c2k $test/template.errors | head -c -1
+        
+        if [ -f "$test/template_$j.errors" ]
+        then
+		    printf "${RED}"
+            echo -n "template"
+            printf "${NC}"
+        else
+			printf "${GREEN}"
+            echo -n "template"
+            printf "${NC}"
+        fi
         echo
-    else
-        printf "${GREEN}"
-        echo "template"
-        printf "${NC}"
-    fi
+    done
 done
