@@ -40,7 +40,7 @@ class Call:
 		if p is None:
 			p = []
 		self.name = n
-		self.parameters = p # List of Variable/Array
+		self.parameters = p # List of (Variable/Array, by_ref). The by_ref is not parsed but deduced from the matched prototype.
 		self.return_var = r # Cannot be an Array, must be a simple Variable.
 		self.prototype = proto # The prototype matched by this call
 
