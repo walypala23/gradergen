@@ -14,6 +14,7 @@ longint res
 inizializza(longint first)
 aggiungi(longint X)
 longint risultato()
+AggiungiTutti(int N, longint X[]) {grader}
 
 ***calls***
 inizializza(S)

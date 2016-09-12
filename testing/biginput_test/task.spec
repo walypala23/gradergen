@@ -12,7 +12,7 @@ char mat[N][N]
 cerca(int N, char[][] &A)
 
 ***calls***
-cerca(N, &mat)
+cerca(N, mat)
 
 
 ***input***

@@ -1,0 +1,1 @@
+(fast-)pascal give the wrong answer for unsupported (or inconsistent) double output. 

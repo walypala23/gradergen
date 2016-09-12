@@ -169,6 +169,11 @@ do
     printf "${BOLDW}"
     echo $test
     printf "${NC}"
+    if [ -f "$test/comments.txt" ]
+    then
+        cat $test/comments.txt
+    fi
+    
     for j in $FILES
     do
 		echo -n "$j: "

@@ -256,22 +256,11 @@ int main() {
 		self.write_comment("call_fun", 1)
 		for fun in self.data["calls"]:
 			for (var, by_ref) in fun.parameters:
-				if type(var) == Array and var.allocated == False:
-					if not all((expr.var is None or expr.var.read) for expr in var.sizes):
-						sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
+				if type(var) == Array and not var.allocated:
 					self.allocate_array(var)
 					var.allocated = True
-				if type(var) == Variable and not var.read and not by_ref:
-					sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
 
 			self.call_function(fun)
-			if fun.return_var:
-				fun.return_var.read = True
-
-			# Variables passed by reference are "read"
-			for (var, by_ref) in fun.parameters:
-				if type(var) == Variable and by_ref:
-					var.read = True
 
 		self.write_comment("output", 1)
 		for output_line in self.data["output"]:
@@ -284,6 +273,8 @@ int main() {
 
 	def write_template(self):
 		for fun in self.data["prototypes"]:
+			if fun.location == 'grader': # Skipping prototypes defined in include_grader
+				continue
 			printed_parameters = self.print_parameters(fun.parameters)
 			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, printed_parameters)
 

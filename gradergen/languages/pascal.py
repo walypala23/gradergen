@@ -33,9 +33,9 @@ var
 begin
    read(fr, c);
    while (ord(c) = $0020) or (ord(c) = $0009) or
-         (ord(c) = $000a) or (ord(c) = $000b) or
-         (ord(c) = $000c) or (ord(c) = $000d) do
-       read(fr, c);
+		 (ord(c) = $000a) or (ord(c) = $000b) or
+		 (ord(c) = $000c) or (ord(c) = $000d) do
+	   read(fr, c);
 
    read_char_skip_whitespaces := c;
 end;
@@ -54,8 +54,8 @@ var	\
 begin
 	%(input)s
 	%(output)s
-    reset(fr);
-    rewrite(fw);
+	reset(fr);
+	rewrite(fw);
 """
 	main_function_fast_io = """\
 
@@ -67,7 +67,7 @@ begin
 	footers = """\
 
 	close(fr);
-    close(fw);
+	close(fw);
 end.
 """
 	footers_fast_io = """\
@@ -314,21 +314,10 @@ end.
 		for fun in self.data["calls"]:
 			for (var, by_ref) in fun.parameters:
 				if type(var) == Array and var.allocated == False:
-					if not all((expr.var is None or expr.var.read) for expr in var.sizes):
-						sys.exit("Devono essere note le dimensioni degli array passati alle funzioni dell'utente")
 					self.allocate_array(var)
 					var.allocated = True
-				if type(var) == Variable and not var.read and not by_ref:
-					sys.exit("I parametri non passati per reference alle funzioni dell'utente devono essere noti")
 
 			self.call_function(fun)
-			if fun.return_var:
-				fun.return_var.read = True
-
-			# Variables passed by reference are "read"
-			for var, by_ref in fun.parameters:
-				if type(var) == Variable and by_ref:
-					var.read = True
 
 		self.write_comment("output", 1)
 		for output_line in self.data["output"]:
@@ -343,22 +332,29 @@ end.
 		self.template = "unit {0};\n\n".format(self.data["task_name"])
 		self.template += "interface\n\n"
 
-
+		
+		# Checking multidimensional arrays, as they have to be defined ad-hoc.
 		matrix_types = []
 		for fun in self.data["prototypes"]:
+			if fun.location == 'grader': # Skipping prototypes defined in include_grader
+				continue
 			for param in fun.parameters:
 				if param.dim == 2:
 					matrix_types.append(param.type)
 				elif param.dim > 2:
 					print("WARNING: pascal doesn't support multidimensional array of dimension > 2 passed as argument")
 
+		# Defining ad-hoc matrices
 		if len(matrix_types) > 0:
 			self.template += "type\n"
 			for matrix_type in set(matrix_types):
 				self.template += "\t{0}matrix = array of array of {0};\n".format(matrix_type)
 			self.template += "\n"
-
+		
+		# Declarations
 		for fun in self.data["prototypes"]:
+			if fun.location == 'grader': # Skipping prototypes defined in include_grader
+				continue
 			printed_parameters = self.print_parameters(fun.parameters)
 			if fun.type == '':
 				self.template += "procedure {0}({1});\n\n".format(fun.name, printed_parameters)
@@ -370,7 +366,10 @@ end.
 		if "include_callable" in self.data:
 			self.template += "uses {0}lib;\n\n".format(self.data["task_name"])
 
+		# Definitions
 		for fun in self.data["prototypes"]:
+			if fun.location == 'grader': # Skipping prototypes defined in include_grader
+				continue
 			printed_parameters = self.print_parameters(fun.parameters)
 			if fun.type == '':
 				self.template += "procedure {0}({1});\n".format(fun.name, printed_parameters)
@@ -379,7 +378,7 @@ end.
 
 			self.template += "begin\n"
 
-			# Variables passed by ref are filled
+			# Variables passed by ref are filled in the template
 			for param in fun.parameters:
 				if param.by_ref:
 					if param.dim == 0:

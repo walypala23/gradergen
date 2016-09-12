@@ -17,7 +17,7 @@ int C
 cerca(int N, char[][] mat, int &A, int &B, int &C)
 
 ***calls***
-cerca(N, mat, &A, &B, &C)
+cerca(N, mat, A, B, C)
 
 
 ***input***

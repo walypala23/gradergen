@@ -2,7 +2,7 @@ class Variable:
 	def __init__(self, n, t):
 		self.name = n
 		self.type = t
-		self.read = False
+		self.known = False # This is not used in any single language class, but only in the main parser.
 
 class Array:
 	def __init__(self, n, t, s):
@@ -10,31 +10,39 @@ class Array:
 		self.type = t
 		self.dim = len(s)
 		self.sizes = s
-		self.allocated = False
+		self.allocated = False # Handled only by single language classes. It is used to know when to allocate an array.
+		self.known = False # This is not used in any single language class, but only in the main parser.
 		
 class Parameter:
 	def __init__(self, n, t, d = 0, b = False):
 		self.name = n
-		self.type = t
+		self.type = t # One of the primitive types
 		self.dim = d # This is the dimension, 0 means it is a simple variable
 		self.by_ref = b
 
 class Prototype:
-	def __init__(self, n = "", p = None, t = ""):
+	def __init__(self, n = "", p = None, t = "", o = "solution"):
 		if p is None:
 			p = []
 		
 		self.name = n
 		self.parameters = p # List of Parameters
-		self.type = t
+		self.type = t # One of the primitive types (array not supported)
+		# Where this prototype should be defined. 
+		# Can be 'solution', if this prototype has to be defined by the contestant
+		# in his solution, or 'grader' if this prototype should be defined in
+		# include_grader.
+		# If the value is 'grader', then this prototype is not included in templates.
+		self.location = o # TODO: Should be an enum
 			
 class Call:
-	def __init__(self, n = "", p = None, r = None):
+	def __init__(self, n = "", p = None, r = None, proto = None):
 		if p is None:
 			p = []
 		self.name = n
-		self.parameters = p # List of couple (Variables/Arrays, by_ref)
-		self.return_var = r
+		self.parameters = p # List of Variable/Array
+		self.return_var = r # Cannot be an Array, must be a simple Variable.
+		self.prototype = proto # The prototype matched by this call
 
 class IOline:
 	def __init__(self, t = None, l = None, s = None):

@@ -37,13 +37,18 @@ TASK_YAML = "task.yaml"
 
 # variables is used in parsing functions and must be global (only get_variable refers to it)
 variables = []
+# prototypes is used in parsing calls and must be global (only match_call refers to it)
+prototypes = []
+
+using_include_grader = False # Non sarebbe meglio passarlo alle funzioni che lo usano?
+using_include_callable = False # Is it really used?
 
 def get_variable(name):
 	global variables
 	for var in variables:
 		if var.name == name:
 			return var
-
+    
 	sys.exit("Una delle variabili a cui ci si riferisce non è stata dichiarata.")
 
 def get_primitive_variable(name):
@@ -59,6 +64,53 @@ def get_array_variable(name):
 		sys.exit("Una variabile che deve essere array è un tipo primitivo.")
 
 	return var
+
+# Returns true if the given variable matches the parameter
+def match_parameter(variable, parameter):
+	if variable.type != parameter.type:
+		return False
+		
+	if type(variable) == Array:
+		if variable.dim != parameter.dim:
+			return False
+	elif parameter.dim != 0:
+		return False
+	
+	return True
+
+# Check whether the call matches one of the prototypes.
+# If the call is matched, sets call.proto to the matched prototype. Moreover
+# the by_ref boolean of the parameters are also set (deducting them from the
+# prototype).
+def match_call(call):
+	global prototypes
+	global variables
+	
+	for proto in prototypes:
+		if proto.name == call.name:
+			if len(proto.parameters) != len(call.parameters):
+				return False
+			
+			if proto.type:
+				if call.return_var is None:
+					return False 
+				if proto.type != call.return_var.type:
+					return False
+			elif call.return_var is not None:
+				return False
+			
+			if not all(match_parameter(call.parameters[i][0], proto.parameters[i]) for i in range(len(call.parameters))):
+				return False
+			
+			# Setting by_ref
+			for i in range(len(call.parameters)):
+				call.parameters[i] = (call.parameters[i][0], proto.parameters[i].by_ref)
+			# Setting the prototype
+			call.prototypes = proto
+			return True
+	
+	return False
+
 
 # FIXME: Pascal is case-insensitive, so this function should be too.
 def add_used_name(s):
@@ -140,8 +192,24 @@ def parse_variable(line):
 
 def parse_prototype(line):
 	proto_obj = Prototype()
-
-	first_split = re.split("[\(\)]", line)
+	
+	after_location_parsing = line
+	if "{" in line: # Owner is defined
+		location_split = re.split("[\{\}]", line)
+		if len(location_split) != 3:
+			sys.exit("La descrizione di un prototipo ha un numero errato di parentesi graffe")
+		
+		if location_split[1] not in ["solution", "grader"]:
+			sys.exit("La locazione (tra graffe) di un prototipo deve essere 'solution' o 'grader'")
+		
+		if location_split[1] == "grader":
+			global using_include_grader
+			if not using_include_grader:
+				sys.exit("Un prototipo non può avere come locazione (tra graffe) il 'grader' se non si sta usando include_grader")
+		proto_obj.location = location_split[1]
+		after_location_parsing = location_split[0].strip()
+	
+	first_split = re.split("[\(\)]", after_location_parsing)
 	if len(first_split) != 3:
 		sys.exit("La descrizione di un prototipo ha un numero errato di parentesi tonde")
 
@@ -190,7 +258,7 @@ def parse_call(line):
 	elif len(line) == 2:
 		var = line[0].strip()
 		fun_obj.return_var = get_primitive_variable(var)
-
+		
 		line = line[1].strip()
 	else:
 		line = line[0].strip()
@@ -202,21 +270,35 @@ def parse_call(line):
 		name = line[0].strip()
 
 		fun_obj.name = name # It is not added to used names, as it might already be declared or it might be in include_grader
-
+		
 		fun_obj.parameters = []
 
 		if len(line[1].strip()) > 0:
 			parameters = re.split(",", line[1])
 			for param in parameters:
 				param = param.strip()
-				by_ref = False
-
-				if param.startswith("&"):
-					param = param[1:]
-					by_ref = True
-
-				fun_obj.parameters.append((get_variable(param), by_ref))
-
+				parameter = get_variable(param)
+				
+				if type(parameter) == Array:
+					if not all((expr.var is None or expr.var.known) for expr in parameter.sizes):
+						sys.exit("The sizes of an array passed to a function must be known")
+			
+				fun_obj.parameters.append((parameter, False))
+	
+	if not match_call(fun_obj):
+		sys.exit("One of the calls doesn't match any prototype.")
+		
+	for param, by_ref in fun_obj.parameters:
+		if not by_ref and not param.known:
+			sys.exit("Parameters passed (not by reference) to a function must be known")
+	
+	# After execution return value and reference parameters are known.
+	if fun_obj.return_var is not None:
+		fun_obj.return_var.known = True
+	for param, by_ref in fun_obj.parameters:
+		if by_ref:
+			param.known = True
+	
 	return fun_obj
 
 def parse_input(line):
@@ -228,11 +310,11 @@ def parse_input(line):
 		for arr in all_arrs:
 			if arr.sizes != all_arrs[0].sizes:
 				sys.exit("Array da leggere insieme devono avere le stesse dimensioni")
-
-			for expr in arr.sizes:
-				if expr.var is not None and expr.var.read == False:
-					sys.exit("Quando si legge un array devono essere note le dimensioni")
-
+			
+			if not all((expr.var is None or expr.var.known) for expr in arr.sizes):
+				sys.exit("Quando si legge un array devono essere note le dimensioni")
+			
+			arr.known = True
 		input_line = IOline("Array", all_arrs, all_arrs[0].sizes)
 		return input_line
 
@@ -240,7 +322,7 @@ def parse_input(line):
 		all_vars = re.split(" ", line) # Split line by spaces
 		all_vars = [get_primitive_variable(name) for name in all_vars if name] # Remove empty chuncks
 		for var in all_vars:
-			var.read = True
+			var.known = True
 
 		input_line = IOline("Variable", all_vars)
 		return input_line
@@ -258,7 +340,7 @@ def parse_output(line):
 				sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
 
 			for expr in arr.sizes:
-				if expr.var is not None and expr.var.read == False:
+				if expr.var is not None and expr.var.known == False:
 					sys.exit("Quando si scrive un array devono essere note le dimensioni")
 
 		input_line = IOline("Array", all_arrs, all_arrs[0].sizes)
@@ -267,8 +349,6 @@ def parse_output(line):
 	else: # Write variables
 		all_vars = re.split(" ", line) # Split line by spaces
 		all_vars = [get_primitive_variable(name) for name in all_vars if name] # Remove empty chuncks
-		for var in all_vars:
-			var.read = True
 
 		input_line = IOline("Variable", all_vars)
 		return input_line
@@ -308,6 +388,7 @@ def main():
 	global languages_serializer
 	global DESCRIPTION_FILE
 	global variables
+	global prototypes
 
 	parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
 	parser.add_argument(\
@@ -440,80 +521,6 @@ def main():
 			["fast_pascal", "sol/grader.pas", "sol/template_pascal.pas"],
 		]
 
-	
-	# Searching for include_grader and include_callable
-
-	include_dir = os.path.dirname(args.task_spec)
-	if args.include_dir is not None:
-		include_dir = args.include_dir
-
-	include_grader = {}
-	for lang in LANGUAGES_LIST:
-		ext = EXTENSIONS_LIST[lang]
-		try:
-			with open(os.path.join(include_dir, "include_grader." + ext)) as f:
-				include_grader[lang] = f.read()
-		except IOError:
-			pass
-
-	include_callable = {}
-	for lang in LANGUAGES_LIST:
-		ext = EXTENSIONS_LIST[lang]
-		try:
-			with open(os.path.join(include_dir, "include_callable." + ext)) as f:
-				include_callable[lang] = f.read()
-		except IOError:
-			pass
-
-
-	# Parsing description file
-	with open(args.task_spec, "r") as task_spec:
-		lines = task_spec.read().splitlines()
-		section_lines = parse_description(lines)
-
-	# Parsing variables
-	for line in section_lines["variables"]:
-		parsed = parse_variable(line)
-		variables.append(parsed)
-
-	# Parsing prototypes
-	prototypes = []
-	for line in section_lines["prototypes"]:
-		parsed = parse_prototype(line)
-		prototypes.append(parsed)
-
-	# Parsing calls
-	calls = []
-	for line in section_lines["calls"]:
-		parsed = parse_call(line)
-		calls.append(parsed)
-
-	# Parsing input
-	input_ = [] # the _ is needed as input is a builtin function (it would be bad to use a variable named input, even if possible)
-	for line in section_lines["input"]:
-		parsed = parse_input(line)
-		input_.append(parsed)
-
-	# Parsing output
-	output =  []
-	if "output" in section_lines:
-		for line in section_lines["output"]:
-			parsed = parse_output(line)
-			output.append(parsed)
-
-	# End of parsing description file
-
-	data = {
-		"task_name": task_name,
-		"input_file": input_file,
-		"output_file": output_file,
-		"variables": variables,
-		"prototypes": prototypes,
-		"calls": calls,
-		"input": input_,
-		"output": output,
-	}
-
 	chosen_languages = []
 	for lang_options in args.languages:
 		lang = lang_options[0]
@@ -534,6 +541,90 @@ def main():
 			sys.exit("For each language you can specify, at most, the names of grader and template")
 
 		chosen_languages.append((lang, lang_options[1], lang_options[2]))
+	
+	# Searching for include_grader and include_callable
+	include_dir = os.path.dirname(args.task_spec)
+	if args.include_dir is not None:
+		include_dir = args.include_dir
+
+	include_grader = {}
+	for lang, grader_name, template_name in chosen_languages:
+		ext = EXTENSIONS_LIST[lang]
+		try:
+			with open(os.path.join(include_dir, "include_grader." + ext)) as f:
+				include_grader[lang] = f.read()
+		except IOError:
+			pass
+		
+		
+	if include_grader:
+		global using_include_grader
+		using_include_grader = True
+		if len(include_grader) != len(chosen_languages):
+			sys.exit("The include_grader file has to exist for all or for none of the chosen languages.")
+	
+	include_callable = {}
+	for lang, grader_name, template_name in chosen_languages:
+		ext = EXTENSIONS_LIST[lang]
+		try:
+			with open(os.path.join(include_dir, "include_callable." + ext)) as f:
+				include_callable[lang] = f.read()
+		except IOError:
+			pass
+	
+	if include_callable:
+		global using_include_callable
+		using_include_callable = True
+		if len(include_callable) != len(chosen_languages):
+			sys.exit("The include_callable file has to exist for all or for none of the chosen languages.")
+	
+
+	# Parsing description file
+	with open(args.task_spec, "r") as task_spec:
+		lines = task_spec.read().splitlines()
+		section_lines = parse_description(lines)
+
+	# Parsing variables
+	for line in section_lines["variables"]:
+		parsed = parse_variable(line)
+		variables.append(parsed)
+
+	# Parsing prototypes
+	for line in section_lines["prototypes"]:
+		parsed = parse_prototype(line)
+		prototypes.append(parsed)
+
+	# Parsing input
+	input_ = [] # the _ is needed as input is a builtin function (it would be bad to use a variable named input, even if possible)
+	for line in section_lines["input"]:
+		parsed = parse_input(line)
+		input_.append(parsed)
+
+	# Parsing calls
+	calls = []
+	for line in section_lines["calls"]:
+		parsed = parse_call(line)
+		calls.append(parsed)
+
+	# Parsing output
+	output_ =  [] # The final _ is just for being consistent with input_ 
+	if "output" in section_lines:
+		for line in section_lines["output"]:
+			parsed = parse_output(line)
+			output_.append(parsed)
+
+	# End of parsing description file
+
+	data = {
+		"task_name": task_name,
+		"input_file": input_file,
+		"output_file": output_file,
+		"variables": variables,
+		"prototypes": prototypes,
+		"calls": calls,
+		"input": input_,
+		"output": output_,
+	}
 
 	for lang, grader_name, template_name in chosen_languages:
 		print(grader_name, template_name)

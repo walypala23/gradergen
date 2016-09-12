@@ -14,7 +14,7 @@ int C[3*N-5]
 moltiplica(int N, int[] X, int[] Y, int[] &res)
 
 ***calls***
-moltiplica(N, A, B, &C)
+moltiplica(N, A, B, C)
 
 ***input***
 N
