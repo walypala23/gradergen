@@ -26,8 +26,7 @@ The section ends when another section starts, or the file ends.
 
 This is a possible `task.spec` file:
 
-<!--- php is used to avoid syntax highlighting --->
-```php
+```
 # Some comments
 # Lines beginning with # and empty lines are ignored.
 
@@ -66,7 +65,7 @@ There are two type of variables: primitive type variables and arrays. We will de
 
 A line describing a simple variable has the following structure:
 
-```php
+```
 type_identifier variable_name
 ``` 
 
@@ -78,7 +77,7 @@ The line states that the variable with name `variable_name` is of the given type
 
 A line describing an array has the following structure:
 
-```php
+```
 type_identifier array_name[size1][size2]...[sizeN]
 ``` 
 
@@ -92,7 +91,7 @@ Here you have to insert both the functions that should be defined in the contest
 This is the only section processed to generate the template.
 
 Each line of this section must contain a prototype for a function. The general syntax of the prototype is:
-```php
+```
 return_type function_name(parameter1, parameter2, ..., parametern)
 ```
 The `return_type` is a type_specifier and obviously is the type of the variable returned by the function.  
@@ -100,13 +99,13 @@ After the prototype, on the same line, there might be `{location}` where locatio
 
 Each parameter must contain the type (arrays are possible), the name (used in the template and in the function declaration in the grader) and whether the parameters should be passed by reference or not. If you want to know more about references see the [section](#references-in-various-languages) focused on them. A parameter should be passed by reference only if the function is expected to modify it.   
 The syntax for the parameter definition is the following:
-```php
+```
 type_identifier &parameter_name[][]..[][]
 ```
 The ampersand `&`, if present, means that the parameter should be passed by reference. The sequence of `[]`, if present, means that the parameter is an array and its dimension is the number of pairs of square brackets.
 
 Given all of the informations above you should now understand the meanings of the following correct prototypes:
-```php
+```
 # FindSum returns the sum of a and b
 int FindSum(int a, int b)
 
