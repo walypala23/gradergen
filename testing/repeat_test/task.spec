@@ -13,12 +13,13 @@ int B[N]
 ***prototypes***
 int moltiplica(int x, int y)
 
-***calls***
-repeat N: B[i0] = moltiplica(A[i0], i0)
-
 ***input***
 N
 A[]
+
+***calls***
+repeat N: B[i0] = moltiplica(A[i0], i0)
+
 
 ***output***
 B[]

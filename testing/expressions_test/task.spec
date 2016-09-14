@@ -13,12 +13,12 @@ int C[3*N-5]
 ***prototypes***
 moltiplica(int N, int[] X, int[] Y, int[] &res)
 
-***calls***
-moltiplica(N, A, B, C)
-
 ***input***
 N
 A[] B[]
+
+***calls***
+moltiplica(N, A, B, C)
 
 ***output***
 C[]

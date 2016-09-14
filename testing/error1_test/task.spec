@@ -14,13 +14,12 @@ int res
 ***prototypes***
 int f(int N)
 
-***calls***
-res = f(N)
-
-
 ***input***
 N
 A[N]
+
+***calls***
+res = f(N)
 
 ***output***
 res

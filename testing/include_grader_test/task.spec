@@ -16,15 +16,15 @@ aggiungi(longint X)
 longint risultato()
 AggiungiTutti(int N, longint X[]) {grader}
 
-***calls***
-inizializza(S)
-AggiungiTutti(N, X)
-res = risultato()
-
 ***input***
 N
 S
 X[]
+
+***calls***
+inizializza(S)
+AggiungiTutti(N, X)
+res = risultato()
 
 ***output***
 res

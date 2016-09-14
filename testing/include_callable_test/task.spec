@@ -14,11 +14,11 @@ int direzione
 ***prototypes***
 Pianifica(int N, int[] altezza)
 
-***calls***
-Pianifica(N, altezza)
-
 ***input***
 N
 altezza[]
+
+***calls***
+Pianifica(N, altezza)
 
 ***output***

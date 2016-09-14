@@ -11,14 +11,12 @@ char mat[N][N]
 ***prototypes***
 cerca(int N, char[][] &A)
 
-***calls***
-cerca(N, mat)
-
-
 ***input***
 N
 mat[][]
 
+***calls***
+cerca(N, mat)
 
 ***output***
 mat[][]
