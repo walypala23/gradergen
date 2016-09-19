@@ -1,4 +1,5 @@
 import enum
+import sys
 
 # Here the lines matched by regex (defined as property of RegexParser) are 
 # transformed in objects. 
@@ -38,7 +39,7 @@ class Array:
         self.known = False # This is not used in any single language class, but only in the main parser.
     
     def is_allocable(self):
-        return all(size.is_known() for size in self.size)
+        return all(size.is_known() for size in self.sizes)
         
 class Parameter:
     def __init__(self, match_tree):
@@ -51,7 +52,7 @@ class Parameter:
         self.by_ref = "&" in match_tree["by_ref"]
         
 class Prototype:
-    def __init__(self, match_tree):
+    def __init__(self, match_tree, using_include_grader):
         self.name = match_tree["name"]
         self.type = PrimitiveType(match_tree["return_type"]) # One of the primitive types (array not supported)
         self.parameters = [Parameter(param) for param in match_tree["params"]]
@@ -60,7 +61,10 @@ class Prototype:
         # in his solution, or GRADER if this prototype should be defined in
         # include_grader.
         # If the value is GRADER, then this prototype is not included in templates.
-        self.location = Location(match_tree["location"]) if "location" in match_tree else Location.GRADER
+        self.location = Location(match_tree["location"]) if "location" in match_tree else Location.SOLUTION
+        
+        if not using_include_grader and self.location == Location.GRADER:
+            sys.exit("The location of a prototype cannot be 'grader' if you are not providing the include_grader file")
 
 class Call:
     def __init__(self, match_tree, data_manager):
@@ -122,26 +126,17 @@ class IOVariables:
             sys.exit("It is not possible to have both arrays and variables on the same IO line. "
                      "Furthermore, arrays have to be denoted using the square bracket notation.")
         
-        self.type = self.variables[0].type
-        
-        if not all(var.type == self.type for var in self.variables):
-            sys.exit("The variables read/written on the same line must be of the same type")
-        
         if is_input_or_output == "output" and not all(var.known for var in self.variables):
             sys.exit("Before writing a variable to output it must have been assigned a value")
 
 class IOArrays:
     def __init__(self, match_tree, data_manager, is_input_or_output):
-        self.arrays = [data_manager.get_variable(arr) for arr in match_tree['arrays']]
+        self.arrays = [data_manager.get_variable(arr["name"]) for arr in match_tree['arrays']]
         if not all(type(arr) == Array for arr in self.arrays):
             sys.exit("It is not possible to have both arrays and variables on the same IO line. "
                      "Furthermore, arrays have to be denoted using the square bracket notation.")
-        
-        self.type = self.arrays[0].type
+                     
         self.sizes = self.arrays[0].sizes
-        
-        if not all(arr.type == self.type for arr in self.arrays):
-            sys.exit("The arrays read on the same line must be of the same type")
             
         if not all(arr.sizes == self.sizes for arr in self.arrays):
             sys.exit("Arrays read on the same line must have the same type")
@@ -152,8 +147,9 @@ class IOArrays:
         if is_input_or_output == "output" and not all(arr.known for arr in self.arrays):
             sys.exit("Before writing an array to output it must have been filled with values")
 
+
+# coef * var + const
 class Expression:
-    # a*var+b
     def __init__(self, match_tree, data_manager):
         if "const1" in match_tree: # Constant expression, just a number
             self.coef = 0
@@ -162,35 +158,35 @@ class Expression:
         else:
             self.coef = int(match_tree["coef"] if "coef" in match_tree else 1) 
             self.var = data_manager.get_variable(match_tree["variable"])
-            if self.var.type not in [Type.INT, Type.LONGINT]:
+            if self.var.type not in [PrimitiveType.INT, PrimitiveType.LONGINT]:
                 sys.exit("Variables in expressions must be int or longint") 
-            self.const = int(match_tree["const2"].replace(" ", "") if "const2" in match_tree else 1)
+            self.const = int(match_tree["const2"].replace(" ", "") if "const2" in match_tree else 0)
 
     def to_string(self):
         res = ""
         if self.var==None:
-            res += str(self.b)
+            res += str(self.const)
             return res
 
-        if self.a == -1:
+        if self.coef == -1:
             res += "-"
-        elif self.a != -1 and self.a != 1:
-            res += str(self.a) + "*"
+        elif self.coef != -1 and self.coef != 1:
+            res += str(self.coef) + "*"
 
         res += self.var.name
 
-        if self.b != 0:
-            if self.b>0:
-                res+="+" + str(self.b)
+        if self.const != 0:
+            if self.const>0:
+                res+="+" + str(self.const)
             else:
-                res+=str(self.b)
+                res+=str(self.const)
         return res
     
-    def is_known():
+    def is_known(self):
         return self.var is None or self.var.known
     
     def __eq__(self, expr2):
-        return (self.a == expr2.a and self.b == expr2.b and self.var == expr2.var)
+        return (self.coef == expr2.coef and self.const == expr2.const and self.var == expr2.var)
 
     def __ne__(self, expr2):
         return not self.__eq__(expr2)

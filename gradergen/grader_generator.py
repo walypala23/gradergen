@@ -7,7 +7,8 @@ import argparse # to parse command line arguments
 import copy # to avoid making too many / too few "array allocations" in the grader
 import yaml # parse task.yaml
 
-from gradergen.structures import Variable, Array, Parameter, Prototype, Call, IOline, Expression
+from gradergen.RegexParser import RegexParser
+from gradergen.structures import Variable, Array, Parameter, Prototype, Call, IOVariables, IOArrays, Expression
 from gradergen.languages.C import LanguageC
 from gradergen.languages.CPP import LanguageCPP
 from gradergen.languages.pascal import LanguagePascal
@@ -43,21 +44,21 @@ class DataManager:
         self.input_ = [] 
         self.calls = []
         self.output = []
-        used_names = set()
+        self.used_names = set()
     
     def add_variable(self, var):
         name = var.name
-        if name in used_names:
+        if name in self.used_names:
             sys.exit("Names of variables, arrays and functions must be all different")
-        used_names.add(name)
+        self.used_names.add(name)
         self.variables[name] = var
     
     def add_prototype(self, proto):
         name = proto.name
-        if name in used_names:
+        if name in self.used_names:
             sys.exit("Names of variables, arrays and functions must be all different")
-        used_names.add(name)
-        self.prototypes[name] = var
+        self.used_names.add(name)
+        self.prototypes[name] = proto
     
     def get_variable(self, name):
         if name not in self.variables:
@@ -71,331 +72,15 @@ class DataManager:
     
     def make_copy(self):
         return copy.deepcopy({
-            "variables": self.variables.values(),
-            "prototypes": self.prototypes.values(),
+            "variables": list(self.variables.values()),
+            "prototypes": list(self.prototypes.values()),
             "input": self.input_,
             "calls": self.calls,
             "output": self.output,        
         })
 
-# variables is used in parsing functions and must be global (only get_variable refers to it)
-variables = []
-# prototypes is used in parsing calls and must be global (only match_call refers to it)
-prototypes = []
-
-using_include_grader = False # Non sarebbe meglio passarlo alle funzioni che lo usano?
-using_include_callable = False # Is it really used?
-
-def get_variable(name):
-    global variables
-    for var in variables:
-        if var.name == name:
-            return var
-    
-    sys.exit("Una delle variabili a cui ci si riferisce non è stata dichiarata.")
-
-def get_primitive_variable(name):
-    var = get_variable(name)
-    if type(var) == Array:
-        sys.exit("Una variabile che deve essere primitiva è un array.")
-
-    return var
-
-def get_array_variable(name):
-    var = get_variable(name)
-    if type(var) == Variable:
-        sys.exit("Una variabile che deve essere array è un tipo primitivo.")
-
-    return var
-
-# Returns true if the given variable matches the parameter
-def match_parameter(variable, parameter):
-    if variable.type != parameter.type:
-        return False
-        
-    if type(variable) == Array:
-        if variable.dim != parameter.dim:
-            return False
-    elif parameter.dim != 0:
-        return False
-    
-    return True
-
-# Check whether the call matches one of the prototypes.
-# If the call is matched, sets call.proto to the matched prototype. Moreover
-# the by_ref boolean of the parameters are also set (deducting them from the
-# prototype).
-def match_call(call):
-    global prototypes
-    global variables
-    
-    for proto in prototypes:
-        if proto.name == call.name:
-            if len(proto.parameters) != len(call.parameters):
-                return False
-            
-            if proto.type:
-                if call.return_var is None:
-                    return False 
-                if proto.type != call.return_var.type:
-                    return False
-            elif call.return_var is not None:
-                return False
-            
-            if not all(match_parameter(call.parameters[i][0], proto.parameters[i]) for i in range(len(call.parameters))):
-                return False
-            
-            # Setting by_ref
-            for i in range(len(call.parameters)):
-                call.parameters[i] = (call.parameters[i][0], proto.parameters[i].by_ref)
-            # Setting the prototype
-            call.prototypes = proto
-            return True
-    
-    return False
-
-
-# FIXME: Pascal is case-insensitive, so this function should be too.
-def add_used_name(s):
-    if s in add_used_name.names:
-        sys.exit("I nomi delle variabili, degli array e delle funzioni non devono coincidere.")
-    add_used_name.names.add(s)
-add_used_name.names = set()
-
-def util_is_integer(s):
-    try:
-        n = int(s)
-    except:
-        return False
-
-    return True
-
-# Parsing expressions like a*var+-b
-def parse_expression(s):
-    # FIXME: Dovrei usare global variables... ?
-    a = 1
-    var = None
-    b = 0
-
-    # Parsing a
-    if "*" in s:
-        splitted = re.split("\*", s)
-        splitted = [x.strip() for x in splitted if x.strip()]
-        if len(splitted) != 2:
-            sys.exit("Un'espressione è malformata (si supportano solo quelle delle forma a*var+b)")
-        if util_is_integer(splitted[0]):
-            a = int(splitted[0])
-        else:
-            sys.exit("Le costanti nelle espressioni devono essere interi")
-
-        s = splitted[1]
-
-    # Parsing var
-    temp_var = re.match("[a-zA-Z_][0-9a-zA-Z_]*", s)
-    if temp_var:
-        name = temp_var.group(0)
-        var = get_primitive_variable(name)
-        if var.type not in ["int", "longint"]:
-            sys.exit("Le variabili nelle espressioni devono essere di tipo intero")
-
-        s = s[len(name):]
-
-    # Parsing b
-    if len(s) > 0:
-        if util_is_integer(s):
-            b = int(s)
-        else:
-            sys.exit("Le costanti nelle espressioni devono essere interi")
-
-    return Expression(var, a, b)
-
-def parse_variable(line):
-    var = re.split('[ \[\]]', line) # Split line by square brackets and space
-    var = [x for x in var if x] # Remove empty chunks
-
-    if not var[0] in TYPES:
-        sys.exit("Tipo non esistente")
-
-    if not re.match("^[a-zA-Z_$][0-9a-zA-Z_$]*$", var[1]):
-        sys.exit("Il nome di una variabile contiene dei caratteri non ammessi")
-
-    add_used_name(var[1])
-
-    if len(var) == 2:
-        var_obj = Variable(var[1], var[0])
-        return var_obj;
-    else:
-        dim = len(var)-2
-        if dim == 0:
-            sys.exit("Dimensioni dell'array non specificate")
-        sizes = [parse_expression(expr) for expr in var[2:]]
-
-        arr_obj = Array(var[1], var[0], sizes)
-        return arr_obj
-
-def parse_prototype(line):
-    proto_obj = Prototype()
-    
-    after_location_parsing = line
-    if "{" in line: # Owner is defined
-        location_split = re.split("[\{\}]", line)
-        if len(location_split) != 3:
-            sys.exit("La descrizione di un prototipo ha un numero errato di parentesi graffe")
-        
-        if location_split[1] not in ["solution", "grader"]:
-            sys.exit("La locazione (tra graffe) di un prototipo deve essere 'solution' o 'grader'")
-        
-        if location_split[1] == "grader":
-            global using_include_grader
-            if not using_include_grader:
-                sys.exit("Un prototipo non può avere come locazione (tra graffe) il 'grader' se non si sta usando include_grader")
-        proto_obj.location = location_split[1]
-        after_location_parsing = location_split[0].strip()
-    
-    first_split = re.split("[\(\)]", after_location_parsing)
-    if len(first_split) != 3:
-        sys.exit("La descrizione di un prototipo ha un numero errato di parentesi tonde")
-
-    type_name = re.split(" ", first_split[0].strip()) #type name or only name
-    parameters = re.split(",", first_split[1]) # with reference
-
-    if len(type_name) == 1:
-        proto_obj.name = type_name[0]
-    elif len(type_name) == 2:
-        proto_obj.type = type_name[0]
-        proto_obj.name = type_name[1]
-    else:
-        sys.exit("Uno dei prototipi è malformato.")
-
-    if proto_obj.type not in TYPES:
-        sys.exit("Il tipo di ritorno di un prototipo non esiste.")
-
-    add_used_name(proto_obj.name)
-
-    for param in parameters:
-        param = param.strip()
-        if len(param) == 0:
-            continue
-
-        by_ref = "&" in param
-        dim = param.count("[]")
-
-        param = re.sub("[&\[\]]", "", param)
-        param = re.sub(" +", " ", param).strip()
-
-        type_name = re.split(" ", param)
-
-        if len(type_name) != 2:
-            sys.exit("Uno dei prototipi è malformato")
-
-        proto_obj.parameters.append(Parameter(type_name[1], type_name[0], dim, by_ref))
-
-    return proto_obj
-
-def parse_call(line):
-    fun_obj = Call()
-
-    line = re.split("=", line)
-    if len(line) > 2:
-        sys.exit("La descrizione di una funzione ha troppi caratteri '='")
-    elif len(line) == 2:
-        var = line[0].strip()
-        fun_obj.return_var = get_primitive_variable(var)
-        
-        line = line[1].strip()
-    else:
-        line = line[0].strip()
-
-    line = re.split("[\(\)]", line)
-    if len(line) != 3:
-        sys.exit("La descrizione di una funzione ha un numero errato di parentesi")
-    else:
-        name = line[0].strip()
-
-        fun_obj.name = name # It is not added to used names, as it might already be declared or it might be in include_grader
-        
-        fun_obj.parameters = []
-
-        if len(line[1].strip()) > 0:
-            parameters = re.split(",", line[1])
-            for param in parameters:
-                param = param.strip()
-                parameter = get_variable(param)
-                
-                if type(parameter) == Array:
-                    if not all((expr.var is None or expr.var.known) for expr in parameter.sizes):
-                        sys.exit("The sizes of an array passed to a function must be known")
-            
-                fun_obj.parameters.append((parameter, False))
-    
-    if not match_call(fun_obj):
-        sys.exit("One of the calls doesn't match any prototype.")
-        
-    for param, by_ref in fun_obj.parameters:
-        if not by_ref and not param.known:
-            sys.exit("Parameters passed (not by reference) to a function must be known")
-    
-    # After execution return value and reference parameters are known.
-    if fun_obj.return_var is not None:
-        fun_obj.return_var.known = True
-    for param, by_ref in fun_obj.parameters:
-        if by_ref:
-            param.known = True
-    
-    return fun_obj
-
-def parse_input(line):
-    if "[" in line: # Read arrays
-        all_arrs = re.sub("[\[\]]", "", line) # Remove square brackets
-        all_arrs = re.split(" ", all_arrs) # Split line by spaces
-        all_arrs = [get_array_variable(name) for name in all_arrs if name] # Remove empty chuncks
-
-        for arr in all_arrs:
-            if arr.sizes != all_arrs[0].sizes:
-                sys.exit("Array da leggere insieme devono avere le stesse dimensioni")
-            
-            if not all((expr.var is None or expr.var.known) for expr in arr.sizes):
-                sys.exit("Quando si legge un array devono essere note le dimensioni")
-            
-            arr.known = True
-        input_line = IOline("Array", all_arrs, all_arrs[0].sizes)
-        return input_line
-
-    else: # Read variables
-        all_vars = re.split(" ", line) # Split line by spaces
-        all_vars = [get_primitive_variable(name) for name in all_vars if name] # Remove empty chuncks
-        for var in all_vars:
-            var.known = True
-
-        input_line = IOline("Variable", all_vars)
-        return input_line
-
-def parse_output(line):
-    global variables, arrays, functions
-
-    if "[" in line: # Write arrays
-        all_arrs = re.sub("[\[\]]", "", line) # Remove square brackets
-        all_arrs = re.split(" ", all_arrs) # Split line by spaces
-        all_arrs = [get_array_variable(name) for name in all_arrs if name] # Remove empty chuncks
-
-        for arr in all_arrs:
-            if arr.sizes != all_arrs[0].sizes:
-                sys.exit("Array da scrivere insieme devono avere le stesse dimensioni")
-
-            for expr in arr.sizes:
-                if expr.var is not None and expr.var.known == False:
-                    sys.exit("Quando si scrive un array devono essere note le dimensioni")
-
-        input_line = IOline("Array", all_arrs, all_arrs[0].sizes)
-        return input_line
-
-    else: # Write variables
-        all_vars = re.split(" ", line) # Split line by spaces
-        all_vars = [get_primitive_variable(name) for name in all_vars if name] # Remove empty chuncks
-
-        input_line = IOline("Variable", all_vars)
-        return input_line
-
+# TOFIX: DELETE ALL HERE
+using_include_grader = False # TOFIX: This one should be handled differently, should be used to check for location.
 
 # Parsing grader description file
 def parse_description(lines):
@@ -601,8 +286,6 @@ def main():
         
         
     if include_grader:
-        global using_include_grader
-        using_include_grader = True
         if len(include_grader) != len(chosen_languages):
             sys.exit("The include_grader file has to exist for all or for none of the chosen languages.")
     
@@ -640,23 +323,21 @@ def main():
             match_tree = regex_parser.MatchTree("variable", line)
             new_variable = Variable(match_tree)
             data_manager.add_variable(new_variable)
-        elif regex_parser.FullMatch(line, "array"):
+        elif regex_parser.FullMatch("array", line):
             match_tree = regex_parser.MatchTree("array", line)
             new_array = Array(match_tree, data_manager)
             data_manager.add_variable(new_array)
         else:
-            sys.exit("The following line, in the variables section, could not be parsed:",
-                     line)
+            sys.exit("The following line, in the variables section, could not be parsed: \n" + line)
 
     # Parsing prototypes
     for line in section_lines["prototypes"]:
         if regex_parser.FullMatch("prototype", line):
             match_tree = regex_parser.MatchTree("prototype", line)
-            new_proto = Prototype(match_tree)
+            new_proto = Prototype(match_tree, using_include_grader)
             data_manager.add_prototype(new_proto)
         else:
-            sys.exit("The following line, in the prototypes section, could not be parsed:",
-                     line)
+            sys.exit("The following line, in the prototypes section, could not be parsed: \n" + line)
 
     # Parsing input
     for line in section_lines["input"]:
@@ -668,13 +349,12 @@ def main():
                 var.known = True
         elif regex_parser.FullMatch("IO_arrays", line):
             match_tree = regex_parser.MatchTree("IO_arrays", line)
-            new_input = IOArrays(match_tree, "input")
+            new_input = IOArrays(match_tree, data_manager, "input")
             data_manager.input_.append(new_input)
             for arr in new_input.arrays:
                 arr.known = True
         else:
-            sys.exit("The following line, in the input section, could not be parsed:",
-                     line)
+            sys.exit("The following line, in the input section, could not be parsed: \n" + line)
 
     # Parsing calls
     for line in section_lines["calls"]:
@@ -682,12 +362,13 @@ def main():
             match_tree = regex_parser.MatchTree("call", line)
             new_call = Call(match_tree, data_manager)
             data_manager.calls.append(new_call)
-            for param, by_ref in call.parameters:
+            for param, by_ref in new_call.parameters:
                 if by_ref:
                     param.known = True
+            if new_call.return_var is not None:
+                new_call.return_var.known = True
         else:
-            sys.exit("The following line, in the calls section, could not be parsed:",
-                     line)
+            sys.exit("The following line, in the calls section, could not be parsed: \n" + line)
 
     # Parsing output
     for line in section_lines["output"]:
@@ -700,8 +381,7 @@ def main():
             new_output = IOArrays(match_tree, data_manager, "output")
             data_manager.output.append(new_output)
         else:
-            sys.exit("The following line, in the output section, could not be parsed:",
-                     line)
+            sys.exit("The following line, in the output section, could not be parsed: \n" + line)
 
     # End of parsing specification file
 

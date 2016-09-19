@@ -14,7 +14,7 @@ int C
 
 
 ***prototypes***
-cerca(int N, char[][] mat, int &A, int &B, int &C)
+cerca(int N, char mat[][], int &A, int &B, int &C)
 
 
 ***input***
