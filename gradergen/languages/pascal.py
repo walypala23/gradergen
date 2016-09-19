@@ -16,9 +16,20 @@ class LanguagePascal(object):
 		else:
 			self.fast_io = False
 
-	types = {'': '', 'int':'longint', 'longint':'int64', 'char':'char', 'real':'double'}
+    types_names = {
+        PrimitiveType.VOID: '', 
+        PrimitiveType.INT: 'longint', 
+        PrimitiveType.LONGINT: 'int64', 
+        PrimitiveType.CHAR: 'char', 
+        PrimitiveType.REAL: 'double'
+    }
 
-	template_types = {'':'', 'int':'1', 'longint':'123456789123', 'char':'\'f\'', 'real':'123.456'}
+	template_values = {
+        PrimitiveType.INT: '1', 
+        PrimitiveType.LONGINT: '123456789123', 
+        PrimitiveType.CHAR: '\'f\'', 
+        PrimitiveType.REAL: '123.456'
+    }
 
 	headers = """\
 uses %(the_name_of_the_task)s;
@@ -101,7 +112,7 @@ end.
 			param = params[i]
 			printed_param = ("var " if param.by_ref else "") + ', '.join([params[k].name for k in range(i, j)]) + ": "
 			if param.dim == 0:
-				printed_param += self.types[param.type]
+				printed_param += self.types_names[param.type]
 			elif param.dim == 1:
 				printed_param += self.at(param.type, param.dim)
 			else:
@@ -114,7 +125,7 @@ end.
 
 	# array type
 	def at(self, type, dim):
-		return "array of "*dim + self.types[type]
+		return "array of "*dim + self.types_names[type]
 
 	# write line
 	def write_line(self, line = "", tabulation = 0):
@@ -126,7 +137,7 @@ end.
 			self.grader += "\n" + ("\t"*tabulation) + "{ " + self.comments[short_description] +" }\n"
 
 	def declare_variable(self, var):
-		self.write_line("{0} : {1};".format(var.name, self.types[var.type]), 1)
+		self.write_line("{0} : {1};".format(var.name, self.types_names[var.type]), 1)
 		if var.type == "real" and self.fast_io:
 			print("WARNING: pascal doesn't support fast input of floating point variables")
 
@@ -359,7 +370,7 @@ end.
 			if fun.type == '':
 				self.template += "procedure {0}({1});\n\n".format(fun.name, printed_parameters)
 			else:
-				self.template += "function {0}({1}): {2};\n\n".format(fun.name, printed_parameters, self.types[fun.type])
+				self.template += "function {0}({1}): {2};\n\n".format(fun.name, printed_parameters, self.types_names[fun.type])
 
 		self.template += "implementation\n\n"
 
@@ -374,7 +385,7 @@ end.
 			if fun.type == '':
 				self.template += "procedure {0}({1});\n".format(fun.name, printed_parameters)
 			else:
-				self.template += "function {0}({1}): {2};\n".format(fun.name, printed_parameters, self.types[fun.type])
+				self.template += "function {0}({1}): {2};\n".format(fun.name, printed_parameters, self.types_names[fun.type])
 
 			self.template += "begin\n"
 
@@ -382,14 +393,14 @@ end.
 			for param in fun.parameters:
 				if param.by_ref:
 					if param.dim == 0:
-						self.template += "\t{0} := {1};\n".format(param.name, self.template_types[param.type])
+						self.template += "\t{0} := {1};\n".format(param.name, self.template_values[param.type])
 					else:
-						self.template += "\t{0}{1} := {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
+						self.template += "\t{0}{1} := {2};\n".format(param.name, "[0]"*param.dim, self.template_values[param.type])
 
 			if fun.type == '':
 				self.template += "\t\n"
 			else:
-				self.template += "\t{0} := {1};\n".format(fun.name, self.template_types[fun.type])
+				self.template += "\t{0} := {1};\n".format(fun.name, self.template_values[fun.type])
 
 			self.template += "end;\n\n"
 

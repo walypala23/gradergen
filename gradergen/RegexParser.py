@@ -1,6 +1,7 @@
 import re
 import sys
 import pprint
+from gradergen.structures import PrimitiveType, Location
 
 class RegexParser:
     # Join the argument in a regex accepting an arbitrary number of spaces
@@ -99,19 +100,18 @@ class RegexParser:
         else:
             return match_tree
     
-    # TOFIX: type_specifiers can be deducted from the enum
-    def __init__(self, type_specifiers):
+    def __init__(self):
         # String used to separate the name from the separator in the
         # method GenerateRepeatedGroupName.
         self.repeated_divider = "_GRADERGEN_IS_COOL_"
         
         # This is the list of type specifiers (int, char,...).
-        self.type_specifiers = type_specifiers
+        self.type_specifiers = [enum_element.value for enum_element in PrimitiveType]
         
         # All regexes needed to correctly parse task.spec are here defined.
         self.maybe_spaces = " *"
-        self.type_ = "(" + "|".join(type_specifiers) + ")"
-        self.type_non_void = "(" + "|".join(type_specifiers[1:]) + ")"
+        self.type_ = "(" + "|".join(self.type_specifiers) + ")"
+        self.type_non_void = "(" + "|".join(self.type_specifiers[1:]) + ")"
         self.name = "([a-zA-Z_][a-zA-Z_0-9]*)"
         self.array_no_sizes = self.GroupName(self.name, "name") + self.GroupName("(\[\])+", "dim")
         
@@ -174,7 +174,10 @@ class RegexParser:
             self.GroupName(self.type_, "return_type"),
             self.GroupName(self.name, "name"), 
             "\(", self.RepeatedSeparated("proto_param", ",", "params"), "\)",
-            "(\{" + self.GroupName("(solution|grader)", "location") + "\})?"
+            "(\{" + self.GroupName(
+                "(" + Location.SOLUTION.value + "|" + Location.GRADER.value + ")", 
+                "location"
+            ) + "\})?"
         )
     
     # Testing for the regexes
@@ -235,4 +238,4 @@ class RegexParser:
         
         
 
-RegexParser(["", "int", "longint", "char", "real"]).test()
+RegexParser().test()

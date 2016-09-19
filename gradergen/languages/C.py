@@ -18,11 +18,27 @@ class LanguageC(object):
 
 	extension = "c"
 
-	types = {'':'void', 'int':'int', 'longint':'long long int', 'char':'char', 'real':'double'}
+	types_names = {
+        PrimitiveType.VOID: 'void', 
+        PrimitiveType.INT: 'int', 
+        PrimitiveType.LONGINT: 'long long int', 
+        PrimitiveType.CHAR: 'char', 
+        PrimitiveType.REAL: 'double'
+    }
 
-	template_types = {'':'', 'int':'1', 'longint':'123456789123ll', 'char':'\'f\'', 'real':'123.456'}
+	template_values = {
+        PrimitiveType.INT: '1', 
+        PrimitiveType.LONGINT: '123456789123ll', 
+        PrimitiveType.CHAR: '\'f\'', 
+        PrimitiveType.REAL: '123.456'
+    }
 
-	stdio_types = {'int':'d', 'longint':'lld', 'char':'c', 'real':'lf'}
+    stdio_types = {
+        PrimitiveType.INT: 'd', 
+        PrimitiveType.LONGINT: 'lld', 
+        PrimitiveType.CHAR: 'c', 
+        PrimitiveType.REAL: 'lf'
+    }
 
 	headers = """\
 #include <stdio.h>
@@ -67,15 +83,15 @@ int main() {
 		
 		for param in params:
 			if param.dim == 1:
-				parameters_string.append(self.types[param.type] + " " + param.name + "[]")
+				parameters_string.append(self.types_names[param.type] + " " + param.name + "[]")
 			else:
-				parameters_string.append(self.types[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name)
+				parameters_string.append(self.types_names[param.type] + ("*" * param.dim) + (self.byref_symbol if param.by_ref and param.dim == 0 else " ") + param.name)
 		
 		return ", ".join(parameters_string)
 
 	# array type
 	def at(self, type, dim):
-		return self.types[type] + "*"*dim
+		return self.types_names[type] + "*"*dim
 
 	# write line
 	def write_line(self, line = "", tabulation = 0):
@@ -87,7 +103,7 @@ int main() {
 			self.grader += "\n" + ("\t"*tabulation) + "// " + self.comments[short_description] +"\n"
 
 	def declare_variable(self, var):
-		self.write_line("static {0} {1};".format(self.types[var.type], var.name))
+		self.write_line("static {0} {1};".format(self.types_names[var.type], var.name))
 
 	def declare_array(self, arr):
 		self.write_line("static {0} {1};".format(self.at(arr.type, arr.dim), arr.name) )
@@ -95,7 +111,7 @@ int main() {
 	def declare_prototype(self, fun):
 		printed_parameters = self.print_parameters(fun.parameters)
 
-		self.write_line("{0} {1}({2});".format(self.types[fun.type], fun.name, printed_parameters))
+		self.write_line("{0} {1}({2});".format(self.types_names[fun.type], fun.name, printed_parameters))
 
 	def allocate_array(self, arr):
 		for i in range(arr.dim):
@@ -276,16 +292,16 @@ int main() {
 			if fun.location == 'grader': # Skipping prototypes defined in include_grader
 				continue
 			printed_parameters = self.print_parameters(fun.parameters)
-			self.template += "{0} {1}({2}) {{\n".format(self.types[fun.type], fun.name, printed_parameters)
+			self.template += "{0} {1}({2}) {{\n".format(self.types_names[fun.type], fun.name, printed_parameters)
 
 			# Variables passed by ref are filled
 			for param in fun.parameters:
 				if param.by_ref:
 					if param.dim == 0:
-						self.template += "\t{0}{1} = {2};\n".format(self.byref_access, param.name, self.template_types[param.type])
+						self.template += "\t{0}{1} = {2};\n".format(self.byref_access, param.name, self.template_values[param.type])
 					else:
-						self.template += "\t{0}{1} = {2};\n".format(param.name, "[0]"*param.dim, self.template_types[param.type])
-			self.template += "\treturn {0};\n".format(self.template_types[fun.type])
+						self.template += "\t{0}{1} = {2};\n".format(param.name, "[0]"*param.dim, self.template_values[param.type])
+			self.template += "\treturn {0};\n".format(self.template_values[fun.type])
 
 			self.template += "}\n\n"
 

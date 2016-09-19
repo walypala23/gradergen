@@ -35,7 +35,7 @@ DESCRIPTION_FILE = "task.spec"
 TASK_YAML = "task.yaml"
 
 class DataManager:
-    __init__(self):
+    def __init__(self):
         self.variables = {} # name: variable
         self.prototypes = {} # name: proto
         # The ending _ does not mean that this are private, it is used 
@@ -45,31 +45,31 @@ class DataManager:
         self.output = []
         used_names = set()
     
-    add_variable(self, var):
+    def add_variable(self, var):
         name = var.name
         if name in used_names:
             sys.exit("Names of variables, arrays and functions must be all different")
         used_names.add(name)
         self.variables[name] = var
     
-    add_prototype(self, proto):
+    def add_prototype(self, proto):
         name = proto.name
         if name in used_names:
             sys.exit("Names of variables, arrays and functions must be all different")
         used_names.add(name)
         self.prototypes[name] = var
     
-    get_variable(self, name):
+    def get_variable(self, name):
         if name not in self.variables:
             sys.exit("One of the variables used has not been declared")
         return self.variables[name]
     
-    get_prototype(self, name):
+    def get_prototype(self, name):
         if name not in self.prototypes:
             sys.exit("One of the function used has not been declared")
         return self.prototypes[name]
     
-    make_copy(self):
+    def make_copy(self):
         return copy.deepcopy({
             "variables": self.variables.values(),
             "prototypes": self.prototypes.values(),
