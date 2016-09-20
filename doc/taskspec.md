@@ -186,4 +186,4 @@ Parameters passed by reference are handled as shown in each language:
 * *C* As references are non existent in pure *C*, references are faked using pointer. So instead of passing the value to the function, a pointer to the value is passed instead. As for *C++*, nothing is done for arrays parameters as they are already passed as pointers.
 * *pascal* References are declared prepending the word `var` to the parameter name.
 
-It is important to note that in some languages passing by reference does not make a copy, instead passing normally makes a copy. This might affect performances. For example array not passed by parameters are copied in pascal and this might slow down solutions. 
+It is important to note that in some languages passing by reference does not make a copy, while passing by value does. This might affect performances. For example array not passed by reference are copied in pascal and this might slow down solutions. 

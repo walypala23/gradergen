@@ -9,7 +9,7 @@ int N
 char mat[N][N]
 
 ***prototypes***
-cerca(int N, char[][] &A)
+cerca(int N, char &A[][])
 
 ***input***
 N

@@ -28,7 +28,7 @@ real colore[res]
 ***prototypes***
 int contapersone(int M, int da[], int a[])
 
-sceglicolori(int dim, int[] &scelti, real[] &colori)
+sceglicolori(int dim, int &scelti[], real &colori[])
 
 ***input***
 
@@ -38,8 +38,6 @@ from[] too[] length[]
 
 H W
 R[][] G[][] B[][]
-
-
 
 ***calls***
 res = contapersone(M, from, too)
