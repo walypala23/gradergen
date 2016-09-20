@@ -39,7 +39,7 @@ int result1
 int result2
 
 ***prototypes***
-doTheThing(int N, char[] x, char[] y, int &result1, int &result2)
+doTheThing(int N, char x[], char y[], int &result1, int &result2)
 
 ***input***
 # Comments can be anywhere in the files, not only at the beginning!
@@ -120,13 +120,36 @@ longint MinCut(int N, int E, int source, int sink, int from[], int to[], int wei
 ```
 
 ## Input
-TODO
+This is the section where you should insert the description of the structure of the input to be read by the grader.  
+Each line describe a part of the input (not necessarily a single line of the input file) and the order of the lines reflects the order in which each part
+is present in the input file.
+Each line can be of two different kinds: can be a line related to simple variables or to arrays. We will focus separately on the two different kinds:
+
+#### Variables input line
+The syntax is very easy in this case, it is just a sequence of variables' names separated by spaces. The semantic meaning is as obvious as it should be, it means that those variables are present on the same line, in the given order, in the input file. The primitive types of the variables do not have to be the same.
+
+Here is the code needed to describe a line that contains two variable, one named `alpha` and the other name `height`:
+```
+alpha height
+```
+
+#### Arrays input line
+The syntax is very similar to [the one just described](#variables-input-line) but the corresponding structure of the input is much more complex.
+The only difference in the syntax is that arrays' names should be followed by the correct amount of `[]`, indicating their sizes. The number of `[]` is not really processed by `gradergen` (even though it will raise an error if you don't put them) and is just for the user to have a clear view of how the input should look like just reading the `input` section in `task.spec`.
+
+All arrays on the same line of the input section should have exactly the same sizes, therefore if one of the arrays is declared as `int A[N][N]` and another one is declared as `int B[N][M]` an error will be raised. As you will see, it would not make sense to put arrays of different sizes on the same line. However there is no constraint on the type of the arrays.
+
+The complicated part is the meaning of the line, that varies wildly with the number of arrays involved, with their sizes and even with their types.
+We will go through all of the possible cases in this punctured list:
+* TODO
+* TODO
+
 
 ## Calls
 TODO
 
 ## Output
-TODO
+Everything (both the syntax and the corresponding structure of the file) is exactly as in the `input` section, so see the [input documentation](#input).
 
 ## Appendix
 
