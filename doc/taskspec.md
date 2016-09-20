@@ -128,7 +128,7 @@ Each line can be of two different kinds: can be a line related to simple variabl
 #### Variables input line
 The syntax is very easy in this case, it is just a sequence of variables' names separated by spaces. The semantic meaning is as obvious as it should be, it means that those variables are present on the same line, in the given order, in the input file. The primitive types of the variables do not have to be the same.
 
-Here is the code needed to describe a line that contains two variable, one named `alpha` and the other name `height`:
+Here is the code needed to describe a line that contains two variables, one named `alpha` and the other named `height`:
 ```
 alpha height
 ```
@@ -137,9 +137,9 @@ alpha height
 The syntax is very similar to [the one just described](#variables-input-line) but the corresponding structure of the input is much more complex.
 The only difference in the syntax is that arrays' names should be followed by the correct amount of `[]`, indicating their sizes. The number of `[]` is not really processed by `gradergen` (even though it will raise an error if you don't put them) and is just for the user to have a clear view of how the input should look like just reading the `input` section in `task.spec`.
 
-All arrays on the same line of the input section should have exactly the same sizes, therefore if one of the arrays is declared as `int A[N][N]` and another one is declared as `int B[N][M]` an error will be raised. As you will see, it would not make sense to put arrays of different sizes on the same line. However there is no constraint on the type of the arrays.
+All arrays on the same line of the input section should have exactly the same sizes, therefore if one of the arrays is declared as `int A[N][N]` and another one is declared as `int B[N][M]` an error will be raised. As you will see, it would not make sense to put arrays of different sizes on the same line. However there is no constraint on the types of the arrays.
 
-The complicated part is the meaning of the line, that varies wildly with the number of arrays involved, with their sizes and even with their types.
+The complicated part is the meaning of the line (i.e. the corresponding part in the input file), that varies wildly with the number of arrays involved, with their sizes and even with their types.
 We will go through all of the possible cases in this punctured list:
 * TODO
 * TODO
