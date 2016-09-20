@@ -12,7 +12,7 @@ longint res
 
 ***prototypes***
 inizializza(longint first)
-aggiungi(int N, longint[] X)
+aggiungi(int N, longint X[])
 longint risultato()
 
 ***input***

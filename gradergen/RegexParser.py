@@ -236,6 +236,3 @@ class RegexParser:
         print("\n\n\n")
         pprint.PrettyPrinter(indent=4, width=150).pprint(self.MatchTree("array", tests["array"]["valid"][2]))
         
-        
-
-# RegexParser().test()

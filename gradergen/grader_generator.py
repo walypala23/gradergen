@@ -79,11 +79,8 @@ class DataManager:
             "output": self.output,        
         })
 
-# TOFIX: DELETE ALL HERE
-using_include_grader = False # TOFIX: This one should be handled differently, should be used to check for location.
-
 # Parsing grader description file
-def parse_description(lines):
+def parse_specification_file(lines):
     sections = {"variables": [], "prototypes": [], "calls": [], "input": [], "output": []}
     section_lines = {}
     act_section = None
@@ -98,7 +95,7 @@ def parse_description(lines):
         for section in sections:
             if line == "***" + section + "***":
                 if sections[section]:
-                    sys.exit("Il file di descrizione contiene due volte la stessa sezione")
+                    sys.exit("The specification file (task.spec) contains twice the same section")
                 is_section_title = True
                 sections[section] = True
                 act_section = section
@@ -107,7 +104,7 @@ def parse_description(lines):
 
         if not is_section_title:
             if not act_section:
-                sys.exit("Il file di descrizione deve specificare una sezione")
+                sys.exit("The specification file (task.spec) has to start with a section header")
             section_lines[act_section].append(line)
     return section_lines
 
@@ -160,7 +157,8 @@ def main():
         "--oii",
         action = "store_true",
         default = False,
-        help = "create graders and templates in all supported languages following oii's standard (sol/ and att/)"
+        help = "create graders and templates in all supported languages following "
+               "oii's standard (sol/ and att/)"
     )
 
     group.add_argument(\
@@ -169,7 +167,8 @@ def main():
         metavar = "IO_type",
         const = "normal",
         default = False,
-        help = "create graders and templates in C++ following stages' standard (sol/ and att/), IO_type decide whether grader in sol/ must have fastIO or not"
+        help = "create graders and templates in C++ following stages' standard (sol/ and att/), "
+               "IO_type decides whether grader in sol/ must have fastIO or not"
     )
 
     args = parser.parse_args()
@@ -298,17 +297,14 @@ def main():
         except IOError:
             pass
     
-    if include_callable:
-        global using_include_callable
-        using_include_callable = True
-        if len(include_callable) != len(chosen_languages):
-            sys.exit("The include_callable file has to exist for all or for none of the chosen languages.")
+    if include_callable and len(include_callable) != len(chosen_languages):
+        sys.exit("The include_callable file has to exist for all or for none of the chosen languages.")
     
 
     # Parsing specication file (task.spec)
     with open(args.task_spec, "r") as task_spec:
         lines = task_spec.read().splitlines()
-        section_lines = parse_description(lines)
+        section_lines = parse_specification_file(lines)
         
     # Here all the data is parsed from task.spec using regex_parser and inserted
     # in data_manager. All compilation-like checks are done by the constructor
@@ -316,7 +312,6 @@ def main():
     regex_parser = RegexParser()
     data_manager = DataManager()    
 
-    # TODO: ERRORS SHOULD BE HANDLED WITH try, except
     # Parsing variables
     for line in section_lines["variables"]:
         if regex_parser.FullMatch("variable", line):
@@ -334,7 +329,7 @@ def main():
     for line in section_lines["prototypes"]:
         if regex_parser.FullMatch("prototype", line):
             match_tree = regex_parser.MatchTree("prototype", line)
-            new_proto = Prototype(match_tree, using_include_grader)
+            new_proto = Prototype(match_tree, include_grader)
             data_manager.add_prototype(new_proto)
         else:
             sys.exit("The following line, in the prototypes section, could not be parsed: \n" + line)

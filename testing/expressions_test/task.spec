@@ -11,7 +11,7 @@ int B[3*N-5]
 int C[3*N-5]
 
 ***prototypes***
-moltiplica(int N, int[] X, int[] Y, int[] &res)
+moltiplica(int N, int X[], int Y[], int &res[])
 
 ***input***
 N

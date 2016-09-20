@@ -1,6 +1,5 @@
 import pkg_resources
-import sys
-import os
+from os import unlink
 from gradergen import structures
 from gradergen.structures import PrimitiveType, Location, Variable, Array, Parameter, Prototype, Call, IOVariables, IOArrays, Expression
 
@@ -411,7 +410,7 @@ end.
     def write(self, filename, source):
         # Unlink is used to avoid following symlink
         try:
-            os.unlink(filename)
+            unlink(filename)
         except OSError:
             pass
 

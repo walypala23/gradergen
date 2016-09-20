@@ -12,7 +12,7 @@ int indice
 int direzione
 
 ***prototypes***
-Pianifica(int N, int[] altezza)
+Pianifica(int N, int altezza[])
 
 ***input***
 N
