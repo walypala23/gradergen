@@ -53,6 +53,8 @@ doTheThing(N, x, y, result1, result2)
 result1 result2
 ```
 
+To see further examples of valid `task.spec` we suggest you to see in the `testing/` folder. However, be aware that some of the tests (a couple of them) are there to test for errors, so the `task.spec` might not be valid.
+
 Now we will describe each section carefully.
 
 ## Variables
@@ -135,7 +137,11 @@ alpha height
 
 #### Arrays input line
 The syntax is very similar to [the one just described](#variables-input-line) but the corresponding structure of the input is much more complex.
-The only difference in the syntax is that arrays' names should be followed by the correct amount of `[]`, indicating their sizes. The number of `[]` is not really processed by `gradergen` (even though it will raise an error if you don't put them) and is just for the user to have a clear view of how the input should look like just reading the `input` section in `task.spec`.
+The only difference in the syntax is that arrays' names should be followed by the correct amount of `[]`, indicating their sizes. The number of `[]` is not really processed by `gradergen` (even though it will raise an error if you don't put them) and is just for the user to have a clear view of how the input should look like just reading the `input` section in `task.spec`.  
+As an example the following is a valid line:
+```
+A[][][] B[][][] long_array_name123[][][]
+```
 
 All arrays on the same line of the input section should have exactly the same sizes, therefore if one of the arrays is declared as `int A[N][N]` and another one is declared as `int B[N][M]` an error will be raised. As you will see, it would not make sense to put arrays of different sizes on the same line. However there is no constraint on the types of the arrays.
 
@@ -146,7 +152,22 @@ We will go through all of the possible cases in this punctured list:
 
 
 ## Calls
-TODO
+The calls section contains all the calls the grader should do at runtime.
+Each line refers to a single call and the order of the lines it's the same as the order in which the functions will be called.
+
+The syntax of a single call line is as follows:
+```
+return_var = function_name(parameter1, parameter2, ..., parametern)
+```
+where the `function_name` must be the name of a function declared in the `prototypes` section and the parameters' names and `return_var` are relative to variables declared in the `variables` section.  
+The first part (`return_var = `) can be absent if the function is not returning anything (if the prototype has empty type).  
+The parameters do *not* have to specify whether they should be passed by reference, their own type or whether if they are arrays or not. All of that is deduced from the prototype. Of course the prototype have not only to match the name of the function but the types of all the variables involved (parameters and `return_var`) too. The name of the parameters don't have to be the same in the prototype declaration and in the call.
+
+For instance, if the variables `result` and `N` and the array `numbers` have been declared, and there is a prototype called `sum` which matches all the parameters, then 
+```
+result = sum(N, numbers)
+```
+is a correct call.
 
 ## Output
 Everything (both the syntax and the corresponding structure of the file) is exactly as in the `input` section, so see the [input documentation](#input).
@@ -173,7 +194,9 @@ variable_name
 variable_name+10
 variable_name-20
 5*variable_name
+74
 -7*variable_name+134
+100000
 ```
 
 ### The `include_grader` and `include_callable` files
