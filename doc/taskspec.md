@@ -136,7 +136,7 @@ alpha height
 ```
 
 #### Arrays input line
-The syntax is very similar to [the one just described](#variables-input-line) but the corresponding structure of the input is much more complex.
+The syntax is very similar to [the one just described](#variables-input-line) but the corresponding structure of the input is more complex.
 The only difference in the syntax is that arrays' names should be followed by the correct amount of `[]`, indicating their sizes. The number of `[]` is not really processed by `gradergen` (even though it will raise an error if you don't put them) and is just for the user to have a clear view of how the input should look like just reading the `input` section in `task.spec`.  
 As an example the following is a valid line:
 ```
@@ -145,11 +145,17 @@ A[][][] B[][][] long_array_name123[][][]
 
 All arrays on the same line of the input section should have exactly the same sizes, therefore if one of the arrays is declared as `int A[N][N]` and another one is declared as `int B[N][M]` an error will be raised. As you will see, it would not make sense to put arrays of different sizes on the same line. However there is no constraint on the types of the arrays.
 
-The complicated part is the meaning of the line (i.e. the corresponding part in the input file), that varies wildly with the number of arrays involved, with their sizes and even with their types.
-We will go through all of the possible cases in this punctured list:
-* TODO
-* TODO
+The complicated part is the meaning of the line (i.e. the corresponding part in the input file), that varies with the number of arrays involved, with their sizes and even with their types.
+We will go through the three possible cases in this punctured list:
 
+* *Only one array of type `char`*: It is treated as a string (or as an array of strings) and printed accordingly. If the array `A` has sizes `size1, size2, ..., sizen`, in the input there will be `size1*size2*...*size(n-1)` lines each containing a string of length `sizen`.  
+The array is read as you would expect, the second character of the first string of the input corresponds to `A[0]...[0][1]`. If for example `A` has dimension 1 and size N, the input will contain a single line with a string of N characters and this string is exactly what `A` should be.
+* *Only one array of type non-`char`*: This is treated like a normal list. Everything exactly as for strings (described above) apart from the fact that single entries are separated by a space.  
+Let's assume for example that `A` has type `int`, dimension two and sizes NxM. Then the input will contain N lines, each with M integers separated by spaces.
+* *More than one array*: Let's name the sizes of the arrays `size1, size2, ..., sizen`. The input will contain `size1*size2*...*sizen` lines, each with as many values as are the arrays. All the values on the same line are separated by a space.  
+Each line is mapped to an entry in all the arrays, and it is done exactly as you would guess.
+For example the second value on the second line is mapped to the entry `[0]...[0][1]` of the second array of the list.
+So if you have two arrays with dimension 1 and length N, the input will have N lines and each line will contain two values.
 
 ## Calls
 The calls section contains all the calls the grader should do at runtime.
