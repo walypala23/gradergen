@@ -162,7 +162,33 @@ int main() {
         else:
             self.write_line("{2} = {0}({1});".format(fun.name, parameters, fun.return_var.name), 1)
 
-    def write_arrays(self, all_arrs):
+    def write_single_array(self, arr):
+        dim = arr.dim
+
+        for i in range(dim):
+            self.write_line("for (int {0} = 0; {0} < {1}; {0}++) {{".format("i" + str(i), arr.sizes[i].to_string()), i+1)
+
+        indexes = "".join("[i" + str(x) + "]" for x in range(dim))
+        if self.fast_io:
+            self.write_line("fast_write_{0}({1});".format(arr.type.value, arr.name + indexes), dim + 1)
+            if arr.type != PrimitiveType.CHAR:
+                self.write_line("fast_write_char(' ');", dim + 1)
+            self.write_line("}", dim)
+            self.write_line("fast_write_char('\\n');", dim)
+        else:
+            format_string = "%" + self.stdio_types[arr.type]
+            antipointers = arr.name + indexes
+            if arr.type != PrimitiveType.CHAR:
+                self.write_line("fprintf(fw, \"{0} \", {1});".format(format_string, antipointers), dim+1)
+            else:
+                self.write_line("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), dim+1)
+            self.write_line("}", dim)
+            self.write_line("fprintf(fw, \"\\n\");", dim)
+            
+        for i in range(1, dim):
+            self.write_line("}", dim - i)
+        
+    def write_many_arrays(self, all_arrs):
         all_dim = all_arrs[0].dim
         all_sizes = all_arrs[0].sizes
 
@@ -175,27 +201,14 @@ int main() {
                 self.write_line("fast_write_{0}({1});".format(arr.type.value, arr.name + indexes), all_dim + 1)
                 if arr != all_arrs[-1]:
                     self.write_line("fast_write_char(' ');", all_dim + 1)
-            if len(all_arrs) > 1:
-                self.write_line("fast_write_char('\\n');", all_dim + 1)
-            elif all_arrs[0].type != PrimitiveType.CHAR:
-                self.write_line("fast_write_char(' ');", all_dim + 1)
+            self.write_line("fast_write_char('\\n');", all_dim + 1)
         else:
             format_string = " ".join("%" + self.stdio_types[arr.type] for arr in all_arrs)
             antipointers = ", ".join(arr.name + indexes for arr in all_arrs)
-            if len(all_arrs) > 1:
-                self.write_line("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), all_dim+1)
-            elif all_arrs[0].type != PrimitiveType.CHAR:
-                self.write_line("fprintf(fw, \"{0} \", {1});".format(format_string, antipointers), all_dim+1)
-            else:
-                self.write_line("fprintf(fw, \"{0}\", {1});".format(format_string, antipointers), all_dim+1)
+            self.write_line("fprintf(fw, \"{0}\\n\", {1});".format(format_string, antipointers), all_dim+1)
 
         for i in range(all_dim):
             self.write_line("}", all_dim - i)
-            if i == 0 and len(all_arrs) == 1:
-                if self.fast_io:
-                    self.write_line("fast_write_char('\\n');", all_dim - i)
-                else:
-                    self.write_line("fprintf(fw, \"\\n\");", all_dim - i)
 
     def write_variables(self, all_vars):
         if self.fast_io:
@@ -281,7 +294,10 @@ int main() {
         self.write_comment("output", 1)
         for output_line in self.data["output"]:
             if type(output_line) == IOArrays:
-                self.write_arrays(output_line.arrays)
+                if len(output_line.arrays) > 1:
+                    self.write_many_arrays(output_line.arrays)
+                else:
+                    self.write_single_array(output_line.arrays[0])
             elif type(output_line) == IOVariables:
                 self.write_variables(output_line.variables)
 
