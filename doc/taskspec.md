@@ -89,7 +89,7 @@ The line states that the variable with name `array_name` is a multidimensional a
 
 ## Prototypes
 In this section you have to declare all the prototypes of the function that will be called by the grader.
-Here you have to insert both the functions that should be defined in the contestant source code and those that are define in the `include_grader` file. For further details about `include_grader` see the [proper section](#the-includegrader-and-includecallable-files).   
+Here you have to insert both the functions that should be defined in the contestant source code and those that are defined in the `include_grader` file. For further details about `include_grader` see the [proper section](#the-includegrader-and-includecallable-files).   
 This is the only section processed to generate the template.
 
 Each line of this section must contain a prototype for a function. The general syntax of the prototype is:
@@ -106,7 +106,7 @@ type_identifier &parameter_name[][]..[][]
 ```
 The ampersand `&`, if present, means that the parameter should be passed by reference. The sequence of `[]`, if present, means that the parameter is an array and its dimension is the number of pairs of square brackets.
 
-Given all of the informations above you should now understand the meanings of the following correct prototypes:
+Given all of the information above you should now understand the meanings of the following correct prototypes:
 ```
 # FindSum returns the sum of a and b
 int FindSum(int a, int b)
@@ -116,14 +116,14 @@ int FindSum(int a, int b)
 # passed to approximate and the return value is stored in solutions[i].
 CallManyTimes(int N, real heights[], int &solutions[]) {grader}
 
-# This function returns the minimum cut relative to the vertexes source and sink in 
-# graph passed in the parameters.
+# This function returns the minimum cut relative to the vertices source and sink in 
+# the graph passed in the parameters.
 longint MinCut(int N, int E, int source, int sink, int from[], int to[], int weight[])
 ```
 
 ## Input
 This is the section where you should insert the description of the structure of the input to be read by the grader.  
-Each line describe a part of the input (not necessarily a single line of the input file) and the order of the lines reflects the order in which each part
+Each line describes a part of the input (not necessarily a single line of the input file) and the order of the lines reflects the order in which each part
 is present in the input file.
 Each line can be of two different kinds: can be a line related to simple variables or to arrays. We will focus separately on the two different kinds:
 
@@ -167,7 +167,7 @@ return_var = function_name(parameter1, parameter2, ..., parametern)
 ```
 where the `function_name` must be the name of a function declared in the `prototypes` section and the parameters' names and `return_var` are relative to variables declared in the `variables` section.  
 The first part (`return_var = `) can be absent if the function is not returning anything (if the prototype has empty type).  
-The parameters do *not* have to specify whether they should be passed by reference, their own type or whether if they are arrays or not. All of that is deduced from the prototype. Of course the prototype have not only to match the name of the function but the types of all the variables involved (parameters and `return_var`) too. The name of the parameters don't have to be the same in the prototype declaration and in the call.
+The parameters do *not* have to specify whether they should be passed by reference, their own type or whether they are arrays or not. All of that is deduced from the prototype. Of course the prototype have not only to match the name of the function but the types of all the variables involved (parameters and `return_var`) too. The name of the parameters don't have to be the same in the prototype declaration and in the call.
 
 For instance, if the variables `result` and `N` and the array `numbers` have been declared, and there is a prototype called `sum` which matches all the parameters, then 
 ```
@@ -207,7 +207,7 @@ variable_name-20
 
 ### The `include_grader` and `include_callable` files
 These two files contain additional source code to be included in the grader. The reason for their existence is to enrich the capability of the generated graders and make possible to use `gradergen` also for *complex* problems that are not fully expressed by the strict syntax of `task.spec`.  
-This files have to be called `include_grader.lang_extension` and `include_callable.lang_extension`, where `lang_extension` is the proper extension of the programming language. If you want `gradergen` to use them they have to be in or in the same directory as `task.spec` or in the directory specified with the flag `--include_dir`.   
+These files have to be called `include_grader.lang_extension` and `include_callable.lang_extension`, where `lang_extension` is the proper extension of the programming language. If you want `gradergen` to use them they have to be in the same directory as `task.spec` or in the directory specified with the flag `--include_dir`.   
 If `include_grader` is present for one of the language processed, then it has to be present for all the languages processed. The same applies to `include_callable`.  
 
 The two files obviously have a different content and are processed differently by `gradergen`.
