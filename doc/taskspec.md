@@ -83,13 +83,13 @@ A line describing an array has the following structure:
 type_identifier array_name[size1][size2]...[sizeN]
 ``` 
 
-Everything about the type identifier and the name is exactly as it is for [primitive type variables](#primitive-type-variables), so we suggest to look there for further details. The sizes have to be expressions, for details about expressione see the [appriopriate section](#expressions). The dimension of the array (the number of sizes) is not limited, even if multidimensional array are not supported in every languages.
+Everything about the type identifier and the name is exactly as it is for [primitive type variables](#primitive-type-variables), so we suggest to look there for further details. The sizes have to be expressions, for details about expressions see the [appriopriate section](#expressions). The dimension of the array (the number of sizes) is not limited, even if multidimensional array are not supported in every language.
 
-The line states that the variable with name `array_name` is a multidimensional array with sizes `size1`, `size2`, ..., `sizen` and its primitive type is the given one.
+The line states that the variable with name `array_name` is a multidimensional array with sizes `size1`, `size2`, ..., `sizeN` and its primitive type is the given one.
 
 ## Prototypes
 In this section you have to declare all the prototypes of the function that will be called by the grader.
-Here you have to insert both the functions that should be defined in the contestant source code and both those that are define in the `include_grader` file. For further details about `include_grader` see the [proper section](#the-includegrader-and-includecallable-files).   
+Here you have to insert both the functions that should be defined in the contestant source code and those that are define in the `include_grader` file. For further details about `include_grader` see the [proper section](#the-includegrader-and-includecallable-files).   
 This is the only section processed to generate the template.
 
 Each line of this section must contain a prototype for a function. The general syntax of the prototype is:
@@ -184,7 +184,7 @@ Everything (both the syntax and the corresponding structure of the file) is exac
 
 The type's identifiers are the following ones:
 
-* `int`: An simple integer (32 bit).
+* `int`: A simple integer (32 bit).
 * `longint`: A long integer (64 bit).
 * `char`: A single character.
 * `real`: A floating point number (usually a double floating point using 64 bit).
