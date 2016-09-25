@@ -230,7 +230,7 @@ For example, `include_callable` must be used in problems where the contestant's 
 ```C++
 bool IsBiggerThanSecretNumber(int n) {
 	number_of_queries++;
-	return n > secret_number
+	return n > secret_number;
 }
 ```
 
