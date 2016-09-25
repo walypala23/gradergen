@@ -224,8 +224,15 @@ void fill_A(int N char X[], int input_values[], int output_values[]) {
 }
 ```
 
-* `include_callable`: This one contains all the functions that the contestant's program can call. These functions can interact with all the variables defined in the grader. Moreover in this file you can also, accordingly to the language, define new variables. We strongly advise not to do any input or output in this section as IO is handled differently if fast input is enabled or not.   
-For example, `include_callable` must be used in problems where the contestant's program can ask questions and the final score depends on the number of questions asked.
+* `include_callable`: This one contains all the functions that the contestant's program can call (not the declarations of the function but the whole implementations). These functions can interact with all the variables defined in the grader. Moreover in this file you can also, accordingly to the language, define new variables. We strongly advise not to do any input or output in this section as IO is handled differently if fast input is enabled or not.  
+For example, `include_callable` must be used in problems where the contestant's program can ask questions and the final score depends on the number of questions asked. Here it is a correct `include_callable` handling queries and keeping the number of queries asked:
+
+```C++
+bool IsBiggerThanSecretNumber(int n) {
+	number_of_queries++;
+	return n > secret_number
+}
+```
 
 The content of `include_grader` and `include_callable` is copy-pasted in the correct section of the grader depending on the programming language.
 
