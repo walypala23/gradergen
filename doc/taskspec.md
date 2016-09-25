@@ -90,7 +90,7 @@ The line states that the variable with name `array_name` is a multidimensional a
 ## Prototypes
 In this section you have to declare all the prototypes of the function that will be called by the grader.
 Here you have to insert both the functions that should be defined in the contestant source code and those that are defined in the `include_grader` file. For further details about `include_grader` see the [proper section](#the-include_grader-and-include_callable-files).   
-This is the only section processed to generate the template.
+This is the only part of `task.spec` processed to generate the template.
 
 Each line of this section must contain a prototype for a function. The general syntax of the prototype is:
 ```
