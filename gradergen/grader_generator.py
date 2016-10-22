@@ -167,8 +167,9 @@ def main():
         metavar = "IO_type",
         const = "normal",
         default = False,
-        help = "create graders and templates in C++ following stages' standard (sol/ and att/), "
-               "IO_type decides whether grader in sol/ must have fastIO or not"
+        help = "create graders and templates in C++ following stages' standard "
+               "(sol/ and att/), IO_type (can be 'normal' or 'fast') decides "
+               "whether graders in sol/ must have fastIO or not"
     )
 
     args = parser.parse_args()
