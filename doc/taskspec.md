@@ -140,13 +140,8 @@ alpha height
 ```
 
 #### Arrays input line
-<<<<<<< Updated upstream
 The syntax is very similar to [the one just described](#variables-input-line) but the corresponding structure of the input is more complex.
-The only difference in the syntax is that arrays' names should be followed by the correct amount of `[]`, indicating their sizes. The number of `[]` is not really processed by `gradergen` (even though it will raise an error if you don't put them) and is just for the user to have a clear view of how the input should look like just reading the `input` section in `task.spec`.  
-=======
-The syntax is very similar to [the one just described](#variables-input-line) but the corresponding structure of the input is much more complex.
 The only difference in the syntax is that arrays' names should be followed by the correct amount of `[]`, indicating their sizes. The number of `[]` is not really processed by `gradergen` (even though an error will be raised if you don't put them) and is just for the user to have a clear view of how the input should look like just reading the `input` section in `task.spec`.  
->>>>>>> Stashed changes
 As an example the following is a valid line:
 ```
 A[][][] B[][][] long_array_name123[][][]
