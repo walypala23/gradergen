@@ -288,7 +288,7 @@ def main():
 
         if len(lang_options) > 3:
             raise ValueError("For each language you can specify, at most, the "
-                             "names of grader and template")
+                             "names of grader and template.")
 
         chosen_languages.append((lang, lang_options[1], lang_options[2]))
     
