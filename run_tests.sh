@@ -18,7 +18,8 @@ NC="\033[0m" # No Color
 OK="$GREEN✓\033[0m"
 NOTOK="$RED✗\033[0m"
 
-FILES='c fast_c cpp fast_cpp pascal fast_pascal'
+LANGUAGES=(C fast_C CPP fast_CPP pascal fast_pascal)
+FILES=(c fast_c cpp fast_cpp pascal fast_pascal)
 
 CHECK() {
     (chronic "$@" && echo -e $OK) || (echo -e $NOTOK && exit 1)
@@ -43,6 +44,52 @@ CHECK pip install -t ./pip_modules -r ../requirements.txt
 echo -n "Creation of 'gradergen' binary inside 'testing' folder... "
 CHECK python ../setup.py install --home ./pip_modules --install-scripts .
 
+compile_stuff() {
+    echo "Compiling solutions and templates... "
+
+    if [ -f grader.c ]; then
+        echo -n "Compiling C "
+        CHECK gcc -Wall -DEVAL -O2 grader.c soluzione.c -o c
+        chronic gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C || touch template_c.errors
+    fi
+    if [ -f fast_grader.c ]; then
+        echo -n "Compiling fast_C "
+        CHECK gcc -Wall -DEVAL -O2 fast_grader.c soluzione.c -o fast_c
+        chronic gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C || touch template_fast_c.errors
+    fi
+    if [ -f grader.cpp ]; then
+        echo -n "Compiling CPP "
+        CHECK g++ -Wall -DEVAL -O2 grader.cpp soluzione.cpp -o cpp
+        chronic g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp || touch template_cpp.errors
+    fi
+    if [ -f fast_grader.cpp ]; then
+        echo -n "Compiling fast_CPP "
+        CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp soluzione.cpp -o fast_cpp
+        chronic g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP || touch template_fast_cpp.errors
+    fi
+    if [ -f grader.pas ]; then
+        echo -n "Compiling pascal "
+        cp soluzione.pas $taskname.pas
+        CHECK fpc -dEVAL grader.pas -opascal
+        rm *.o *.ppu # Otherwise fpc seems to be non-deterministic.
+        
+        cp template_pascal.pas $taskname.pas
+        chronic fpc -dEVAL grader.pas -otemplate_pascal || touch template_pascal.errors
+        rm *.o *.ppu # Otherwise fpc seems to be non-deterministic.
+    fi
+    if [ -f fast_grader.pas ]; then
+        echo -n "Compiling fast_pascal "
+        cp soluzione.pas $taskname.pas
+        CHECK fpc -dEVAL fast_grader.pas -ofast_pascal
+        rm *.o *.ppu # Otherwise fpc seems to be non-deterministic.
+
+        cp template_pascal.pas $taskname.pas
+        chronic fpc -dEVAL fast_grader.pas -otemplate_fast_pascal || touch template_fast_pascal.errors
+        rm *.o *.ppu # Otherwise fpc seems to be non-deterministic.
+    fi
+    
+    rm -f $taskname.pas
+}
 
 run_test() {
     pushd $1 > /dev/null
@@ -56,18 +103,29 @@ run_test() {
     outfile=$(grep "outfile" task.yaml | cut -d":" -f2)
     outfile=${outfile:1}
 
-    chronic ../gradergen --all 2> $1.errors
-
-    if [ $? != "0" ]
-    then
-        for name in $FILES
-        do
-            cat $1.errors > $name.out
+    for index in {0..5}
+    do
+        language=${LANGUAGES[$index]}
+        name=${FILES[$index]}
+        echo $language $name
+        chronic ../gradergen --lang $language 2> $name.out
+        if [ $? != "0" ]
+        then
             md5sum $name.out | awk '{print $1}' > $name.out.md5
-        done
-        popd > /dev/null
-        return
-    fi
+        fi
+    done
+    
+    # chronic ../gradergen --all 2> $1.errors
+    # if [ $? != "0" ]
+    # then
+        # for name in ${FILES[@]}
+        # do
+            # cat $1.errors > $name.out
+            # md5sum $name.out | awk '{print $1}' > $name.out.md5
+        # done
+        # popd > /dev/null
+        # return
+    # fi
 
     echo
 
@@ -80,52 +138,67 @@ run_test() {
           && ./input > input.txt
     fi
 
-    echo -n "Compiling stuff... "
-    cp soluzione.pas $taskname.pas
+    compile_stuff
+    # echo -n "Compiling stuff... "
+    # cp soluzione.pas $taskname.pas
 
-    CHECK gcc -Wall -DEVAL -O2 grader.c soluzione.c -o c
-    CHECK gcc -Wall -DEVAL -O2 fast_grader.c soluzione.c -o fast_c
-    CHECK g++ -Wall -DEVAL -O2 grader.cpp soluzione.cpp -o cpp
-    CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp soluzione.cpp -o fast_cpp
-    CHECK fpc -dEVAL grader.pas -opascal
-    CHECK fpc -dEVAL fast_grader.pas -ofast_pascal
+    # if [ -f grader.c ]; then
+        # CHECK gcc -Wall -DEVAL -O2 grader.c soluzione.c -o c
+    # fi
+    # if [ -f fast_grader.c ]; then
+        # CHECK gcc -Wall -DEVAL -O2 fast_grader.c soluzione.c -o fast_c
+    # fi
+    # if [ -f grader.cpp ]; then
+        # CHECK g++ -Wall -DEVAL -O2 grader.cpp soluzione.cpp -o cpp
+    # fi
+    # if [ -f fast_grader.cpp ]; then
+        # CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp soluzione.cpp -o fast_cpp
+    # fi
+    # if [ -f grader.pas ]; then
+        # CHECK fpc -dEVAL grader.pas -opascal
+    # fi
+    # if [ -f fast_grader.pas ]; then
+        # CHECK fpc -dEVAL fast_grader.pas -ofast_pascal
+    # fi
 
-    rm $taskname.pas
+    # rm $taskname.pas
 
-    for name in $FILES
+    for name in ${FILES[@]}
     do
-        echo -n "Running $name... "
+        if [ -f $name ]; then
+            echo -n "Running $name... "
 
-        if [ $infile = '""' ];
-        then
-            (./$name < input.txt > output.txt && echo -e $OK) || echo -e $NOTOK
-            mv output.txt $name.out
-        elif [ $infile = "input.txt" ];
-        then
-            (./$name && echo -e $OK) || echo -e $NOTOK
-            mv output.txt $name.out
-        else
-            ln -s input.txt $infile
-            (./$name && echo -e $OK) || echo -e $NOTOK
-            mv $outfile $name.out
-            rm $infile
+            if [ $infile = '""' ];
+            then
+                (./$name < input.txt > output.txt && echo -e $OK) || echo -e $NOTOK
+                mv output.txt $name.out
+            elif [ $infile = "input.txt" ];
+            then
+                (./$name && echo -e $OK) || echo -e $NOTOK
+                mv output.txt $name.out
+            else
+                ln -s input.txt $infile
+                (./$name && echo -e $OK) || echo -e $NOTOK
+                mv $outfile $name.out
+                rm $infile
+            fi
+
+            md5sum $name.out | awk '{print $1}' > $name.out.md5
         fi
-
-        md5sum $name.out | awk '{print $1}' > $name.out.md5
     done
 
-    echo -n "Compiling templates... "
-    cp template_pascal.pas $taskname.pas
-    rm *.o *.ppu # Otherwise fpc seems to be non-deterministic...
+    # echo -n "Compiling templates... "
+    # cp template_pascal.pas $taskname.pas
+    # rm *.o *.ppu # Otherwise fpc seems to be non-deterministic...
 
-    CHECK gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C || touch template_c.errors
-    CHECK gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C || touch template_fast_c.errors
-    CHECK g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp || touch template_cpp.errors
-    CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP || touch template_fast_cpp.errors
-    CHECK fpc -dEVAL grader.pas -otemplate_pascal || touch template_pascal.errors
-    CHECK fpc -dEVAL fast_grader.pas -otemplate_fast_pascal || touch template_fast_pascal.errors
+    # CHECK gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C || touch template_c.errors
+    # CHECK gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C || touch template_fast_c.errors
+    # CHECK g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp || touch template_cpp.errors
+    # CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP || touch template_fast_cpp.errors
+    # CHECK fpc -dEVAL grader.pas -otemplate_pascal || touch template_pascal.errors
+    # CHECK fpc -dEVAL fast_grader.pas -otemplate_fast_pascal || touch template_fast_pascal.errors
 
-    rm $taskname.pas
+    # rm $taskname.pas
 
     echo
 
@@ -174,16 +247,16 @@ do
         cat $test/comments.txt
     fi
     
-    for j in $FILES
+    for name in ${FILES[@]}
     do
-		echo -n "$j: "
-        diff -q $test/correct.md5 $test/$j.out.md5 > /dev/null
+		echo -n "$name: "
+        diff -q $test/correct.md5 $test/$name.out.md5 > /dev/null
         if [ $? -ne 0 ]
         then
             printf "${RED}"
             echo -n "grader "
             printf "${NC}"
-            # head -c2k $test/$j.out | head -c -1
+            # head -c2k $test/$name.out | head -c -1
             # echo
         else
             printf "${GREEN}"
@@ -191,7 +264,7 @@ do
             printf "${NC}"
         fi
         
-        if [ -f "$test/template_$j.errors" ]
+        if [ -f "$test/template_$name.errors" ]
         then
 		    printf "${RED}"
             echo -n "template"

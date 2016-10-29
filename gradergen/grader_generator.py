@@ -45,29 +45,34 @@ class DataManager:
         self.calls = []
         self.output = []
         self.used_names = set()
-    
+
+    def add_new_name(self, name):
+        if name in self.used_names:
+            raise ValueError("Names of variables, arrays and functions must be "
+                             "all different. The name {0} was already used."
+                                 .format(name))
+        self.used_names.add(name)
+        
     def add_variable(self, var):
         name = var.name
-        if name in self.used_names:
-            sys.exit("Names of variables, arrays and functions must be all different")
-        self.used_names.add(name)
+        self.add_new_name(name)
         self.variables[name] = var
     
     def add_prototype(self, proto):
         name = proto.name
-        if name in self.used_names:
-            sys.exit("Names of variables, arrays and functions must be all different")
-        self.used_names.add(name)
+        self.add_new_name(name)
         self.prototypes[name] = proto
     
     def get_variable(self, name):
         if name not in self.variables:
-            sys.exit("One of the variables used has not been declared")
+            raise NameError("The variable {0} was used without being declared."
+                                .format(name))
         return self.variables[name]
     
     def get_prototype(self, name):
         if name not in self.prototypes:
-            sys.exit("One of the function used has not been declared")
+            raise NameError("The function {0} was used without being declared."
+                                .format(name))
         return self.prototypes[name]
     
     def make_copy(self):
@@ -84,7 +89,8 @@ def parse_specification_file(lines):
     sections = {"variables": [], "prototypes": [], "calls": [], "input": [], "output": []}
     section_lines = {}
     act_section = None
-    for line in lines:
+    for line_number in range(len(lines)):
+        line = lines[line_number]
         line = line.strip()
         line = re.sub(" +", " ", line) # remove multiple spaces
 
@@ -95,7 +101,8 @@ def parse_specification_file(lines):
         for section in sections:
             if line == "***" + section + "***":
                 if sections[section]:
-                    sys.exit("The specification file (task.spec) contains twice the same section")
+                    raise SyntaxError("The specification file (task.spec) "
+                                      "contains twice the same section.")
                 is_section_title = True
                 sections[section] = True
                 act_section = section
@@ -104,10 +111,14 @@ def parse_specification_file(lines):
 
         if not is_section_title:
             if not act_section:
-                sys.exit("The specification file (task.spec) has to start with a section header")
-            section_lines[act_section].append(line)
+                raise SyntaxError("The specification file (task.spec) has to "
+                                  "start with a section header.")
+            section_lines[act_section].append((line_number, line))
     return section_lines
 
+def raise_parsing_error(section, line_number, line):
+    raise SyntaxError("The line {1}, in the {0} section, could not be parsed: {2}"
+                          .format(section, line_number, line))
 
 def main():
     global languages_serializer
@@ -118,25 +129,26 @@ def main():
     parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
     parser.add_argument(\
         "--task_spec",
-        metavar = "task_spec",
-        action = "store", nargs="?",
+        metavar = "task_spec", action = "store", nargs = "?",
         help = "the file describing the grader"
     )
     parser.add_argument(\
         "--task_yaml",
-        metavar = "task_yaml",
-        action = "store", nargs="?",
+        metavar = "task_yaml", action = "store", nargs = "?",
         help = "the yaml file describing the task"
     )
     parser.add_argument(\
         "--include_dir",
-        metavar = "include_dir",
-        action = "store", nargs="?",
+        metavar = "include_dir", action = "store", nargs="?",
         help = "the folder containing include_callable and include_grader"
+    )
+    parser.add_argument(\
+        "--debug",
+        action = "store_true", default = False,
+        help = "whether to show the backtrace when an exception is raised"
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
-
     group.add_argument(\
         "-l", "--lang",
         nargs = "+",
@@ -145,14 +157,12 @@ def main():
         action = "append",
         help = "programming language, grader and template"
     )
-
     group.add_argument(\
         "-a", "--all",
         action = "store_true",
         default = False,
         help = "create graders and templates in all supported languages (with standard names)"
     )
-    
     group.add_argument(\
         "--oii",
         action = "store_true",
@@ -160,7 +170,6 @@ def main():
         help = "create graders and templates in all supported languages following "
                "oii's standard (sol/ and att/)"
     )
-
     group.add_argument(\
         "--stage",
         nargs = "?",
@@ -173,6 +182,14 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Hiding backtrace if --debug is not set
+    if not args.debug:
+        def NoBacktraceExpectionHandler(exception_type, exception, traceback):
+            print("{0}: {1}".format(exception_type.__name__, exception),
+                  file=sys.stderr)
+        sys.excepthook = NoBacktraceExpectionHandler
+    
     if args.task_spec is None:
         # Search for a DESCRIPTION_FILE
         directory = os.getcwd()
@@ -189,7 +206,8 @@ def main():
                 directory = os.path.dirname(directory)
 
     if args.task_spec is None:
-        sys.exit("The " + DESCRIPTION_FILE + " file cannot be found.")
+        raise FileNotFoundError("The {0} file cannot be found."
+                                    .format(DESCRIPTION_FILE))
 
     if args.task_yaml is None:
         # Search for a TASK_YAML
@@ -207,7 +225,8 @@ def main():
                 directory = os.path.dirname(directory)
 
     if args.task_yaml is None:
-        sys.exit("The " + TASK_YAML + " file cannot be found.")
+        raise FileNotFoundError("The {0} file cannot be found."
+                                    .format(DESCRIPTION_FILE))
 
 
     # Parsing task.yaml
@@ -236,7 +255,8 @@ def main():
                 ["CPP", "sol/grader.cpp", "sol/template_cpp.cpp"]
             ]
         else:
-            sys.exit("The argument of --stage must be `normal`, `fast` or empty.")
+            raise ValueError("The argument of --stage must be `normal`, "
+                             "`fast` or empty.")
     
     if args.oii:
         args.include_dir = "gradergen"
@@ -253,7 +273,8 @@ def main():
     for lang_options in args.languages:
         lang = lang_options[0]
         if lang not in LANGUAGES_LIST:
-            sys.exit("One of the specified languages is not currently supported")
+            raise NotImplementedError("One of the specified languages is not "
+                                      "currently supported.")
 
         # grader.extension is the standard name for graders
         if len(lang_options) <= 1:
@@ -266,7 +287,8 @@ def main():
             lang_options.append(template_name)
 
         if len(lang_options) > 3:
-            sys.exit("For each language you can specify, at most, the names of grader and template")
+            raise ValueError("For each language you can specify, at most, the "
+                             "names of grader and template")
 
         chosen_languages.append((lang, lang_options[1], lang_options[2]))
     
@@ -285,9 +307,9 @@ def main():
             pass
         
         
-    if include_grader:
-        if len(include_grader) != len(chosen_languages):
-            sys.exit("The include_grader file has to exist for all or for none of the chosen languages.")
+    if include_grader and len(include_grader) != len(chosen_languages):
+        raise FileNotFoundError("The include_grader file has to exist for "
+                                "all or for none of the chosen languages.")
     
     include_callable = {}
     for lang, grader_name, template_name in chosen_languages:
@@ -299,7 +321,8 @@ def main():
             pass
     
     if include_callable and len(include_callable) != len(chosen_languages):
-        sys.exit("The include_callable file has to exist for all or for none of the chosen languages.")
+        raise FileNotFoundError("The include_callable file has to exist for "
+                                "all or for none of the chosen languages.")
     
 
     # Parsing specication file (task.spec)
@@ -313,72 +336,76 @@ def main():
     regex_parser = RegexParser()
     data_manager = DataManager()    
 
-    # Parsing variables
-    for line in section_lines["variables"]:
-        if regex_parser.FullMatch("variable", line):
-            match_tree = regex_parser.MatchTree("variable", line)
-            new_variable = Variable(match_tree)
-            data_manager.add_variable(new_variable)
-        elif regex_parser.FullMatch("array", line):
-            match_tree = regex_parser.MatchTree("array", line)
-            new_array = Array(match_tree, data_manager)
-            data_manager.add_variable(new_array)
-        else:
-            sys.exit("The following line, in the variables section, could not be parsed: \n" + line)
+    try:
+        # Parsing variables
+        for line_number, line in section_lines["variables"]:
+            if regex_parser.FullMatch("variable", line):
+                match_tree = regex_parser.MatchTree("variable", line)
+                new_variable = Variable(match_tree)
+                data_manager.add_variable(new_variable)
+            elif regex_parser.FullMatch("array", line):
+                match_tree = regex_parser.MatchTree("array", line)
+                new_array = Array(match_tree, data_manager)
+                data_manager.add_variable(new_array)
+            else:
+                raise_parsing_error("variables", line_number, line)
 
-    # Parsing prototypes
-    for line in section_lines["prototypes"]:
-        if regex_parser.FullMatch("prototype", line):
-            match_tree = regex_parser.MatchTree("prototype", line)
-            new_proto = Prototype(match_tree, include_grader)
-            data_manager.add_prototype(new_proto)
-        else:
-            sys.exit("The following line, in the prototypes section, could not be parsed: \n" + line)
+        # Parsing prototypes
+        for line_number, line in section_lines["prototypes"]:
+            if regex_parser.FullMatch("prototype", line):
+                match_tree = regex_parser.MatchTree("prototype", line)
+                new_proto = Prototype(match_tree, include_grader)
+                data_manager.add_prototype(new_proto)
+            else:
+                raise_parsing_error("prototypes", line_number, line)
 
-    # Parsing input
-    for line in section_lines["input"]:
-        if regex_parser.FullMatch("IO_variables", line):
-            match_tree = regex_parser.MatchTree("IO_variables", line)
-            new_input = IOVariables(match_tree, data_manager, "input")
-            data_manager.input_.append(new_input)
-            for var in new_input.variables:
-                var.known = True
-        elif regex_parser.FullMatch("IO_arrays", line):
-            match_tree = regex_parser.MatchTree("IO_arrays", line)
-            new_input = IOArrays(match_tree, data_manager, "input")
-            data_manager.input_.append(new_input)
-            for arr in new_input.arrays:
-                arr.known = True
-        else:
-            sys.exit("The following line, in the input section, could not be parsed: \n" + line)
+        # Parsing input
+        for line_number, line in section_lines["input"]:
+            if regex_parser.FullMatch("IO_variables", line):
+                match_tree = regex_parser.MatchTree("IO_variables", line)
+                new_input = IOVariables(match_tree, data_manager, "input")
+                data_manager.input_.append(new_input)
+                for var in new_input.variables:
+                    var.known = True
+            elif regex_parser.FullMatch("IO_arrays", line):
+                match_tree = regex_parser.MatchTree("IO_arrays", line)
+                new_input = IOArrays(match_tree, data_manager, "input")
+                data_manager.input_.append(new_input)
+                for arr in new_input.arrays:
+                    arr.known = True
+            else:
+                raise_parsing_error("input", line_number, line)
 
-    # Parsing calls
-    for line in section_lines["calls"]:
-        if regex_parser.FullMatch("call", line):
-            match_tree = regex_parser.MatchTree("call", line)
-            new_call = Call(match_tree, data_manager)
-            data_manager.calls.append(new_call)
-            for param, by_ref in new_call.parameters:
-                if by_ref:
-                    param.known = True
-            if new_call.return_var is not None:
-                new_call.return_var.known = True
-        else:
-            sys.exit("The following line, in the calls section, could not be parsed: \n" + line)
+        # Parsing calls
+        for line_number, line in section_lines["calls"]:
+            if regex_parser.FullMatch("call", line):
+                match_tree = regex_parser.MatchTree("call", line)
+                new_call = Call(match_tree, data_manager)
+                data_manager.calls.append(new_call)
+                for param, by_ref in new_call.parameters:
+                    if by_ref:
+                        param.known = True
+                if new_call.return_var is not None:
+                    new_call.return_var.known = True
+            else:
+                raise_parsing_error("calls", line_number, line)
 
-    # Parsing output
-    for line in section_lines["output"]:
-        if regex_parser.FullMatch("IO_variables", line):
-            match_tree = regex_parser.MatchTree("IO_variables", line)
-            new_output = IOVariables(match_tree, data_manager, "output")
-            data_manager.output.append(new_output)
-        elif regex_parser.FullMatch("IO_arrays", line):
-            match_tree = regex_parser.MatchTree("IO_arrays", line)
-            new_output = IOArrays(match_tree, data_manager, "output")
-            data_manager.output.append(new_output)
-        else:
-            sys.exit("The following line, in the output section, could not be parsed: \n" + line)
-
+        # Parsing output
+        for line_number, line in section_lines["output"]:
+            if regex_parser.FullMatch("IO_variables", line):
+                match_tree = regex_parser.MatchTree("IO_variables", line)
+                new_output = IOVariables(match_tree, data_manager, "output")
+                data_manager.output.append(new_output)
+            elif regex_parser.FullMatch("IO_arrays", line):
+                match_tree = regex_parser.MatchTree("IO_arrays", line)
+                new_output = IOArrays(match_tree, data_manager, "output")
+                data_manager.output.append(new_output)
+            else:
+                raise_parsing_error("output", line_number, line)
+    except Exception as e:
+        error_message = \
+            "{2}\nError at line {0}: {1}".format(line_number, line, str(e))
+        raise type(e)(error_message).with_traceback(sys.exc_info()[2])
     # End of parsing specification file
 
     for lang, grader_name, template_name in chosen_languages:

@@ -32,7 +32,7 @@ class LanguagePascal(object):
     }
 
     headers = """\
-uses %(the_name_of_the_task)s;
+uses %(task_name)s;
 
 var
     fr, fw : text;
@@ -55,7 +55,7 @@ var
 """
 
     headers_fast_io1 = """\
-uses %(the_name_of_the_task)s, Classes, sysutils;
+uses %(task_name)s, Classes, sysutils;
 """
     headers_fast_io2 = """\
 var    \
@@ -111,12 +111,15 @@ end.
             
             param = params[i]
             printed_param = ("var " if param.by_ref else "") + ', '.join([params[k].name for k in range(i, j)]) + ": "
+            # param.dim > 2 is not supported and an error is raised before
+            # arriving in this function.
+            assert(param.dim <= 2)
             if param.dim == 0:
                 printed_param += self.types_names[param.type]
             elif param.dim == 1:
                 printed_param += self.at(param.type, param.dim)
-            else:
-                printed_param += self.types_names[param.type] + "matrix" # TOFIX: Non ha senso
+            elif param.dim == 2:
+                printed_param += self.types_names[param.type] + "matrix"
             parameters_string.append(printed_param)
             
             i = j
@@ -139,12 +142,14 @@ end.
     def declare_variable(self, var):
         self.write_line("{0} : {1};".format(var.name, self.types_names[var.type]), 1)
         if var.type == PrimitiveType.REAL and self.fast_io:
-            print("WARNING: pascal doesn't support fast input of floating point variables")
+            raise NotImplementedError("In pascal fast input of floating point "
+                                      "variables is not supported.")
 
     def declare_array(self, arr):
         self.write_line("{0} : {1};".format(arr.name, self.at(arr.type, arr.dim)), 1)
         if arr.type == PrimitiveType.REAL and self.fast_io:
-            print("WARNING: pascal doesn't support fast output of floating point variables")
+            raise NotImplementedError("In pascal fast output of floating point "
+                                      "variables is not supported.")
 
     def declare_prototype(self, fun):  # In pascal it is not needed to declare user functions in grader.pas
         pass
@@ -256,11 +261,8 @@ end.
             self.write_line("writeln(fw, {0});".format(antipointers), 1)
 
     def insert_headers(self):
-        if self.data["task_name"] is "the_name_of_the_task":
-            print("warning: Nella prima riga del grader pascal deve essere inserito il nome del file scritto dal contestant")
-
         if self.fast_io:
-            self.grader += self.headers_fast_io1 % {"the_name_of_the_task": self.data["task_name"]}
+            self.grader += self.headers_fast_io1 % {"task_name": self.data["task_name"]}
             fast_io_file = open(pkg_resources.resource_filename("gradergen.languages", "fast_input.pas"), "r")
             self.grader += "\n" + fast_io_file.read()
             fast_io_file.close()
@@ -269,7 +271,7 @@ end.
             fast_io_file.close()
             self.grader += self.headers_fast_io2
         else:
-            self.grader += self.headers % {"the_name_of_the_task": self.data["task_name"]}
+            self.grader += self.headers % {"task_name": self.data["task_name"]}
 
     def insert_main(self):
         if self.fast_io:
@@ -369,7 +371,9 @@ end.
                 if param.dim == 2:
                     matrix_types.append(param.type)
                 elif param.dim > 2:
-                    print("WARNING: pascal doesn't support multidimensional array of dimension > 2 passed as argument")
+                    raise NotImplementedError(
+                        "In pascal multidimensional arrays of dimension > 2 "
+                        "passed as arguments of functions are not supported.")
 
         # Defining ad-hoc matrices
         if len(matrix_types) > 0:
