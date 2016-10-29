@@ -64,7 +64,8 @@ class Prototype:
         self.location = Location(match_tree["location"]) if "location" in match_tree else Location.SOLUTION
         
         if not using_include_grader and self.location == Location.GRADER:
-            sys.exit("The location of a prototype cannot be 'grader' if you are not providing the include_grader file")
+            raise ValueError("The location of a prototype cannot be 'grader' "
+                             "if you are not providing the include_grader file")
 
 class Call:
     def __init__(self, match_tree, data_manager):
@@ -73,7 +74,8 @@ class Call:
         
         # Cannot be an Array, must be a simple Variable.
         if self.return_var is not None and type(self.return_var) == Array:
-            sys.exit("The variable assigned to the return value of a call cannot be an array.")
+            raise ValueError("The variable assigned to the return value of a "
+                             "call cannot be an array.")
         
         # Finding the prototype with the same name as this call.
         self.prototype = data_manager.get_prototype(self.name)
@@ -110,42 +112,52 @@ class Call:
                 self.prototype_not_matched()
             
             if type(call_param) == Array and not call_param.is_allocable():
-                sys.exit("The sizes of the array passed by parameter must be known")
+                raise ValueError("The sizes of the array passed by parameter "
+                                 "must be known.")
             if not proto_param.by_ref and not call_param.known:
-                sys.exit("The parameters not passed by reference must be known")
+                raise ValueError("The parameters not passed by reference must "
+                                 "be known.")
                 
             self.parameters.append((call_param, proto_param.by_ref))
         
     def prototype_not_matched():
-        sys.exit("One of the calls does not match any prototype")
+        raise NameError("One of the calls does not match any prototype.")
 
 class IOVariables:
     def __init__(self, match_tree, data_manager, is_input_or_output):
         self.variables = [data_manager.get_variable(var) for var in match_tree['variables']]
         if not all(type(var) == Variable for var in self.variables):
-            sys.exit("It is not possible to have both arrays and variables on the same IO line. "
-                     "Furthermore, arrays have to be denoted using the square bracket notation.")
+            raise SyntaxError("It is not possible to have both arrays and "
+                              "variables on the same IO line. Furthermore, "
+                              "arrays have to be denoted using the square "
+                              "bracket notation.")
         
         if is_input_or_output == "output" and not all(var.known for var in self.variables):
-            sys.exit("Before writing a variable to output it must have been assigned a value")
+            raise ValueError("Before writing a variable to output it must "
+                             "have been assigned a value.")
 
 class IOArrays:
     def __init__(self, match_tree, data_manager, is_input_or_output):
         self.arrays = [data_manager.get_variable(arr["name"]) for arr in match_tree['arrays']]
         if not all(type(arr) == Array for arr in self.arrays):
-            sys.exit("It is not possible to have both arrays and variables on the same IO line. "
-                     "Furthermore, arrays have to be denoted using the square bracket notation.")
-                     
+            raise SyntaxError("It is not possible to have both arrays and "
+                              "variables on the same IO line. Furthermore, "
+                              "arrays have to be denoted using the square "
+                              "bracket notation.")
+        
         self.sizes = self.arrays[0].sizes
             
         if not all(arr.sizes == self.sizes for arr in self.arrays):
-            sys.exit("Arrays read on the same line must have the same type")
+            raise ValueError("Arrays read on the same line must have the same "
+                             "type.")
             
         if not all(expr.is_known() for expr in self.sizes):
-            sys.exit("Before reading/writing an arrays, theirs sizes must be known")
+            raise ValueError("Before reading/writing an arrays, theirs sizes "
+                             "must be known.")
             
         if is_input_or_output == "output" and not all(arr.known for arr in self.arrays):
-            sys.exit("Before writing an array to output it must have been filled with values")
+            raise ValueError("Before writing an array to output it must have "
+                             "been filled with values.")
 
 
 # coef * var + const
@@ -159,7 +171,8 @@ class Expression:
             self.coef = int(match_tree["coef"] if "coef" in match_tree else 1) 
             self.var = data_manager.get_variable(match_tree["variable"])
             if self.var.type not in [PrimitiveType.INT, PrimitiveType.LONGINT]:
-                sys.exit("Variables in expressions must be int or longint") 
+                raise ValueError("Variables in expressions must be int or "
+                                 "longint.") 
             self.const = int(match_tree["const2"].replace(" ", "") if "const2" in match_tree else 0)
 
     def to_string(self):

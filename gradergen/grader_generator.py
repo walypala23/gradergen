@@ -49,7 +49,7 @@ class DataManager:
     def add_new_name(self, name):
         if name in self.used_names:
             raise ValueError("Names of variables, arrays and functions must be "
-                             "all different. The name {0} has been used"
+                             "all different. The name {0} was already used."
                                  .format(name))
         self.used_names.add(name)
         
@@ -65,14 +65,14 @@ class DataManager:
     
     def get_variable(self, name):
         if name not in self.variables:
-            raise ValueError("The variable {0} was used without being declared."
-                                 .format(name))
+            raise NameError("The variable {0} was used without being declared."
+                                .format(name))
         return self.variables[name]
     
     def get_prototype(self, name):
         if name not in self.prototypes:
-            raise ValueError("The function {0} was used without being declared."
-                                 .format(name))
+            raise NameError("The function {0} was used without being declared."
+                                .format(name))
         return self.prototypes[name]
     
     def make_copy(self):
@@ -336,72 +336,76 @@ def main():
     regex_parser = RegexParser()
     data_manager = DataManager()    
 
-    # Parsing variables
-    for line_number, line in section_lines["variables"]:
-        if regex_parser.FullMatch("variable", line):
-            match_tree = regex_parser.MatchTree("variable", line)
-            new_variable = Variable(match_tree)
-            data_manager.add_variable(new_variable)
-        elif regex_parser.FullMatch("array", line):
-            match_tree = regex_parser.MatchTree("array", line)
-            new_array = Array(match_tree, data_manager)
-            data_manager.add_variable(new_array)
-        else:
-            raise_parsing_error("variables", line_number, line)
+    try:
+        # Parsing variables
+        for line_number, line in section_lines["variables"]:
+            if regex_parser.FullMatch("variable", line):
+                match_tree = regex_parser.MatchTree("variable", line)
+                new_variable = Variable(match_tree)
+                data_manager.add_variable(new_variable)
+            elif regex_parser.FullMatch("array", line):
+                match_tree = regex_parser.MatchTree("array", line)
+                new_array = Array(match_tree, data_manager)
+                data_manager.add_variable(new_array)
+            else:
+                raise_parsing_error("variables", line_number, line)
 
-    # Parsing prototypes
-    for line_number, line in section_lines["prototypes"]:
-        if regex_parser.FullMatch("prototype", line):
-            match_tree = regex_parser.MatchTree("prototype", line)
-            new_proto = Prototype(match_tree, include_grader)
-            data_manager.add_prototype(new_proto)
-        else:
-            raise_parsing_error("prototypes", line_number, line)
+        # Parsing prototypes
+        for line_number, line in section_lines["prototypes"]:
+            if regex_parser.FullMatch("prototype", line):
+                match_tree = regex_parser.MatchTree("prototype", line)
+                new_proto = Prototype(match_tree, include_grader)
+                data_manager.add_prototype(new_proto)
+            else:
+                raise_parsing_error("prototypes", line_number, line)
 
-    # Parsing input
-    for line_number, line in section_lines["input"]:
-        if regex_parser.FullMatch("IO_variables", line):
-            match_tree = regex_parser.MatchTree("IO_variables", line)
-            new_input = IOVariables(match_tree, data_manager, "input")
-            data_manager.input_.append(new_input)
-            for var in new_input.variables:
-                var.known = True
-        elif regex_parser.FullMatch("IO_arrays", line):
-            match_tree = regex_parser.MatchTree("IO_arrays", line)
-            new_input = IOArrays(match_tree, data_manager, "input")
-            data_manager.input_.append(new_input)
-            for arr in new_input.arrays:
-                arr.known = True
-        else:
-            raise_parsing_error("input", line_number, line)
+        # Parsing input
+        for line_number, line in section_lines["input"]:
+            if regex_parser.FullMatch("IO_variables", line):
+                match_tree = regex_parser.MatchTree("IO_variables", line)
+                new_input = IOVariables(match_tree, data_manager, "input")
+                data_manager.input_.append(new_input)
+                for var in new_input.variables:
+                    var.known = True
+            elif regex_parser.FullMatch("IO_arrays", line):
+                match_tree = regex_parser.MatchTree("IO_arrays", line)
+                new_input = IOArrays(match_tree, data_manager, "input")
+                data_manager.input_.append(new_input)
+                for arr in new_input.arrays:
+                    arr.known = True
+            else:
+                raise_parsing_error("input", line_number, line)
 
-    # Parsing calls
-    for line_number, line in section_lines["calls"]:
-        if regex_parser.FullMatch("call", line):
-            match_tree = regex_parser.MatchTree("call", line)
-            new_call = Call(match_tree, data_manager)
-            data_manager.calls.append(new_call)
-            for param, by_ref in new_call.parameters:
-                if by_ref:
-                    param.known = True
-            if new_call.return_var is not None:
-                new_call.return_var.known = True
-        else:
-            raise_parsing_error("calls", line_number, line)
+        # Parsing calls
+        for line_number, line in section_lines["calls"]:
+            if regex_parser.FullMatch("call", line):
+                match_tree = regex_parser.MatchTree("call", line)
+                new_call = Call(match_tree, data_manager)
+                data_manager.calls.append(new_call)
+                for param, by_ref in new_call.parameters:
+                    if by_ref:
+                        param.known = True
+                if new_call.return_var is not None:
+                    new_call.return_var.known = True
+            else:
+                raise_parsing_error("calls", line_number, line)
 
-    # Parsing output
-    for line_number, line in section_lines["output"]:
-        if regex_parser.FullMatch("IO_variables", line):
-            match_tree = regex_parser.MatchTree("IO_variables", line)
-            new_output = IOVariables(match_tree, data_manager, "output")
-            data_manager.output.append(new_output)
-        elif regex_parser.FullMatch("IO_arrays", line):
-            match_tree = regex_parser.MatchTree("IO_arrays", line)
-            new_output = IOArrays(match_tree, data_manager, "output")
-            data_manager.output.append(new_output)
-        else:
-            raise_parsing_error("output", line_number, line)
-
+        # Parsing output
+        for line_number, line in section_lines["output"]:
+            if regex_parser.FullMatch("IO_variables", line):
+                match_tree = regex_parser.MatchTree("IO_variables", line)
+                new_output = IOVariables(match_tree, data_manager, "output")
+                data_manager.output.append(new_output)
+            elif regex_parser.FullMatch("IO_arrays", line):
+                match_tree = regex_parser.MatchTree("IO_arrays", line)
+                new_output = IOArrays(match_tree, data_manager, "output")
+                data_manager.output.append(new_output)
+            else:
+                raise_parsing_error("output", line_number, line)
+    except Exception as e:
+        error_message = \
+            "{2}\nError at line {0}: {1}".format(line_number, line, str(e))
+        raise type(e)(error_message).with_traceback(sys.exc_info()[2])
     # End of parsing specification file
 
     for lang, grader_name, template_name in chosen_languages:
