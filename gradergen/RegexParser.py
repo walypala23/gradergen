@@ -4,7 +4,8 @@ import pprint
 from gradergen.structures import PrimitiveType, Location
 
 # TOFIX: Follow PEPS for naming.
-# All methods should be lower_case_with_underscore
+#        All methods should be lower_case_with_underscore.
+#        Tests should be in a different file.
 class RegexParser:
     # Join the argument in a regex accepting an arbitrary number of spaces
     # between each piece.

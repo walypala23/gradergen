@@ -226,7 +226,7 @@ def main():
 
     if args.task_yaml is None:
         raise FileNotFoundError("The {0} file cannot be found."
-                                    .format(DESCRIPTION_FILE))
+                                    .format(TASK_YAML))
 
 
     # Parsing task.yaml
