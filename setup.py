@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='gradergen',
-    version='0.3',
+    version='0.4',
     description='Grader generator',
     packages=find_packages(exclude=['testing']),
     package_data={
