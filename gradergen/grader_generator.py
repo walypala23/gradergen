@@ -231,9 +231,12 @@ def main():
 
     # Parsing task.yaml
     task_yaml = yaml.safe_load(open(task_yaml, "rt", encoding="utf-8"))
-    task_name = task_yaml["name"]
-    input_file = task_yaml["infile"]
-    output_file = task_yaml["outfile"]
+    try:
+        task_name = task_yaml["name"]
+        input_file = task_yaml["infile"]
+        output_file = task_yaml["outfile"]
+    except KeyError:
+        raise KeyError("The task.yaml file must contain name, infile and outfile.")
 
     # End of parsing task.yaml
 
@@ -269,6 +272,10 @@ def main():
             ["fast_pascal", "sol/grader.pas", "sol/template_pascal.pas"],
         ]
 
+    if args.stage or args.oii:
+        if not os.path.isdir("att/"):
+            raise IOError("Please create the folder att/.")
+    
     chosen_languages = []
     for lang_options in args.languages:
         lang = lang_options[0]
