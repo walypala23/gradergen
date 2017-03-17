@@ -5,21 +5,10 @@ from gradergen.structures import PrimitiveType, Variable, Array, IOVariables, IO
 from gradergen import grader_generator
 from gradergen.grader_generator import DataManager
 
-class IoLibraryGenerator:
+class IOLibraryGenerator:
     def __init__(self, data):
         self.data = data
-        self.read_input = ""
-        self.write_input = ""
-        self.read_output = ""
-        self.write_output = ""
-
-    # write line
-    def write_line(self, line = "", tabulation = 0):
-        self.io_library += "\t"*tabulation + line + "\n"
-
-    # Writes a line containing: lhs = rhs
-    def write_assignment(self, lhs, rhs, indentation):
-        self.write_line(lhs + " = " + rhs, indentation)
+        self.io_lib = ""
 
     # Returns the given variables as an index of data: data["var_name"]
     @staticmethod
@@ -35,71 +24,85 @@ class IoLibraryGenerator:
         else:
             # A hacky way to use data["name"] instead of just name.
             var_name = expression.var.name
-            expression.var.name = PythonIOLibraryGenerator.data_enclose(var_name)
+            expression.var.name = IOLibraryGenerator.data_enclose(var_name)
             generated_string = expression.to_string()
             expression.var.name = var_name
             return generated_string
 
-    def read_input(self):
-        for input_line in self.data.input_:
-            if type(input_line) == IOArrays:
-                if len(input_line.arrays) == 1:
-                    arr = input_line.arrays[0]
-                    self.write_comment("Reading the array {0}.".format(arr.name), 1)
-                    if arr.dim == 1:
-                        # Reading a 1-dimensional array.
-                        line_numbers.append(1)
-                        self.assert_file_length(line_numbers)
-                        lhs = self.data_enclose(arr.name)
-                        rhs = "ReadArrayLine(\"{0}\", {1}, f[{2}])"\
-                            .format(arr.type.value,
-                                    self.expression_to_data_string(arr.sizes[0]),
-                                    self.array_sum(line_numbers[:-1]))
-                        self.write_assignment(lhs, rhs, 1)
-                    else:
-                        # Reading a multi-dimensional array.
-                        line_sizes = map(self.expression_to_data_string, arr.sizes[:-1])
-                        line_numbers.append(" * ".join("({0})".format(size) for size in line_sizes))
-                        self.assert_file_length(line_numbers)
-                        self.write_assignment("current_line", self.array_sum(line_numbers[:-1]), 1)
-                        for i in range(len(arr.sizes) - 1):
-                            current_size = self.expression_to_data_string(arr.sizes[i])
-                            lhs = self.data_enclose(arr.name) + self.array_indexes(i)
-                            rhs = "[None] * {0}".format(current_size)
-                            self.write_assignment(lhs, rhs, 1 + i)
+    # Converts the PrimitiveType to a string enclosed in "".
+    @staticmethod
+    def type_to_string(primitive_type):
+        return "\"" + primitive_type.value + "\""
 
-                            self.write_line("for {0} in range({1}):"\
-                                .format(self.iteration_var(i), current_size),
-                                            1 + i)
-                        lhs = self.data_enclose(arr.name) + self.array_indexes(len(arr.sizes) - 1)
-                        rhs = "ReadArrayLine(\"{0}\", {1}, f[current_line])"\
-                            .format(arr.type.value,
-                                    self.expression_to_data_string(arr.sizes[-1]))
-                        self.write_assignment(lhs, rhs, len(arr.sizes))
-                        self.write_line("current_line += 1", len(arr.sizes))
-                else:
-                    for arr in input_line.arrays:
-                        # Do something
-                        pass
-            elif type(input_line) == IOVariables:
-                if len(input_line.variables) == 1:
-                    self.write_comment("Reading the variable {0}.".format(input_line.variables[0].name), 1)
-                else:
-                    self.write_comment("Reading the variables {0}.".format(", ".join(var.name for var in input_line.variables)), 1)
-                line_numbers.append(1)
-                self.assert_file_length(line_numbers)
+    # Joins all the lines in a single string (separating them with \n) and
+    # indents them all by 4 spaces.
+    @staticmethod
+    def join_and_indent(lines):
+        return "\n".join(["    " + line for line in lines])
 
-                var_names = [self.data_enclose(var.name) for var in input_line.variables]
-                var_types = ["\"{0}\"".format(var.type.value) for var in input_line.variables]
-                lhs = ", ".join(var_names)
-                rhs = "ReadVariablesLine(({0}), f[{1}])"\
-                    .format(", ".join(var_types),
-                            self.array_sum(line_numbers[:-1]))
-                self.write_assignment(lhs, rhs, 1)
+    def generate_read_function(self, file_format):
+        generated_lines = []
+        for line in file_format:
+            if type(line) == IOArrays:
+                arrays = line.arrays
+                lhs = ", ".join(
+                    [self.data_enclose(arr.name) for arr in arrays])
+                rhs = "read_arrays([{types}], [{sizes}], f)".format(
+                    types = ", ".join(
+                        [self.type_to_string(arr.type) for arr in arrays]),
+                    sizes = ", ".join(
+                        [self.expression_to_data_string(size) \
+                            for size in arrays[0].sizes])
+                )
+                generated_lines.append(lhs + " = " + rhs)
+            elif type(line) == IOVariables:
+                variables = line.variables
+                lhs = ", ".join(
+                    [self.data_enclose(var.name) for var in variables])
+                rhs = "read_variables([{types}], f)".format(
+                    types = ", ".join(
+                        [self.type_to_string(var.type) for var in variables])
+                )
+                generated_lines.append(lhs + " = " + rhs)
+        return self.join_and_indent(generated_lines)
 
-            self.write_line("", 1)
+    def generate_write_function(self, file_format):
+        generated_lines = []
+        for line in file_format:
+            if type(line) == IOArrays:
+                arrays = line.arrays
+                # write_arrays(arr_types, sizes, arrs, f)
+                new_line = "write_arrays([{types}], [{sizes}], [{values}], f)".format(
+                    types = ", ".join(
+                        [self.type_to_string(arr.type) for arr in arrays]),
+                    sizes = ", ".join(
+                        [self.expression_to_data_string(size) \
+                            for size in arrays[0].sizes]),
+                    values = ", ".join(
+                        [self.data_enclose(arr.name) for arr in arrays])
+                )
+                generated_lines.append(new_line)
+            elif type(line) == IOVariables:
+                variables = line.variables
+                new_line = "write_variables([{types}], [{values}], f)".format(
+                    types = ", ".join(
+                        [self.type_to_string(var.type) for var in variables]),
+                    values = ", ".join(
+                        [self.data_enclose(var.name) for var in variables])
+                )
+                generated_lines.append(new_line)
+        return self.join_and_indent(generated_lines)
 
-        self.write_line("return data", 1)
+    def generate_io_lib(self):
+        with open("problem_io_template.py") as template_file:
+            template = template_file.read()
+        self.io_lib = template.format(
+            gradergen_io_lib = "gradergen_io_lib",
+            read_input = self.generate_read_function(self.data.input_),
+            write_input = self.generate_write_function(self.data.input_),
+            read_output = self.generate_read_function(self.data.output),
+            write_output = self.generate_write_function(self.data.output),
+        )
 
     def write(self, filename, source):
         # Unlink is used to avoid following symlink
@@ -116,8 +119,10 @@ class IoLibraryGenerator:
 dm = DataManager()
 dm.add_variable(Variable({"name": "N", "type": PrimitiveType.INT}))
 dm.add_variable(Variable({"name": "M", "type": PrimitiveType.INT}))
+dm.add_variable(Variable({"name": "res", "type": PrimitiveType.LONGINT}))
 dm.get_variable("N").known = True
 dm.get_variable("M").known = True
+dm.get_variable("res").known = True
 dm.add_variable(Array({"name": "edges", "type": PrimitiveType.REAL, "sizes": [{"variable": "M"}]}, dm))
 dm.add_variable(Array({"name": "quad", "type": PrimitiveType.LONGINT, "sizes": [{"variable": "N"}, {"variable": "M"}]}, dm))
 
@@ -125,8 +130,9 @@ dm.input_ = [IOVariables({"variables": ["N", "M"]}, dm, "input"),
              IOArrays({"arrays": [{"name": "edges"}]}, dm, "input"),
              IOArrays({"arrays": [{"name": "quad"}]}, dm, "input")]
 
-io_parser = PythonIOLibraryGenerator(dm)
+dm.output = [IOVariables({"variables": ["res"]}, dm, "output")]
 
-io_parser.read_input()
-print(io_parser.io_library)
+io_lib_generator = IOLibraryGenerator(dm)
 
+io_lib_generator.generate_io_lib()
+print(io_lib_generator.io_lib)
