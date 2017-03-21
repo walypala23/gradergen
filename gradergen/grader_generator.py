@@ -423,6 +423,8 @@ def main():
             "task_name": task_name,
             "input_file": input_file,
             "output_file": output_file,
+            "gradergen_io_lib_package": "gradergen_io_lib",
+            "problem_io_filename": task_name + "_io.py",
         }
         if lang in include_grader:
             data["include_grader"] = include_grader[lang]

@@ -40,6 +40,17 @@ class IOLibraryGenerator:
     def join_and_indent(lines):
         return "\n".join(["    " + line for line in lines])
 
+    @staticmethod
+    def write(filename, source):
+        # Unlink is used to avoid following symlink
+        try:
+            unlink(filename)
+        except OSError:
+            pass
+
+        with open(filename, "w") as f:
+            f.write(source)
+
     def generate_read_function(self, file_format):
         generated_lines = []
         for line in file_format:
@@ -97,22 +108,16 @@ class IOLibraryGenerator:
         with open("problem_io_template.py") as template_file:
             template = template_file.read()
         self.io_lib = template.format(
-            gradergen_io_lib = "gradergen_io_lib",
-            read_input = self.generate_read_function(self.data.input_),
-            write_input = self.generate_write_function(self.data.input_),
-            read_output = self.generate_read_function(self.data.output),
-            write_output = self.generate_write_function(self.data.output),
+            gradergen_io_lib = self.data["gradergen_io_lib_package"],
+            read_input = self.generate_read_function(self.data["input"]),
+            write_input = self.generate_write_function(self.data["input"]),
+            read_output = self.generate_read_function(self.data["output"]),
+            write_output = self.generate_write_function(self.data["output"]),
         )
 
-    def write(self, filename, source):
-        # Unlink is used to avoid following symlink
-        try:
-            unlink(filename)
-        except OSError:
-            pass
-
-        with open(filename, "w") as f:
-            f.write(source)
+    def write_io_lib(self):
+        self.generate_io_lib()
+        self.write(self.data["problem_io_filename"], self.io_lib)
 
 
 # Testing. TODEL
@@ -132,7 +137,10 @@ dm.input_ = [IOVariables({"variables": ["N", "M"]}, dm, "input"),
 
 dm.output = [IOVariables({"variables": ["res"]}, dm, "output")]
 
-io_lib_generator = IOLibraryGenerator(dm)
+io_lib_generator = IOLibraryGenerator({
+    **dm.make_copy(),
+    "gradergen_io_lib_package": "gradergen_io_lib",
+    "problem_io_filename": "exampleproblem" + "_io.py",
+})
 
-io_lib_generator.generate_io_lib()
-print(io_lib_generator.io_lib)
+io_lib_generator.write_io_lib()
