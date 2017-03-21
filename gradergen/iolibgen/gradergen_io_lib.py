@@ -55,13 +55,15 @@ def safe_readline(f):
 # Recursively reads arrays from the file and fills the arrs_to_fill
 # parameter.
 # If the arrs to be read are two and each of them is one-dimensional with
-# size N, the arrs_to_fill parameter must be of the form 2xN.
+# size N, the arrs_to_fill parameter must be of the form 2xN (and sizes must be
+# [N]).
 def internal_read_arrays(array_types, sizes, f, arrs_to_fill):
     size = sizes[0]
     if len(sizes) == 1:
         if len(array_types) == 1:
-            arrs_to_fill[0] = \
-                read_array_line(array_types[0], size, safe_readline(f))
+            partial_res = read_array_line(array_types[0], size, safe_readline(f))
+            for i in range(size):
+                arrs_to_fill[0][i] = partial_res[i]
         else:
             for i in range(size):
                 partial_res = read_variables_line(array_types, safe_readline(f))
