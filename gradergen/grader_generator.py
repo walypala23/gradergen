@@ -12,6 +12,7 @@ from gradergen.structures import Variable, Array, Parameter, Prototype, Call, IO
 from gradergen.languages.C import LanguageC
 from gradergen.languages.CPP import LanguageCPP
 from gradergen.languages.pascal import LanguagePascal
+from gradergen.iolibgen.iolibgen import IOLibraryGenerator
 
 LANGUAGES_LIST = ["C", "fast_C", "CPP", "fast_CPP", "pascal", "fast_pascal"]
 CLASSES_LIST = \
@@ -123,8 +124,6 @@ def raise_parsing_error(section, line_number, line):
 def main():
     global languages_serializer
     global DESCRIPTION_FILE
-    global variables
-    global prototypes
 
     parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
     parser.add_argument(\
@@ -415,21 +414,24 @@ def main():
         raise type(e)(error_message).with_traceback(sys.exc_info()[2])
     # End of parsing specification file
 
+    data = {
+        **data_manager.make_copy(),
+        "task_name": task_name,
+        "input_file": input_file,
+        "output_file": output_file,
+        "gradergen_io_lib_package": "gradergen_io_lib",
+        "problem_io_filename": task_name + "_io.py",
+    }
+
     for lang, grader_name, template_name in chosen_languages:
         print(grader_name, template_name)
-
-        data = {
-            **data_manager.make_copy(),
-            "task_name": task_name,
-            "input_file": input_file,
-            "output_file": output_file,
-            "gradergen_io_lib_package": "gradergen_io_lib",
-            "problem_io_filename": task_name + "_io.py",
-        }
         if lang in include_grader:
             data["include_grader"] = include_grader[lang]
         if lang in include_callable:
             data["include_callable"] = include_callable[lang]
-
         LangClass, fast_io = CLASSES_LIST[lang]
         LangClass(fast_io, data).write_files(grader_name, template_name)
+
+    create_io_lib = False
+    if create_io_lib:
+        IOLibraryGenerator(data).write_io_lib()
