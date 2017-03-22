@@ -105,7 +105,7 @@ class IOLibraryGenerator:
         return self.join_and_indent(generated_lines)
 
     def generate_io_lib(self):
-        with open(pkg_resources.resource_filename("gradergen.iolibgen", "problem_io_template.py")) as template_file:
+        with open(pkg_resources.resource_filename("gradergen.iolibgen", "problem_io_template.py.tmpl")) as template_file:
             template = template_file.read()
         self.io_lib = template.format(
             gradergen_io_lib = self.data["gradergen_io_lib_package"],

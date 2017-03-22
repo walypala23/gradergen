@@ -124,29 +124,58 @@ def raise_parsing_error(section, line_number, line):
 def parse_command_line_arguments():
     parser = argparse.ArgumentParser(description = \
         "Automatically generate graders and templates in various languages")
-    parser.add_argument(\
+    parser.add_argument(
         "--task_spec",
-        metavar = "task_spec", action = "store", nargs = "?",
+        metavar = "task_spec", action = "store",
         help = "the file describing the grader"
     )
-    parser.add_argument(\
+    parser.add_argument(
         "--task_yaml",
-        metavar = "task_yaml", action = "store", nargs = "?",
+        metavar = "task_yaml", action = "store",
         help = "the yaml file describing the task"
     )
-    parser.add_argument(\
+    parser.add_argument(
         "--include_dir",
-        metavar = "include_dir", action = "store", nargs="?",
+        metavar = "include_dir", action = "store",
         help = "the folder containing include_callable and include_grader"
     )
-    parser.add_argument(\
+    parser.add_argument(
         "--debug",
         action = "store_true", default = False,
         help = "whether to show the backtrace when an exception is raised"
     )
 
+    # TODEL: What the heck is happening? Why aren't these arguments recognized?
+    io_lib_group = parser.add_argument_group(
+        title = "Python IO library",
+        description = "Arguments needed to create a python IO library tailored "
+                      "for the problem. Such a library will have all the "
+                      "utility functions needed to parse and write input or "
+                      "output of this problem."
+    ) 
+    io_lib_group.add_argument(
+        "--io_lib",
+        action = "store_true",
+        default = False,
+        help = "create a python file to read and write input and output of the problem"
+    )
+    io_lib_group.add_argument(
+        "--problem_io",
+        metavar = "problem_io",
+        action = "store",
+        help = "the filename of the python file created with --io_lib"
+    )
+    io_lib_group.add_argument(
+        "--gradergen_io_lib",
+        metavar = "gradergen_io_lib",
+        action = "store",
+        default = "gradergen_io_lib",
+        help = "the package name of the library gradergen/iolibgen/gradergen_io_lib.py. "
+               "It must be relative to the position speficied in --problem_io."
+    )
+
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(\
+    group.add_argument(
         "-l", "--lang",
         nargs = "+",
         metavar = ("lang", "filename"),
@@ -154,20 +183,20 @@ def parse_command_line_arguments():
         action = "append",
         help = "programming language, grader and template"
     )
-    group.add_argument(\
+    group.add_argument(
         "-a", "--all",
         action = "store_true",
         default = False,
         help = "create graders and templates in all supported languages (with standard names)"
     )
-    group.add_argument(\
+    group.add_argument(
         "--oii",
         action = "store_true",
         default = False,
         help = "create graders and templates in all supported languages following "
                "oii's standard (sol/ and att/)"
     )
-    group.add_argument(\
+    group.add_argument(
         "--stage",
         nargs = "?",
         metavar = "IO_type",
