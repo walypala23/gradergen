@@ -7,7 +7,7 @@ setup(
     packages=find_packages(exclude=['testing']),
     package_data={
         'gradergen.languages': ['fast_io.c', 'fast_io.cpp', 'fast_input.pas', 'fast_output.pas'],
-        'gradergen.iolibgen': ['problem_io_template.py'],
+        'gradergen.iolibgen': ['problem_io_template.py.tmpl'],
     },
     entry_points={
         'console_scripts': [

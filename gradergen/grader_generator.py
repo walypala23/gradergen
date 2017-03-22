@@ -6,6 +6,7 @@ import re # regexp, used to check variables and functions names
 import argparse # to parse command line arguments
 import copy # to avoid making too many / too few "array allocations" in the grader
 import yaml # parse task.yaml
+import pprint # to pretty print in debug mode
 
 from gradergen.RegexParser import RegexParser
 from gradergen.structures import Variable, Array, Parameter, Prototype, Call, IOVariables, IOArrays, Expression
@@ -145,7 +146,6 @@ def parse_command_line_arguments():
         help = "whether to show the backtrace when an exception is raised"
     )
 
-    # TODEL: What the heck is happening? Why aren't these arguments recognized?
     io_lib_group = parser.add_argument_group(
         title = "Python IO library",
         description = "Arguments needed to create a python IO library tailored "
@@ -194,7 +194,8 @@ def parse_command_line_arguments():
         action = "store_true",
         default = False,
         help = "create graders and templates in all supported languages following "
-               "oii's standard (sol/ and att/)"
+               "oii's standard (sol/ and att/). It also creates the io library "
+               "in gen/."
     )
     group.add_argument(
         "--stage",
@@ -204,7 +205,8 @@ def parse_command_line_arguments():
         default = False,
         help = "create graders and templates in C++ following stages' standard "
                "(sol/ and att/), IO_type (can be 'normal' or 'fast') decides "
-               "whether graders in sol/ must have fastIO or not"
+               "whether graders in sol/ must have fastIO or not. It also creates "
+               "the io library in gen/."
     )
 
     return parser.parse_args()
@@ -275,8 +277,16 @@ def main():
     if args.all:
         args.languages = [[lang] for lang in LANGUAGES_LIST]
 
-    if args.stage:
+    if args.stage or args.oii:
         args.include_dir = "gradergen"
+        args.io_lib = True
+        args.problem_io = "gen/{0}_io.py".format(task_name)
+        args.gradergen_io_lib = "gradergen_io_lib"
+
+        if not os.path.isdir("att/"):
+            raise IOError("Please create the folder att/.")
+
+    if args.stage:
         if args.stage == "fast":
             args.languages = [
                 ["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
@@ -292,7 +302,6 @@ def main():
                              "`fast` or empty.")
     
     if args.oii:
-        args.include_dir = "gradergen"
         args.languages = [
             ["CPP", "att/grader.cpp", "att/"+task_name+".cpp"],
             ["fast_CPP", "sol/grader.cpp", "sol/template_cpp.cpp"],
@@ -302,9 +311,13 @@ def main():
             ["fast_pascal", "sol/grader.pas", "sol/template_pascal.pas"],
         ]
 
-    if args.stage or args.oii:
-        if not os.path.isdir("att/"):
-            raise IOError("Please create the folder att/.")
+    # iolibgen
+    create_io_lib = args.io_lib
+    if args.problem_io is not None:
+        problem_io_filename = args.problem_io
+    else:
+        problem_io_filename = "{0}_io.py".format(task_name)
+    gradergen_io_lib_package = args.gradergen_io_lib
     
     chosen_languages = []
     for lang_options in args.languages:
@@ -450,9 +463,13 @@ def main():
         "task_name": task_name,
         "input_file": input_file,
         "output_file": output_file,
-        "gradergen_io_lib_package": "gradergen_io_lib",
-        "problem_io_filename": task_name + "_io.py",
+        "gradergen_io_lib_package": gradergen_io_lib_package,
+        "problem_io_filename": problem_io_filename,
     }
+
+    if args.debug:
+        print("data: ")
+        pprint.pprint(data)
 
     for lang, grader_name, template_name in chosen_languages:
         print(grader_name, template_name)
@@ -463,6 +480,5 @@ def main():
         LangClass, fast_io = CLASSES_LIST[lang]
         LangClass(fast_io, data).write_files(grader_name, template_name)
 
-    create_io_lib = False
     if create_io_lib:
         IOLibraryGenerator(data).write_io_lib()

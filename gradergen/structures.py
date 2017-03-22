@@ -28,6 +28,8 @@ class Variable:
         self.name = match_tree["name"]
         self.type = PrimitiveType(match_tree["type"])
         self.known = False # This is not used in any single language class, but only in the main parser.
+    def __repr__(self):
+        return "{" + self.type.value + " " + self.name + "}"
 
 class Array:
     def __init__(self, match_tree, data_manager):
@@ -40,6 +42,10 @@ class Array:
     
     def is_allocable(self):
         return all(size.is_known() for size in self.sizes)
+
+    def __repr__(self):
+        sizes_str = "".join(["[{0}]".format(size.to_string()) for size in self.sizes])
+        return "{" + self.type.value + " " + self.name + sizes_str + "}"
         
 class Parameter:
     def __init__(self, match_tree):
@@ -135,6 +141,8 @@ class IOVariables:
         if is_input_or_output == "output" and not all(var.known for var in self.variables):
             raise ValueError("Before writing a variable to output it must "
                              "have been assigned a value.")
+    def __repr__(self):
+        return "Vars: " + " ".join([var.name for var in self.variables])
 
 class IOArrays:
     def __init__(self, match_tree, data_manager, is_input_or_output):
@@ -158,6 +166,8 @@ class IOArrays:
         if is_input_or_output == "output" and not all(arr.known for arr in self.arrays):
             raise ValueError("Before writing an array to output it must have "
                              "been filled with values.")
+    def __repr__(self):
+        return "Arrs: " + " ".join([arr.name for arr in self.arrays])
 
 
 # coef * var + const

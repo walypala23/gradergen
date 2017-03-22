@@ -3,7 +3,6 @@ from os import unlink
 from gradergen import structures
 from gradergen.structures import PrimitiveType, Variable, Array, IOVariables, IOArrays, Expression
 from gradergen import grader_generator
-# from gradergen.grader_generator import DataManager # TODEL
 
 class IOLibraryGenerator:
     def __init__(self, data):
@@ -118,29 +117,3 @@ class IOLibraryGenerator:
     def write_io_lib(self):
         self.generate_io_lib()
         self.write(self.data["problem_io_filename"], self.io_lib)
-
-
-# Testing. TODEL
-# dm = DataManager()
-# dm.add_variable(Variable({"name": "N", "type": PrimitiveType.INT}))
-# dm.add_variable(Variable({"name": "M", "type": PrimitiveType.INT}))
-# dm.add_variable(Variable({"name": "res", "type": PrimitiveType.LONGINT}))
-# dm.get_variable("N").known = True
-# dm.get_variable("M").known = True
-# dm.get_variable("res").known = True
-# dm.add_variable(Array({"name": "edges", "type": PrimitiveType.REAL, "sizes": [{"variable": "M"}]}, dm))
-# dm.add_variable(Array({"name": "quad", "type": PrimitiveType.LONGINT, "sizes": [{"variable": "N"}, {"variable": "M"}]}, dm))
-
-# dm.input_ = [IOVariables({"variables": ["N", "M"]}, dm, "input"),
-             # IOArrays({"arrays": [{"name": "edges"}]}, dm, "input"),
-             # IOArrays({"arrays": [{"name": "quad"}]}, dm, "input")]
-
-# dm.output = [IOVariables({"variables": ["res"]}, dm, "output")]
-
-# io_lib_generator = IOLibraryGenerator({
-    # **dm.make_copy(),
-    # "gradergen_io_lib_package": "gradergen_io_lib",
-    # "problem_io_filename": "exampleproblem" + "_io.py",
-# })
-
-# io_lib_generator.write_io_lib()
