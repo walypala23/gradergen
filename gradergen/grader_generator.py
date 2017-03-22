@@ -121,11 +121,9 @@ def raise_parsing_error(section, line_number, line):
     raise SyntaxError("The line {1}, in the {0} section, could not be parsed: {2}"
                           .format(section, line_number, line))
 
-def main():
-    global languages_serializer
-    global DESCRIPTION_FILE
-
-    parser = argparse.ArgumentParser(description = "Automatically generate graders and templates in various languages")
+def parse_command_line_arguments():
+    parser = argparse.ArgumentParser(description = \
+        "Automatically generate graders and templates in various languages")
     parser.add_argument(\
         "--task_spec",
         metavar = "task_spec", action = "store", nargs = "?",
@@ -180,7 +178,13 @@ def main():
                "whether graders in sol/ must have fastIO or not"
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+def main():
+    global languages_serializer
+    global DESCRIPTION_FILE
+
+    args = parse_command_line_arguments()
 
     # Hiding backtrace if --debug is not set
     if not args.debug:
@@ -227,7 +231,6 @@ def main():
         raise FileNotFoundError("The {0} file cannot be found."
                                     .format(TASK_YAML))
 
-
     # Parsing task.yaml
     task_yaml = yaml.safe_load(open(task_yaml, "rt", encoding="utf-8"))
     try:
@@ -242,7 +245,6 @@ def main():
     # --all, --stage, --oii
     if args.all:
         args.languages = [[lang] for lang in LANGUAGES_LIST]
-
 
     if args.stage:
         args.include_dir = "gradergen"
