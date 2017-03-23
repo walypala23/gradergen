@@ -55,8 +55,8 @@ class IOLibraryGenerator:
         for line in file_format:
             if type(line) == IOArrays:
                 arrays = line.arrays
-                lhs = ", ".join(
-                    [self.data_enclose(arr.name) for arr in arrays])
+                lhs = " ".join(
+                    [self.data_enclose(arr.name) + "," for arr in arrays])
                 rhs = "read_arrays([{types}], [{sizes}], f)".format(
                     types = ", ".join(
                         [self.type_to_string(arr.type) for arr in arrays]),
@@ -67,8 +67,8 @@ class IOLibraryGenerator:
                 generated_lines.append(lhs + " = " + rhs)
             elif type(line) == IOVariables:
                 variables = line.variables
-                lhs = ", ".join(
-                    [self.data_enclose(var.name) for var in variables])
+                lhs = " ".join(
+                    [self.data_enclose(var.name) + "," for var in variables])
                 rhs = "read_variables([{types}], f)".format(
                     types = ", ".join(
                         [self.type_to_string(var.type) for var in variables])
