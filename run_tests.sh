@@ -91,18 +91,7 @@ compile_stuff() {
     rm -f $taskname.pas
 }
 
-run_test() {
-    pushd $1 > /dev/null
-
-    echo -e "Testing $1... "
-
-    taskname=$(grep "name" task.yaml | cut -d":" -f2)
-    taskname=${taskname:1}
-    infile=$(grep "infile" task.yaml | cut -d":" -f2)
-    infile=${infile:1}
-    outfile=$(grep "outfile" task.yaml | cut -d":" -f2)
-    outfile=${outfile:1}
-
+prepare_test_folder() {
     for index in {0..5}
     do
         language=${LANGUAGES[$index]}
@@ -114,18 +103,6 @@ run_test() {
             md5sum $name.out | awk '{print $1}' > $name.out.md5
         fi
     done
-    
-    # chronic ../gradergen --all 2> $1.errors
-    # if [ $? != "0" ]
-    # then
-        # for name in ${FILES[@]}
-        # do
-            # cat $1.errors > $name.out
-            # md5sum $name.out | awk '{print $1}' > $name.out.md5
-        # done
-        # popd > /dev/null
-        # return
-    # fi
 
     echo
 
@@ -138,30 +115,26 @@ run_test() {
           && ./input > input.txt
     fi
 
+    # iolibgen stuff
+    ln -s ../../gradergen/iolibgen/gradergen_io_lib.py gradergen_io_lib.py
+    cp ../test_iolibgen.py test_iolibgen.py
+}
+
+run_test() {
+    pushd $1 > /dev/null
+
+    echo -e "Testing $1... "
+
+    taskname=$(grep "name" task.yaml | cut -d":" -f2)
+    taskname=${taskname:1}
+    infile=$(grep "infile" task.yaml | cut -d":" -f2)
+    infile=${infile:1}
+    outfile=$(grep "outfile" task.yaml | cut -d":" -f2)
+    outfile=${outfile:1}
+
+    prepare_test_folder
+
     compile_stuff
-    # echo -n "Compiling stuff... "
-    # cp soluzione.pas $taskname.pas
-
-    # if [ -f grader.c ]; then
-        # CHECK gcc -Wall -DEVAL -O2 grader.c soluzione.c -o c
-    # fi
-    # if [ -f fast_grader.c ]; then
-        # CHECK gcc -Wall -DEVAL -O2 fast_grader.c soluzione.c -o fast_c
-    # fi
-    # if [ -f grader.cpp ]; then
-        # CHECK g++ -Wall -DEVAL -O2 grader.cpp soluzione.cpp -o cpp
-    # fi
-    # if [ -f fast_grader.cpp ]; then
-        # CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp soluzione.cpp -o fast_cpp
-    # fi
-    # if [ -f grader.pas ]; then
-        # CHECK fpc -dEVAL grader.pas -opascal
-    # fi
-    # if [ -f fast_grader.pas ]; then
-        # CHECK fpc -dEVAL fast_grader.pas -ofast_pascal
-    # fi
-
-    # rm $taskname.pas
 
     for name in ${FILES[@]}
     do
@@ -187,20 +160,13 @@ run_test() {
         fi
     done
 
-    # echo -n "Compiling templates... "
-    # cp template_pascal.pas $taskname.pas
-    # rm *.o *.ppu # Otherwise fpc seems to be non-deterministic...
-
-    # CHECK gcc -Wall -DEVAL -O2 grader.c template_C.c -o template_C || touch template_c.errors
-    # CHECK gcc -Wall -DEVAL -O2 fast_grader.c template_fast_C.c -o template_fast_C || touch template_fast_c.errors
-    # CHECK g++ -Wall -DEVAL -O2 grader.cpp template_CPP.cpp -o template_cpp || touch template_cpp.errors
-    # CHECK g++ -Wall -DEVAL -O2 fast_grader.cpp template_fast_CPP.cpp -o template_fast_CPP || touch template_fast_cpp.errors
-    # CHECK fpc -dEVAL grader.pas -otemplate_pascal || touch template_pascal.errors
-    # CHECK fpc -dEVAL fast_grader.pas -otemplate_fast_pascal || touch template_fast_pascal.errors
-
-    # rm $taskname.pas
-
     echo
+
+    if [ -f input.txt ]; then
+        echo -n "Testing iolibgen... "
+        chronic ../gradergen --io_lib 2> iolibgen.out
+        (python test_iolibgen.py 2> test_iolibgen.out && echo -e $OK) || echo -e $NOTOK 
+    fi
 
     popd > /dev/null
 }
@@ -256,8 +222,6 @@ do
             printf "${RED}"
             echo -n "grader "
             printf "${NC}"
-            # head -c2k $test/$name.out | head -c -1
-            # echo
         else
             printf "${GREEN}"
             echo -n "grader "
@@ -267,13 +231,46 @@ do
         if [ -f "$test/template_$name.errors" ]
         then
 		    printf "${RED}"
-            echo -n "template"
+            echo -n "template "
             printf "${NC}"
         else
 			printf "${GREEN}"
-            echo -n "template"
+            echo -n "template "
             printf "${NC}"
         fi
+        
         echo
     done
+
+    # Checking iolibgen.
+    if [ -f $test/input.txt ]; then
+        diff -q $test/iolibgen_input.txt $test/input.txt > /dev/null
+        if [ $? -ne 0 ]
+        then
+            printf "${RED}"
+            echo -n "iolibgen_input "
+            printf "${NC}"
+        else
+            printf "${GREEN}"
+            echo -n "iolibgen_input "
+            printf "${NC}"
+        fi
+
+        diff -q $test/iolibgen_output.txt $test/c.out > /dev/null
+        if [ $? -ne 0 ]
+        then
+            printf "${RED}"
+            echo -n "iolibgen_output"
+            printf "${NC}"
+        else
+            printf "${GREEN}"
+            echo -n "iolibgen_output"
+            printf "${NC}"
+        fi
+    else
+        printf "${GREEN}"
+        echo -n "iolibgen "
+        printf "${NC}"
+    fi
+    echo
 done

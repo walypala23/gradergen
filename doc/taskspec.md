@@ -154,9 +154,9 @@ We will go through the three possible cases in this punctured list:
 
 * *Only one array of type `char`*: It is treated as a string (or as an array of strings) and printed accordingly. If the array `A` has sizes `size1, size2, ..., sizen`, in the input there will be `size1*size2*...*size(n-1)` lines each containing a string of length `sizen`.  
 The array is read as you would expect, the second character of the first string of the input corresponds to `A[0]...[0][1]`. If for example `A` has dimension 1 and size N, the input will contain a single line with a string of N characters and this string is exactly what `A` should be.
-* *Only one array of type non-`char`*: This is treated like a normal list. Everything exactly as for strings (described above) apart from the fact that single entries are separated by a space.  
+* *Only one array of type non-`char`*: This is treated like a normal list. Everything is exactly as for strings (described above) apart from the fact that single entries are separated by a space. An additional space is also present at the end of each line.
 Let's assume for example that `A` has type `int`, dimension two and sizes NxM. Then the input will contain N lines, each with M integers separated by spaces.
-* *More than one array*: Let's name the sizes of the arrays `size1, size2, ..., sizen`. The input will contain `size1*size2*...*sizen` lines, each with as many values as the number of arrays involved. All the values on the same line are separated by a space.  
+* *More than one array*: Let's name the sizes of the arrays `size1, size2, ..., sizen`. The input will contain `size1*size2*...*sizen` lines, each with as many values as the number of arrays involved. All the values on the same line are separated by a space (without a trailing space).  
 Each line is mapped to an entry in all the arrays, and it is done exactly as you would guess.
 For example the second value on the second line is mapped to the entry `[0]...[0][1]` of the second array of the list.
 So if you have two arrays with dimension 1 and length N, the input will have N lines and each line will contain two values.

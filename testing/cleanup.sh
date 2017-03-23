@@ -10,6 +10,9 @@ fi
 #### Generic cleanup ####
 rm -f gradergen
 rm -rf pip_modules
+rm -rf build
+rm -rf dist
+rm -rf gradergen.egg-info
 
 #### Other cleanup ####
 taskname='nome_sorgente_contestant'

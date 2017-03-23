@@ -70,7 +70,7 @@ class Prototype:
         self.location = Location(match_tree["location"]) if "location" in match_tree else Location.SOLUTION
         
         if not using_include_grader and self.location == Location.GRADER:
-            raise ValueError("The location of a prototype cannot be 'grader' if"
+            raise ValueError("The location of a prototype cannot be 'grader' if "
                              "you are not providing the include_grader file.")
 
 class Call:

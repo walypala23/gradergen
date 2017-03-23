@@ -116,6 +116,8 @@ def assert_eof(f):
 # BEGIN WRITING UTILITY FUNCTIONS
 
 def convert_to_string(primitive_type, value):
+    if primitive_type == "real":
+        return "{0:0.6f}".format(value)
     return str(value)
 
 # Returns a line containing the given values separated by a space.
@@ -127,7 +129,11 @@ def write_variables_line(var_types, values):
 # Returns a line containing all the entries of the array separated by a space.
 def write_array_line(arr_type, arr):
     separator = "" if arr_type == "char" else " "
-    line = separator.join([convert_to_string(arr_type, el) for el in arr])
+
+    # Here we add a trailing space to be consistent with the graders.
+    # Even if in python is not a issue, avoiding adding the extra space
+    # in C/C++ would make the grader less readable.
+    line = "".join([convert_to_string(arr_type, el) + separator for el in arr])
     return line
 
 # END WRITING UTILITY FUNCTIONS
@@ -159,7 +165,7 @@ def write_arrays(arr_types, sizes, arrs, f):
                 print(write_variables_line(arr_types, [arr[i] for arr in arrs]),
                       file=f)
     else:
-        for i in size:
+        for i in range(size):
             write_arrays(arr_types, sizes[1:], [arr[i] for arr in arrs], f)
 
 # END WRITING PUBLIC API

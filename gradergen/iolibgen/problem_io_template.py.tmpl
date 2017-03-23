@@ -28,18 +28,17 @@ def write_input(data, filename=None):
     
 {write_input}
 
-# Returns a dictionary containing all the variables/arrays contained
-# in the output file.
+# Fills the data dictionary with all the variables/arrays contained
+# in the output file. The data dictionary must already contain all the variables
+# contained in the input file as they might be necessary to parse the output.
 # An error is raised if the output file was malformed (or nonexistent).
 # If filename is not specified, the input is read from stdin.
-def read_output(filename=None):
+def read_output(data, filename=None):
     f = open_to_read(filename)
-    
-    data = {{}}
+
 {read_output}
 
     assert_eof(f)
-    return data
 
 # Writes the data dictionary in the proper format into the output file.
 # If the filename is not specified, the output is printed to stdout.

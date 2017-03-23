@@ -161,21 +161,21 @@ def parse_command_line_arguments():
     )
     io_lib_group.add_argument(
         "--problem_io",
-        metavar = "problem_io",
+        metavar = "filename.py",
         action = "store",
         help = "the filename of the python file created with --io_lib"
     )
     io_lib_group.add_argument(
         "--gradergen_io_lib",
-        metavar = "gradergen_io_lib",
+        metavar = "package_name",
         action = "store",
         default = "gradergen_io_lib",
         help = "the package name of the library gradergen/iolibgen/gradergen_io_lib.py. "
                "It must be relative to the position speficied in --problem_io."
     )
 
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
+    languages_group = parser.add_mutually_exclusive_group()
+    languages_group.add_argument(
         "-l", "--lang",
         nargs = "+",
         metavar = ("lang", "filename"),
@@ -183,13 +183,13 @@ def parse_command_line_arguments():
         action = "append",
         help = "programming language, grader and template"
     )
-    group.add_argument(
+    languages_group.add_argument(
         "-a", "--all",
         action = "store_true",
         default = False,
         help = "create graders and templates in all supported languages (with standard names)"
     )
-    group.add_argument(
+    languages_group.add_argument(
         "--oii",
         action = "store_true",
         default = False,
@@ -197,7 +197,7 @@ def parse_command_line_arguments():
                "oii's standard (sol/ and att/). It also creates the io library "
                "in gen/."
     )
-    group.add_argument(
+    languages_group.add_argument(
         "--stage",
         nargs = "?",
         metavar = "IO_type",
@@ -273,6 +273,12 @@ def main():
 
     # End of parsing task.yaml
 
+    if args.io_lib is False and args.all is False and args.stage is False \
+                            and args.oii is False and args.languages is None:
+        raise ValueError("At least one of the arguments -l/--lang -a/--all "
+                         "--oii --stage --io_lib must be specified, otherwise "
+                         "gradergen does nothing.")
+    
     # --all, --stage, --oii
     if args.all:
         args.languages = [[lang] for lang in LANGUAGES_LIST]
@@ -318,7 +324,10 @@ def main():
     else:
         problem_io_filename = "{0}_io.py".format(task_name)
     gradergen_io_lib_package = args.gradergen_io_lib
-    
+
+    if args.languages is None:
+        args.languages = []
+
     chosen_languages = []
     for lang_options in args.languages:
         lang = lang_options[0]
@@ -401,10 +410,12 @@ def main():
                 raise_parsing_error("variables", line_number, line)
 
         # Parsing prototypes
+        using_include_grader = \
+            include_grader is not None or len(chosen_languages) == 0
         for line_number, line in section_lines["prototypes"]:
             if regex_parser.FullMatch("prototype", line):
                 match_tree = regex_parser.MatchTree("prototype", line)
-                new_proto = Prototype(match_tree, include_grader)
+                new_proto = Prototype(match_tree, using_include_grader)
                 data_manager.add_prototype(new_proto)
             else:
                 raise_parsing_error("prototypes", line_number, line)

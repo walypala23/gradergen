@@ -1,0 +1,1 @@
+iolibgen_output is incorrect as the output format is not specified in task.spec.
