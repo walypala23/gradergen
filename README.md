@@ -17,8 +17,8 @@ Installation
 To install the `gradergen` command, run the following commands:
 
 ```bash
-$ git clone https://github.com/walypala23/grader-creator
-$ cd grader-creator
+$ git clone https://github.com/walypala23/gradergen
+$ cd gradergen
 $ sudo python3 setup.py install
 ```
 
