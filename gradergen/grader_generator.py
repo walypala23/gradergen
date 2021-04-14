@@ -244,6 +244,10 @@ def main():
     if args.all:
         args.languages = [[lang] for lang in LANGUAGES_LIST]
 
+    if args.stage or args.oii:
+        if args.include_dir is not None:
+            raise ValueError("--include_dir is not supported with --stage or "
+                             "--oii, use gradergen/.")
 
     if args.stage:
         args.include_dir = "gradergen"

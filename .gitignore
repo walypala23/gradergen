@@ -18,3 +18,7 @@ gradergen.egg-info/
 
 # For testing
 pip_modules/
+testing/**/*.out
+testing/**/*.md5
+testing/**/*grader*
+testing/**/*template*
